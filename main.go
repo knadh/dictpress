@@ -11,6 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictmaker/search"
 	"github.com/knadh/goyesql"
+	goyesqlx "github.com/knadh/goyesql/sqlx"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
@@ -102,7 +103,7 @@ func main() {
 
 	// Map queries to the query container.
 	var q search.Queries
-	if err := scanQueriesToStruct(&q, qMap, db.Unsafe()); err != nil {
+	if err := goyesqlx.ScanToStruct(&q, qMap, db.Unsafe()); err != nil {
 		logger.Fatalf("no SQL queries loaded: %v", err)
 	}
 
