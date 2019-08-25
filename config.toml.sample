@@ -1,0 +1,58 @@
+[app]
+address = ":8080"
+
+# Enable rendering arbitrary pages from (site_dir/pages/*.html).
+# For instance, "about" for site_dir/pages/about.html will be
+# rendered on site.com/pages/about where the template is defined
+# with the name {{ define "page-about" }}. All template name definitions
+# should be "page-*".
+#
+# This is relevant when starting dictmaker with a site theme (--site param).
+enable_pages = false
+
+[results]
+# Default number of entries to return per page when paginated.
+default_per_page = 10
+
+# The absolute maximum number of results to return per query in case the
+# per_page value above if overwritten from the frontend.
+max_per_page = 20
+
+num_page_nums = 10
+
+[glossary]
+default_per_page = 100
+max_per_page = 100
+num_page_nums = 10
+
+[db]
+host = "localhost"
+port = 5432
+db = "mydict"
+user = ""
+password = ""
+
+[lang.english]
+name = "English"
+
+# The name of the tokenizer that's used to tokenize search queries.
+# This can be either a Postgres supported tsvector regconfig (eg: english|german|finnish etc.)
+# or a tokenizer plugin with a .tk extension that's dynamically loaded.
+# tokenizer_type = db | plugin
+tokenizer = "english"
+tokenizer_type = "db"
+
+[lang.english.types]
+noun = "Noun"
+adj = "Adjective"
+verb = "Verb"
+adv = "Adverb"
+conj = "Conjugation"
+
+[lang.italian]
+tokenzier = "italian"
+tokenizer_type = "db"
+
+[lang.italian.types]
+sost = "Sostantivo"       # Noun
+verb = "Verbo"            # Verb
