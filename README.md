@@ -57,7 +57,7 @@ curl localhost:8080/dictionary/english/english/apple
 ```
 
 ## Sample dictionary
-The `sample` directory shows how to setup an English-English and English-Italian dictionary. Copy the language configuration from `sample/sample-config.toml` to your `config.toml` and execute `sample/data.sql` on your database.
+The `sample/sample.sql` shows how to setup an English-English and English-Italian dictionary. Retaining the English-Italian config in the generated sample config file, execute `sample/sample.sql` on your database.
 
 Then try:
 ```shell
