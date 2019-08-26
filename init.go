@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"plugin"
 	"strings"
@@ -12,6 +15,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictmaker/search"
+	"github.com/knadh/stuffbin"
 )
 
 // connectDB initializes a database connection.
@@ -23,6 +27,31 @@ func connectDB(host string, port int, user, pwd, dbName string) (*sqlx.DB, error
 	}
 
 	return db, nil
+}
+
+// initFileSystem initializes the stuffbin FileSystem to provide
+// access to bunded static assets to the app.
+func initFileSystem(binPath string) (stuffbin.FileSystem, error) {
+	fs, err := stuffbin.UnStuff(os.Args[0])
+	if err == nil {
+		return fs, nil
+	}
+
+	// Running in local mode. Load the required static assets into
+	// the in-memory stuffbin.FileSystem.
+	logger.Printf("unable to initialize embedded filesystem: %v", err)
+	logger.Printf("using local filesystem for static assets")
+	files := []string{
+		"config.toml.sample",
+		"queries.sql",
+		"schema.sql",
+	}
+
+	fs, err = stuffbin.NewLocalFS("/", files...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize local file for assets: %v", err)
+	}
+	return fs, nil
 }
 
 // loadTheme loads a theme from a directory.
@@ -133,5 +162,33 @@ func loadLanguages(app *App) error {
 		}
 		app.lang[l] = lang
 	}
+	return nil
+}
+
+func generateNewFiles() error {
+	if _, err := os.Stat("config.toml"); !os.IsNotExist(err) {
+		return errors.New("config.toml exists. Remove it to generate a new one")
+	}
+
+	// Initialize the static file system into which all
+	// required static assets (.sql, .js files etc.) are loaded.
+	fs, err := initFileSystem(os.Args[0])
+	if err != nil {
+		return err
+	}
+
+	// Generate config file.
+	b, err := fs.Read("config.toml.sample")
+	if err != nil {
+		return fmt.Errorf("error reading sample config (is binary stuffed?): %v", err)
+	}
+	ioutil.WriteFile("config.toml", b, 0644)
+
+	// Generate schema file.
+	b, err = fs.Read("schema.sql")
+	if err != nil {
+		return fmt.Errorf("error reading schema.sql (is binary stuffed?): %v", err)
+	}
+	ioutil.WriteFile("schema.sql", b, 0644)
 	return nil
 }

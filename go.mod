@@ -10,6 +10,7 @@ require (
 	github.com/knadh/knphone v0.0.0-20190624172359-d31f66505cbf
 	github.com/knadh/koanf v0.4.4
 	github.com/knadh/paginator v0.0.0-20190812121607-b4fbeb7c977b
+	github.com/knadh/stuffbin v1.0.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect

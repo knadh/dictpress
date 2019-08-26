@@ -1,0 +1,19 @@
+# .goreleaser.yml
+builds:
+  - binary: dictmaker
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+
+    hooks:
+      # stuff executables with static assets.
+      post: make pack-releases
+
+archive:
+  format: tar.gz
+  files:
+    - README.md
+    - LICENSE
+    - sample/*

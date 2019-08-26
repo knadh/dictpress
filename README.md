@@ -41,12 +41,13 @@ dictmaker has no concept of language or semantics. To make a universal dictionar
 | `tags`    | `TEXT[]` | Optional tags                                                          |
 | `notes`   | `TEXT`   | Optional text notes                                                    |
 
-# How to build a dictionary
+# Installation
 1. Download the latest release [release](https://github.com/knadh/dictmaker/releases) of dictmaker
-2. Create a Postgres DB and execute `schema.sql` on it to create the tables
-3. Define your dictionary's languages and properties along with other configuration in `config.toml`
-4. Populate the `entries` and `relations` tables with your dictionary data. See the "Sample dictionary" section below
-5. Run the binary: `./dictmaker`
+2. Run `./dictmaker --new` to generate a sample config.toml and DB schema.sql
+3. Create a Postgres DB and execute `schema.sql` on it to create the tables
+4. Define your dictionary's languages and properties along with other configuration in `config.toml`
+5. Populate the `entries` and `relations` tables with your dictionary data. See the "Sample dictionary" section below
+6. Run the binary: `./dictmaker`
  
 ## Dictionary query API
 ```shell
