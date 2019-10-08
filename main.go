@@ -141,6 +141,7 @@ func main() {
 		logger.Fatalf("no SQL queries loaded: %v", err)
 	}
 	app.search = search.NewSearch(&q)
+	app.queries = &q
 
 	// Pagination.
 	o := paginator.Default()
