@@ -27,6 +27,9 @@ func (kn *Kannada) Name() string {
 // tsquery string.
 func (kn *Kannada) Tokenize(in string) string {
 	key0, key1, key2 := kn.ph.Encode(in)
+	if key0 == "" {
+		return ""
+	}
 	return fmt.Sprintf("%s | (%s & %s) ", key2, key1, key0)
 }
 

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/knadh/dictmaker/search"
@@ -89,7 +90,7 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 	var (
 		fromLang = chi.URLParam(r, "fromLang")
 		toLang   = chi.URLParam(r, "toLang")
-		q        = chi.URLParam(r, "q")
+		q        = strings.TrimSpace(chi.URLParam(r, "q"))
 
 		qp  = r.URL.Query()
 		pg  = getPagination(qp, entriesPerPage, entriesPerPage)
@@ -102,6 +103,7 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 	if err != nil {
 		return search.Query{}, nil, fmt.Errorf("error parsing query: %v", err)
 	}
+	q = strings.TrimSpace(q)
 
 	if _, ok := app.lang[fromLang]; !ok {
 		return search.Query{}, nil, errors.New("unknown `from` language")
