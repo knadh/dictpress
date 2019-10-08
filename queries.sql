@@ -40,7 +40,7 @@ WHERE
     AND (COALESCE(CARDINALITY($3::TEXT[]), 0) = 0 OR relations.tags && $3)
     -- AND tokens @@ (CASE WHEN $4 != '' THEN plainto_tsquery($4::regconfig, $5::TEXT) ELSE to_tsquery($5) END)
     AND from_id = ANY($4::INT[])
-ORDER BY weight;
+ORDER BY relations.weight;
 
 -- name: get-initials
 -- Gets the list of unique "initial"s (first character) across all the words
