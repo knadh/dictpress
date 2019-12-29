@@ -22,7 +22,7 @@ dictmaker has no concept of language or semantics. To make a universal dictionar
 ## entries table schema
 | `id`      | `SERIAL`   |                                                                                                                                     |
 |-----------|------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| `guid`    | `TEXT`     | A custom, unique GUID for every entry, like an MD5 hash                                                                             |
+| `guid`    | `TEXT`     | A custom, unique GUID for every entry, like a UUID or a hash                                                                             |
 | `content` | `TEXT`     | Actual language content. Dictionary word or definition entries                                                                      |
 | `initial` | `TEXT`     | The first "alphabet" of the content. For English, for the word `Apple`, the initial is `A`                                          |
 | `weight`  | `INT`      | An optional numeric value to order search results                                                                                   |
