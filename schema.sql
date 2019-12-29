@@ -12,7 +12,7 @@ CREATE TABLE entries (
     initial         TEXT NOT NULL DEFAULT '',
 
     -- An optional numeric value to order search results
-    weight          INT NOT NULL DEFAULT 0,
+    weight          DECIMAL NOT NULL DEFAULT 0,
 
     -- Fulltext search tokens. For English, Postgres’ built-in tokenizer gives to_tsvector('fully conditioned') = 'condit':2 'fulli':1
     tokens          TSVECTOR NOT NULL DEFAULT '',
@@ -53,7 +53,7 @@ CREATE TABLE relations (
     notes           TEXT NOT NULL DEFAULT '',
 
     -- Optional weight for ordering definitions.
-    weight          INT DEFAULT 0,
+    weight          DECIMAL DEFAULT 0,
 
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
