@@ -66,7 +66,7 @@ curl localhost:8080/dictionary/english/italian/apple
 ```
 
 ## Themes
-See the [dictmaker-alar](https://github.com/knadh/dictmaker-alar) repository that powers the [Alar](https://alar.ink) dictionary. A theme is a directory with a collection of Go HTML templates. Run a theme by passing `./dictmaker --site=theme_dir`.
+See the [alar-dict/alar.ink](https://github.com/alar-dict/alar.ink) repository that powers the [Alar](https://alar.ink) dictionary. A theme is a directory with a collection of Go HTML templates. Run a theme by passing `./dictmaker --site=theme_dir`.
 
 ## Tokenizer plugins
 For languages that do not have Postgres fulltext dictionaries and tokenizers, dictmaker supports loading compiled Go tokenizer plugins that implement the `search.Tokenizer` interface. See `tokenizers/kannada` (and `Makefile` for compilation help).
