@@ -36,6 +36,7 @@ func initFileSystem() (stuffbin.FileSystem, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	fs, err := stuffbin.UnStuff(path)
 	if err == nil {
 		return fs, nil
