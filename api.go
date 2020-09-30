@@ -299,6 +299,7 @@ func sendResponse(data interface{}, status int, w http.ResponseWriter) {
 // sendTpl executes a template and writes the results to the HTTP response.
 func sendTpl(status int, tplName string, tpl *template.Template, data interface{}, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
 	tpl.ExecuteTemplate(w, tplName, data)
 }
 
