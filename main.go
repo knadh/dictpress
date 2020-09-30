@@ -69,6 +69,7 @@ func init() {
 		"path to one or more config files (will be merged in order)")
 	f.String("site", "", "path to a site theme. If left empty, only the APIs will run.")
 	f.Bool("install", false, "run first time installation")
+	f.Bool("prompt", true, "prompt before each steps in installation")
 	f.Bool("version", false, "current version of the build")
 	f.Parse(os.Args[1:])
 
@@ -127,7 +128,7 @@ func main() {
 
 	// Install schema.
 	if ko.Bool("install") {
-		os.Exit(app.installSchema())
+		os.Exit(app.installSchema(ko.Bool("prompt")))
 	}
 
 	// Load SQL queries.
