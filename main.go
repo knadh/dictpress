@@ -109,7 +109,7 @@ func main() {
 	}
 	defer db.Close()
 
-	fs, err := initFileSystem(os.Args[0])
+	fs, err := initFileSystem()
 	if err != nil {
 		logger.Fatal(err)
 	}

@@ -31,8 +31,12 @@ func connectDB(host string, port int, user, pwd, dbName string) (*sqlx.DB, error
 
 // initFileSystem initializes the stuffbin FileSystem to provide
 // access to bunded static assets to the app.
-func initFileSystem(binPath string) (stuffbin.FileSystem, error) {
-	fs, err := stuffbin.UnStuff(os.Args[0])
+func initFileSystem() (stuffbin.FileSystem, error) {
+	path, err := os.Executable()
+	if err != nil {
+		return nil, err
+	}
+	fs, err := stuffbin.UnStuff(path)
 	if err == nil {
 		return fs, nil
 	}
@@ -172,7 +176,7 @@ func generateNewFiles() error {
 
 	// Initialize the static file system into which all
 	// required static assets (.sql, .js files etc.) are loaded.
-	fs, err := initFileSystem(os.Args[0])
+	fs, err := initFileSystem()
 	if err != nil {
 		return err
 	}
