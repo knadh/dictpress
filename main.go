@@ -125,6 +125,11 @@ func main() {
 		logger: logger,
 	}
 
+	// Install schema.
+	if ko.Bool("install") {
+		os.Exit(app.installSchema())
+	}
+
 	// Load SQL queries.
 	qB, err := fs.Read("/queries.sql")
 	if err != nil {
