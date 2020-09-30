@@ -45,6 +45,7 @@ func initFileSystem() (stuffbin.FileSystem, error) {
 	// the in-memory stuffbin.FileSystem.
 	logger.Printf("unable to initialize embedded filesystem: %v", err)
 	logger.Printf("using local filesystem for static assets")
+
 	files := []string{
 		"config.toml.sample",
 		"queries.sql",
@@ -55,6 +56,7 @@ func initFileSystem() (stuffbin.FileSystem, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize local file for assets: %v", err)
 	}
+
 	return fs, nil
 }
 
@@ -90,6 +92,7 @@ func loadSiteTheme(path string, loadPages bool) (*template.Template, error) {
 			return t, err
 		}
 	}
+
 	return t, nil
 }
 
@@ -140,6 +143,7 @@ func registerHandlers(r *chi.Mux, app *App) {
 			sendResponse("welcome to dictmaker", http.StatusOK, w)
 		})
 	}
+
 	r.Get("/api/dictionary/{fromLang}/{toLang}/{q}", wrap(app, handleSearch))
 }
 
@@ -148,15 +152,18 @@ func loadLanguages(app *App) error {
 	// Language configuration.
 	for _, l := range ko.MapKeys("lang") {
 		var lang Lang
-		ko.Unmarshal("lang."+l, &lang)
+
+		_ = ko.Unmarshal("lang."+l, &lang)
 
 		// Load external plugin.
 		logger.Printf("language: %s", l)
+
 		if lang.TokenizerType == "plugin" {
 			tk, err := loadTokenizerPlugin(lang.TokenizerName)
 			if err != nil {
 				return err
 			}
+
 			lang.Tokenizer = tk
 
 			// Tokenizations for search queries are looked up by the tokenizer
@@ -164,8 +171,10 @@ func loadLanguages(app *App) error {
 			lang.TokenizerName = tk.ID()
 			logger.Printf("loaded tokenizer %s", lang.TokenizerName)
 		}
+
 		app.lang[l] = lang
 	}
+
 	return nil
 }
 
@@ -186,13 +195,16 @@ func generateNewFiles() error {
 	if err != nil {
 		return fmt.Errorf("error reading sample config (is binary stuffed?): %v", err)
 	}
-	ioutil.WriteFile("config.toml", b, 0644)
+
+	_ = ioutil.WriteFile("config.toml", b, 0644)
 
 	// Generate schema file.
 	b, err = fs.Read("schema.sql")
 	if err != nil {
 		return fmt.Errorf("error reading schema.sql (is binary stuffed?): %v", err)
 	}
-	ioutil.WriteFile("schema.sql", b, 0644)
+
+	_ = ioutil.WriteFile("schema.sql", b, 0644)
+
 	return nil
 }

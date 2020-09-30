@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -18,8 +17,8 @@ import (
 )
 
 const (
-	entriesPerPage  = 20
-	glossaryPerPage = 100
+	entriesPerPage = 20
+	// glossaryPerPage = 100
 )
 
 // Results represents a set of results.
@@ -68,19 +67,25 @@ type httpResp struct {
 
 // handleSearch performs a search and responds with JSON results.
 func handleSearch(w http.ResponseWriter, r *http.Request) {
-	app := r.Context().Value("app").(*App)
+	app, _ := r.Context().Value("app").(*App)
+
 	_, out, err := doSearch(r, app)
+
 	if err != nil {
 		var s int
+
 		// If out is nil, it's a non 500 "soft" error.
 		if out != nil {
 			s = http.StatusBadRequest
 		} else {
 			s = http.StatusInternalServerError
 		}
+
 		sendErrorResponse(err.Error(), s, nil, w)
+
 		return
 	}
+
 	sendResponse(okResp{out}, http.StatusOK, w)
 }
 
@@ -96,18 +101,22 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 		pg  = getPagination(qp, entriesPerPage, entriesPerPage)
 		out = &Results{}
 	)
+
 	if q == "" {
 		q = qp.Get("q")
 	}
+
 	q, err := url.QueryUnescape(q)
 	if err != nil {
 		return search.Query{}, nil, fmt.Errorf("error parsing query: %v", err)
 	}
+
 	q = strings.TrimSpace(q)
 
 	if _, ok := app.lang[fromLang]; !ok {
 		return search.Query{}, nil, errors.New("unknown `from` language")
 	}
+
 	if _, ok := app.lang[toLang]; !ok {
 		return search.Query{}, nil, errors.New("unknown `to` language")
 	}
@@ -124,7 +133,8 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 		Offset:        pg.Offset,
 		Limit:         pg.Limit,
 	}
-	if err := validateSearchQuery(query, app.lang); err != nil {
+
+	if err = validateSearchQuery(query, app.lang); err != nil {
 		return query, out, err
 	}
 
@@ -140,9 +150,12 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 		if err == sql.ErrNoRows {
 			return query, out, nil
 		}
+
 		app.logger.Printf("error querying db: %v", err)
+
 		return query, nil, errors.New("error querying db")
 	}
+
 	if len(res) == 0 {
 		return query, out, nil
 	}
@@ -166,6 +179,7 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 
 	out.Total = total
 	out.Entries = res
+
 	return query, out, nil
 }
 
@@ -184,15 +198,19 @@ func getGlossaryWords(lang, initial string, pg paginator.Set, app *App) (*Glossa
 		if err == sql.ErrNoRows {
 			return out, nil
 		}
+
 		app.logger.Printf("error querying db: %v", err)
+
 		return nil, errors.New("error querying db")
 	}
+
 	if len(res) == 0 {
 		return out, nil
 	}
 
 	out.Total = total
 	out.Words = res
+
 	return out, nil
 }
 
@@ -225,19 +243,22 @@ func (p *pagination) GenerateNumbers() {
 	if p.Total <= p.PerPage {
 		return
 	}
+
 	var (
 		// Page divisor.
 		div      = p.Total / p.PerPage
 		divStart = 1
 		hints    = 0
 	)
+
 	if p.Total%p.PerPage == 0 {
 		div = div - 1
 	}
+
 	div++
 
 	if div > 10 {
-		hints = int(math.Floor(float64(div)))
+		hints = div
 		div = 10
 	}
 
@@ -260,7 +281,7 @@ func (p *pagination) GenerateNumbers() {
 	}
 
 	if hints-10 > p.Page {
-		p.PageEnd = int(math.Floor(float64(hints)))
+		p.PageEnd = hints
 	}
 }
 
@@ -270,17 +291,21 @@ func validateSearchQuery(q search.Query, l Languages) error {
 	if q.Query == "" {
 		return errors.New("empty search query")
 	}
+
 	if _, ok := l[q.FromLang]; !ok {
 		return fmt.Errorf("unknown language %s", q.FromLang)
 	}
+
 	if _, ok := l[q.ToLang]; !ok {
 		return fmt.Errorf("unknown language %s", q.ToLang)
 	}
+
 	for _, t := range q.Types {
 		if _, ok := l[q.FromLang].Types[t]; !ok {
 			return fmt.Errorf("unknown type %s", t)
 		}
 	}
+
 	return nil
 }
 
@@ -288,18 +313,22 @@ func validateSearchQuery(q search.Query, l Languages) error {
 func sendResponse(data interface{}, status int, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
+
 	out, err := json.Marshal(httpResp{Status: "success", Data: data})
 	if err != nil {
 		sendErrorResponse("Internal Server Error", http.StatusInternalServerError, nil, w)
 		return
 	}
-	w.Write(out)
+
+	_, _ = w.Write(out)
 }
 
 // sendTpl executes a template and writes the results to the HTTP response.
 func sendTpl(status int, tplName string, tpl *template.Template, data interface{}, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	tpl.ExecuteTemplate(w, tplName, data)
+	w.WriteHeader(status)
+
+	_ = tpl.ExecuteTemplate(w, tplName, data)
 }
 
 // sendErrorResponse sends a JSON error envelope to the HTTP response.
@@ -310,6 +339,8 @@ func sendErrorResponse(message string, status int, data interface{}, w http.Resp
 	resp := httpResp{Status: "error",
 		Message: message,
 		Data:    data}
+
 	out, _ := json.Marshal(resp)
-	w.Write(out)
+
+	_, _ = w.Write(out)
 }
