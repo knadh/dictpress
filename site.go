@@ -18,10 +18,6 @@ const (
 	pageStatic   = "static"
 )
 
-type siteTpl struct {
-	templates *template.Template
-}
-
 type sitePage struct {
 	Path        string
 	Page        string
@@ -51,7 +47,7 @@ type siteMsg struct {
 
 // handleIndexPage renders the homepage.
 func handleIndexPage(w http.ResponseWriter, r *http.Request) {
-	app := r.Context().Value("app").(*App)
+	app, _ := r.Context().Value("app").(*App)
 	sendTpl(http.StatusOK, "index", app.site, sitePage{
 		Path: r.RequestURI,
 		Page: pageIndex,
@@ -60,7 +56,8 @@ func handleIndexPage(w http.ResponseWriter, r *http.Request) {
 
 // handleSearchPage renders the search results page.
 func handleSearchPage(w http.ResponseWriter, r *http.Request) {
-	app := r.Context().Value("app").(*App)
+	app, _ := r.Context().Value("app").(*App)
+
 	query, out, err := doSearch(r, app)
 	if err != nil {
 		app.logger.Printf("error searching: %v", err)
@@ -69,8 +66,10 @@ func handleSearchPage(w http.ResponseWriter, r *http.Request) {
 			Heading:     "Error",
 			Description: err.Error(),
 		}, w)
+
 		return
 	}
+
 	// Render the results.
 	sendTpl(http.StatusOK, "search", app.site, sitePage{
 		Path:    r.RequestURI,
@@ -100,6 +99,7 @@ func handleGlossaryPage(w http.ResponseWriter, r *http.Request) {
 			Description: "Error fetching glossary initials.",
 		}, w)
 	}
+
 	if len(initials) == 0 {
 		// No glossary initials found.
 		sendTpl(http.StatusOK, "glossary", app.site, sitePage{
@@ -125,6 +125,7 @@ func handleGlossaryPage(w http.ResponseWriter, r *http.Request) {
 			Heading:     "Error",
 			Description: "Error fetching glossary words.",
 		}, w)
+
 		return
 	}
 
@@ -155,6 +156,7 @@ func handleStaticPage(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse("Page not found", http.StatusNotFound, nil, w)
 		return
 	}
+
 	sendTpl(http.StatusOK, id, app.site, sitePage{
 		Path: r.RequestURI,
 		Page: pageStatic,

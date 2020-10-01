@@ -2,6 +2,7 @@ package search
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -29,8 +30,7 @@ type Queries struct {
 
 // Search represents the dictionary search interface.
 type Search struct {
-	queries    *Queries
-	tokenizers map[string]Tokenizer
+	queries *Queries
 }
 
 // Query represents the parameters of a single search query.
@@ -72,9 +72,10 @@ type Entry struct {
 // Entries represents a slice of Entry.
 type Entries []Entry
 
+// GlossaryWord to read glosary content from db.
 type GlossaryWord struct {
 	ID      int    `json:"id" db:"id"`
-	Guid    string `json:"guid" db:"guid"`
+	GUID    string `json:"guid" db:"guid"`
 	Content string `json:"content" db:"content"`
 	Total   int    `json:"-" db:"total"`
 }
@@ -95,6 +96,7 @@ func (s *Search) FindEntries(q Query) (Entries, int, error) {
 		tsVectorLang = ""
 		tokens       string
 	)
+
 	if q.Tokenizer == nil {
 		// No external tokenizer.
 		tsVectorLang = q.TokenizerName
@@ -114,17 +116,19 @@ func (s *Search) FindEntries(q Query) (Entries, int, error) {
 	// $7 - offset
 	// $8 - limit
 	var out Entries
-	err := s.queries.Search.Select(&out,
+
+	if err := s.queries.Search.Select(&out,
 		q.Query,
 		tsVectorLang,
 		tokens,
 		q.FromLang,
 		pq.StringArray(q.Types),
 		pq.StringArray(q.Tags),
-		q.Offset, q.Limit)
-	if err != nil || len(out) == 0 {
+		q.Offset, q.Limit,
+	); err != nil || len(out) == 0 {
 		return nil, 0, err
 	}
+
 	return out, out[0].Total, nil
 }
 
@@ -132,19 +136,28 @@ func (s *Search) FindEntries(q Query) (Entries, int, error) {
 // all the words for a given language.
 func (s *Search) GetInitials(lang string) ([]string, error) {
 	out := make([]string, 0, 200)
+
 	rows, err := s.queries.GetInitials.Query(lang)
 	if err != nil {
 		return out, err
 	}
+
+	if rows.Err() != nil {
+		return out, rows.Err()
+	}
+
 	defer rows.Close()
 
 	var i string
+
 	for rows.Next() {
 		if err := rows.Scan(&i); err != nil {
 			return out, err
 		}
+
 		out = append(out, i)
 	}
+
 	return out, nil
 }
 
@@ -152,8 +165,11 @@ func (s *Search) GetInitials(lang string) ([]string, error) {
 // to build a glossary.
 func (s *Search) GetGlossaryWords(lang, initial string, offset, limit int) ([]GlossaryWord, int, error) {
 	var out []GlossaryWord
-	err := s.queries.GetGlossaryWords.Select(&out, lang, initial, offset, limit)
-	if err != nil || len(out) == 0 {
+	if err := s.queries.GetGlossaryWords.Select(&out, lang, initial, offset, limit); err != nil || len(out) == 0 {
+		if len(out) == 0 {
+			err = fmt.Errorf("glossary is empty")
+		}
+
 		return nil, 0, err
 	}
 
@@ -169,6 +185,7 @@ func (e Entries) LoadRelations(q Query, stmt *sqlx.Stmt) error {
 		// to attach relations back into e.
 		idMap = make(map[int]int)
 	)
+
 	for i := 0; i < len(e); i++ {
 		IDs[i] = int64(e[i].ID)
 		e[i].Relations = make(Entries, 0)
@@ -184,8 +201,10 @@ func (e Entries) LoadRelations(q Query, stmt *sqlx.Stmt) error {
 		if err == sql.ErrNoRows {
 			return nil
 		}
+
 		return err
 	}
+
 	for _, r := range rel {
 		idx := idMap[r.FromID]
 		e[idx].Relations = append(e[idx].Relations, r)
