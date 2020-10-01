@@ -15,6 +15,7 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.3
+	gitlab.com/joice/mlphone-go v0.0.0-20201001084309-2bb02984eed8
 	google.golang.org/appengine v1.4.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/volatiletech/null.v6 v6.0.0-20170828023728-0bef4e07ae1b
