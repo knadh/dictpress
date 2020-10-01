@@ -146,7 +146,7 @@ func (s *Search) GetInitials(lang string) ([]string, error) {
 		return out, rows.Err()
 	}
 
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var i string
 

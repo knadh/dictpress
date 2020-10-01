@@ -127,7 +127,7 @@ func main() {
 		logger.Fatalf("error connecting to DB: %v", err)
 	}
 
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
 	fs, err := initFileSystem()
 	if err != nil {
