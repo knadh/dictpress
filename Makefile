@@ -14,6 +14,7 @@ build:
 build-tokenizers:
 	# Compile the Kannada tokenizer.
 	go build -ldflags="-s -w" -buildmode=plugin -o kannada.tk tokenizers/kannada/kannada.go
+	go build -ldflags="-s -w" -buildmode=plugin -o malayalam.tk tokenizers/malayalam/malayalam.go
 
 # pack-releases runs stuffbin packing on a given list of
 # binaries. This is used with goreleaser for packing
