@@ -21,6 +21,11 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
+var (
+	buildVersion = "unknown"
+	buildDate    = "unknown"
+)
+
 // Lang represents a language's configuration.
 type Lang struct {
 	Name          string            `koanf:"name"`
@@ -95,6 +100,11 @@ func init() {
 
 	if err := ko.Load(posflag.Provider(f, ".", ko), nil); err != nil {
 		logger.Fatalf("error loading config: %v", err)
+	}
+
+	if ko.Bool("version") {
+		fmt.Printf("Commit: %v\nBuild: %v\n", buildVersion, buildDate)
+		os.Exit(0)
 	}
 }
 
