@@ -18,6 +18,8 @@ github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhB
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/knadh/goyesql v0.0.0-20190822122127-22fd9176b589 h1:+dkkaKpb9tbPEQIzunVA+1m4acbQzU0B2HW+lN9gsVA=
 github.com/knadh/goyesql v0.0.0-20190822122127-22fd9176b589/go.mod h1:U9J4DmpkGzrHHKIs8XUtsyVnsZZKGtj3iwes78xrm6M=
+github.com/knadh/knphone v0.0.0-20190624172359-d31f66505cbf h1:qaF4Sls+Z1vbo7j4Tz+QtwuZ0A+so4mCSoDIFGo/G+w=
+github.com/knadh/knphone v0.0.0-20190624172359-d31f66505cbf/go.mod h1:tfUGBbPGiWlkwkFRF3WR3u0ybGgc0Pm/x3bObH0St0A=
 github.com/knadh/koanf v0.13.0 h1:OEjNdmrP/5oAhJkNwTtarioqOC4xe6WxRK8Q5ffW8WU=
 github.com/knadh/koanf v0.13.0/go.mod h1:7XDF7OJIqSQLUZnaXkjb1HB3CgMEYHyrzmgT8A6xAaE=
 github.com/knadh/paginator v0.0.0-20190812121607-b4fbeb7c977b h1:1nu8rKo3secxUYyD725+fnEMGz38+cgaBS1c+jBI4Hk=

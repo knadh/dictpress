@@ -7,6 +7,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/knadh/goyesql v0.0.0-20190822122127-22fd9176b589
+	github.com/knadh/knphone v0.0.0-20190624172359-d31f66505cbf
 	github.com/knadh/koanf v0.13.0
 	github.com/knadh/paginator v0.0.0-20190812121607-b4fbeb7c977b
 	github.com/knadh/stuffbin v1.0.0
