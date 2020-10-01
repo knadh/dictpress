@@ -53,7 +53,7 @@ dictmaker has no concept of language or semantics. To make a universal dictionar
 ```shell
 # /dictionary/from_lang/to_lang/word
 # Optional query params: ?type=noun&type=noun2&tag=a&tag=b ...
-curl localhost:8080/dictionary/english/english/apple
+curl localhost:8080/api/dictionary/english/english/apple
 ```
 
 ## Sample dictionary
@@ -61,8 +61,8 @@ The `sample/sample.sql` shows how to setup an English-English and English-Italia
 
 Then try:
 ```shell
-curl localhost:8080/dictionary/english/english/apple
-curl localhost:8080/dictionary/english/italian/apple
+curl localhost:8080/api/dictionary/english/english/apple
+curl localhost:8080/api/dictionary/english/italian/apple
 ```
 
 ## Themes
