@@ -10,7 +10,7 @@ directMatch AS (
         ($4 = '' OR lang=$4)
         AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR types && $5)
         AND (COALESCE(CARDINALITY($6::TEXT[]), 0) = 0 OR tags && $6)
-        AND (LOWER(SUBSTRING(content, 0, 50))=LOWER(SUBSTRING($1, 0, 50)) OR tokens @@ TO_TSQUERY('simple', $2))
+        AND (LOWER(SUBSTRING(content, 0, 50))=LOWER(SUBSTRING($1, 0, 50)) OR tokens @@ TO_TSQUERY($2::regconfig, $1))
         ORDER BY rank DESC
         OFFSET $7 LIMIT $8
 ),
