@@ -22,12 +22,12 @@ func New() (search.Tokenizer, error) {
 
 // ID returns the ID of the tokenizer.
 func (*Malayalam) ID() string {
-	return "kannada"
+	return "malayalam"
 }
 
 // Name returns the name of the tokenizer.
 func (*Malayalam) Name() string {
-	return "Kannada"
+	return "Malayalam"
 }
 
 // Tokenize tokenizes a Kannada string into Romanized (mlphone) Postgres
