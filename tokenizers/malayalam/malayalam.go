@@ -1,4 +1,4 @@
-package malayalam
+package main
 
 import (
 	"fmt"

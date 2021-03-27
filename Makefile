@@ -18,7 +18,6 @@ build:
 
 .PHONY: build-tokenizers
 build-tokenizers:
-	# Compile the Kannada tokenizer.
 	go build -ldflags="-s -w" -buildmode=plugin -o kannada.tk tokenizers/kannada/kannada.go
 	go build -ldflags="-s -w" -buildmode=plugin -o malayalam.tk tokenizers/malayalam/malayalam.go
 
