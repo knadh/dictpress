@@ -73,9 +73,9 @@ func init() {
 	f.Bool("new", false, "generate a new sample config.toml file.")
 	f.StringSlice("config", []string{"config.toml"},
 		"path to one or more config files (will be merged in order)")
-	f.String("site", "", "path to a site theme. If left empty, only the APIs will run.")
-	f.Bool("install", false, "run first time installation")
-	f.Bool("prompt", true, "prompt before each steps in installation")
+	f.String("site", "", "path to a site theme. If left empty, only HTTP APIs will be available.")
+	f.Bool("install", false, "run first time DB installation")
+	f.Bool("yes", false, "assume 'yes' to prompts, eg: during --install")
 	f.Bool("version", false, "current version of the build")
 
 	if err := f.Parse(os.Args[1:]); err != nil {
@@ -93,7 +93,7 @@ func init() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Println("config.toml and schema.sql generated. You can edit the config now.")
+		fmt.Println("config.toml generated. Edit and run --install.")
 		os.Exit(0)
 	}
 
@@ -145,7 +145,8 @@ func main() {
 
 	// Install schema.
 	if ko.Bool("install") {
-		os.Exit(app.installSchema(ko.Bool("prompt")))
+		installSchema(app, !ko.Bool("yes"))
+		return
 	}
 
 	// Load SQL queries.

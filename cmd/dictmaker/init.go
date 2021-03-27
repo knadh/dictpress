@@ -197,15 +197,9 @@ func generateNewFiles() error {
 		return fmt.Errorf("error reading sample config (is binary stuffed?): %v", err)
 	}
 
-	_ = ioutil.WriteFile("config.toml", b, 0644)
-
-	// Generate schema file.
-	b, err = fs.Read("schema.sql")
-	if err != nil {
-		return fmt.Errorf("error reading schema.sql (is binary stuffed?): %v", err)
+	if err := ioutil.WriteFile("config.toml", b, 0644); err != nil {
+		return err
 	}
-
-	_ = ioutil.WriteFile("schema.sql", b, 0644)
 
 	return nil
 }

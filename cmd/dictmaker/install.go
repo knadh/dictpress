@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
-func (app *App) installSchema(prompt bool) int {
+func installSchema(app *App, prompt bool) {
 	if prompt {
 		fmt.Println("")
 		fmt.Println("** first time installation **")
@@ -13,32 +14,30 @@ func (app *App) installSchema(prompt bool) int {
 			ko.String("db.db"))
 		fmt.Println("")
 
-		var ok string
-
-		fmt.Print("continue (y/n)?  ")
-
-		if _, err := fmt.Scanf("%s", &ok); err != nil {
-			app.logger.Fatalf("error reading value from terminal: %v", err)
-		}
-
-		if strings.ToLower(ok) != "y" {
-			fmt.Println("install cancelled.")
-			return 1
+		if prompt {
+			var ok string
+			fmt.Print("continue (y/n)?  ")
+			if _, err := fmt.Scanf("%s", &ok); err != nil {
+				fmt.Printf("error reading value from terminal: %v", err)
+				os.Exit(1)
+			}
+			if strings.ToLower(ok) != "y" {
+				fmt.Println("install cancelled.")
+				return
+			}
 		}
 	}
 
 	q, err := app.fs.Read("/schema.sql")
 	if err != nil {
 		app.logger.Fatal(err.Error())
-		return 1
+		return
 	}
 
 	if _, err := app.db.Exec(string(q)); err != nil {
 		app.logger.Fatal(err.Error())
-		return 1
+		return
 	}
 
 	app.logger.Println("successfully installed schema")
-
-	return 0
 }
