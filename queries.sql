@@ -1,31 +1,38 @@
 -- name: search
 WITH q AS (
-    SELECT (CASE WHEN $2 != '' THEN plainto_tsquery($2::regconfig, $1::TEXT) ELSE to_tsquery($3) END) AS query
+    -- Prepare TS_QUERY tokens for querying with either:
+    -- a) built in Postgres dictionary/tokenizer ($1=query, $2=Postgres dictionary name)
+    -- b) externally computed and supplied tokens ($3)
+    SELECT (CASE WHEN $2 != '' THEN PLAINTO_TSQUERY($2::regconfig, $1::TEXT) ELSE TO_TSQUERY($3) END) AS query
 ),
 directMatch AS (
-    -- If res did not return any results, match with 'simple' tokens (that avoid stopwords).
-    -- The UNION here only executes this leg of the query if the previous query did not
-    -- return anything, hence there is no added cost.
-    SELECT COUNT(*) OVER () AS total, entries.*, LENGTH(content) AS rank, weight FROM entries WHERE
+    -- Do a direct string match (first 50 chars) of the query or see if there are matches for
+    -- "simple" (Postgres token dictionary that merely removes English stopwords) tokens.
+    -- Rank is the inverted string length so that all results in this query have a negative
+    -- rank, where the smaller numbers represent shorter strings. That is, shorter strings
+    -- are considered closer matches. 
+    SELECT COUNT(*) OVER () AS total, entries.*, -1 * ( 50 - LENGTH(content)) AS rank FROM entries WHERE
         ($4 = '' OR lang=$4)
         AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR types && $5)
         AND (COALESCE(CARDINALITY($6::TEXT[]), 0) = 0 OR tags && $6)
-        AND (LOWER(SUBSTRING(content, 0, 50))=LOWER(SUBSTRING($1, 0, 50)) OR tokens @@ TO_TSQUERY($2::regconfig, $1))
-        ORDER BY rank DESC
-        OFFSET $7 LIMIT $8
+        AND (
+            LOWER(SUBSTRING(content, 0, 50))=LOWER(SUBSTRING($1, 0, 50))
+            OR tokens @@ PLAINTO_TSQUERY('simple', $1)
+        )
 ),
 tokenMatch AS (
-    -- Match records with the proper tokens
-    SELECT COUNT(*) OVER () AS total, entries.*, TS_RANK(tokens, (SELECT query FROM q), 1) AS rank, weight FROM entries WHERE
+    -- Full text search for words with proper tokens either from a built-in Postgres dictionary
+    -- or externally computed tokens ($3) 
+    SELECT COUNT(*) OVER () AS total, entries.*, 1 - TS_RANK(tokens, (SELECT query FROM q), 1) AS rank FROM entries WHERE
         ($4 = '' OR lang=$4)
         AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR types && $5)
         AND (COALESCE(CARDINALITY($6::TEXT[]), 0) = 0 OR tags && $6)
-        AND tokens @@ (SELECT query FROM q) AND $1=$1
+        AND tokens @@ (SELECT query FROM q)
         AND id NOT IN (SELECT id FROM directMatch)
-        ORDER BY rank DESC
-        OFFSET $7 LIMIT $8
 )
-SELECT * FROM directMatch UNION SELECT * FROM tokenMatch;
+-- Combine results from direct matches and token matches. As directMatches ranks are
+-- forced to be negative, they will rank on top. 
+SELECT * FROM directMatch UNION ALL SELECT * FROM tokenMatch ORDER BY rank OFFSET $7 LIMIT $8;
 
 -- name: get-relations
 SELECT entries.*,
