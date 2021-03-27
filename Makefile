@@ -1,10 +1,9 @@
-BIN := $(shell basename $$PWD)
-HASH := $(shell git rev-parse HEAD | cut -c 1-8)
-COMMIT_DATE := $(shell git show -s --format=%ci ${HASH})
-BUILD_DATE := $(shell date '+%Y-%m-%d %H:%M:%S')
-VERSION := ${HASH} (${COMMIT_DATE})
+LAST_COMMIT := $(shell git rev-parse --short HEAD)
+VERSION := $(shell git describe --tags --abbrev=0)
+BUILDSTR := ${VERSION} (\#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
 
 STATIC := config.toml.sample schema.sql queries.sql
+BIN := dictmaker
 
 # Install dependencies needed for building
 .PHONY: deps
@@ -13,8 +12,8 @@ deps:
 
 .PHONY: build
 build:
-	go build -o ${BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'" cmd/dictmaker/*.go
-	stuffbin -a stuff -in dictmaker -out dictmaker ${STATIC}
+	go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}'" cmd/${BIN}/*.go
+	stuffbin -a stuff -in ${BIN} -out ${BIN} ${STATIC}
 
 .PHONY: build-tokenizers
 build-tokenizers:

@@ -22,8 +22,7 @@ import (
 )
 
 var (
-	buildVersion = "unknown"
-	buildDate    = "unknown"
+	buildString = "unknown"
 )
 
 // Lang represents a language's configuration.
@@ -67,7 +66,8 @@ func init() {
 	f := flag.NewFlagSet("config", flag.ContinueOnError)
 
 	f.Usage = func() {
-		log.Fatal(f.FlagUsages())
+		fmt.Println(f.FlagUsages())
+		os.Exit(0)
 	}
 
 	f.Bool("new", false, "generate a new sample config.toml file.")
@@ -82,15 +82,18 @@ func init() {
 		log.Fatalf("error parsing flags: %v", err)
 	}
 
+	if ok, _ := f.GetBool("version"); ok {
+		fmt.Println(buildString)
+		os.Exit(0)
+	}
+
 	// Generate new config file.
 	if ok, _ := f.GetBool("new"); ok {
 		if err := generateNewFiles(); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-
 		fmt.Println("config.toml and schema.sql generated. You can edit the config now.")
-
 		os.Exit(0)
 	}
 
@@ -107,11 +110,6 @@ func init() {
 
 	if err := ko.Load(posflag.Provider(f, ".", ko), nil); err != nil {
 		logger.Fatalf("error loading config: %v", err)
-	}
-
-	if ko.Bool("version") {
-		fmt.Printf("Commit: %v\nBuild: %v\n", buildVersion, buildDate)
-		os.Exit(0)
 	}
 }
 
