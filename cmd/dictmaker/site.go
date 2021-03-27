@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/knadh/dictmaker/search"
+	"github.com/knadh/dictmaker/internal/search"
 	"github.com/knadh/paginator"
 )
 

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/knadh/dictmaker/search"
+	"github.com/knadh/dictmaker/internal/search"
 	"github.com/knadh/knphone"
 )
 

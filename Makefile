@@ -13,7 +13,7 @@ deps:
 
 .PHONY: build
 build:
-	go build -o ${BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'"
+	go build -o ${BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'" cmd/dictmaker/*.go
 	stuffbin -a stuff -in dictmaker -out dictmaker ${STATIC}
 
 .PHONY: build-tokenizers

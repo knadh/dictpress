@@ -14,7 +14,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/jmoiron/sqlx"
-	"github.com/knadh/dictmaker/search"
+	"github.com/knadh/dictmaker/internal/search"
 	"github.com/knadh/stuffbin"
 )
 
