@@ -1,19 +1,27 @@
-# .goreleaser.yml
+env:
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+
 builds:
   - binary: dictmaker
+    main: ./cmd/dictmaker
     goos:
       - darwin
       - linux
+      - freebsd
+      - openbsd
+      - netbsd
     goarch:
       - amd64
+    ldflags:
+      - -s -w -X "main.buildString={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
 
     hooks:
       # stuff executables with static assets.
-      post: make pack-releases
+      post: make pack-bin BIN={{ .Path }}
 
-archive:
-  format: tar.gz
-  files:
-    - README.md
-    - LICENSE
-    - sample/*
+archives:
+  - format: tar.gz
+    files:
+      - README.md
+      - LICENSE
