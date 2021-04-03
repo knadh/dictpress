@@ -311,8 +311,8 @@ func validateSearchQuery(q search.Query, l Languages) error {
 
 // sendResponse sends a JSON envelope to the HTTP response.
 func sendResponse(data interface{}, status int, w http.ResponseWriter) {
-	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
 
 	out, err := json.Marshal(httpResp{Status: "success", Data: data})
 	if err != nil {
