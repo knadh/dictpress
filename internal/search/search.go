@@ -9,6 +9,12 @@ import (
 	null "gopkg.in/volatiletech/null.v6"
 )
 
+const (
+	StatusPending  = "pending"
+	StatusEnabled  = "enabled"
+	StatusDisabled = "disabled"
+)
+
 // Tokenizer represents a function that takes a string
 // and returns a list of Postgres tsvector tokens.
 type Tokenizer interface {
@@ -42,6 +48,7 @@ type Query struct {
 	Tags          []string
 	TokenizerName string
 	Tokenizer     Tokenizer
+	Status        string
 	Offset        int
 	Limit         int
 }
@@ -58,6 +65,7 @@ type Entry struct {
 	Notes     string         `json:"notes" db:"notes"`
 	CreatedAt null.Time      `json:"created_at" db:"created_at"`
 	UpdatedAt null.Time      `json:"updated_at" db:"updated_at"`
+	Status    string         `json:"status" db:"status"`
 	Relations Entries        `json:"relations,omitempty" db:"relations"`
 	Total     int            `json:"-" db:"total"`
 
@@ -124,6 +132,7 @@ func (s *Search) FindEntries(q Query) (Entries, int, error) {
 		q.FromLang,
 		pq.StringArray(q.Types),
 		pq.StringArray(q.Tags),
+		q.Status,
 		q.Offset, q.Limit,
 	); err != nil || len(out) == 0 {
 		return nil, 0, err
@@ -197,7 +206,8 @@ func (e Entries) LoadRelations(q Query, stmt *sqlx.Stmt) error {
 		q.ToLang,
 		pq.StringArray(q.Types),
 		pq.StringArray(q.Tags),
-		pq.Int64Array(IDs)); err != nil {
+		pq.Int64Array(IDs),
+		q.Status); err != nil {
 		if err == sql.ErrNoRows {
 			return nil
 		}

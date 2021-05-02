@@ -27,11 +27,11 @@ var (
 
 // Lang represents a language's configuration.
 type Lang struct {
-	Name          string            `koanf:"name"`
-	Types         map[string]string `koanf:"types"`
-	TokenizerName string            `koanf:"tokenizer"`
-	TokenizerType string            `koanf:"tokenizer_type"`
-	Tokenizer     search.Tokenizer
+	Name          string            `koanf:"name" json:"name"`
+	Types         map[string]string `koanf:"types" json:"types"`
+	TokenizerName string            `koanf:"tokenizer" json:"tokenizer"`
+	TokenizerType string            `koanf:"tokenizer_type" json:"tokenizer_type"`
+	Tokenizer     search.Tokenizer  `koanf:"-" json:"-"`
 }
 
 // Languages represents a map of Langs.

@@ -19,6 +19,7 @@ directMatch AS (
             LOWER(SUBSTRING(content, 0, 50))=LOWER(SUBSTRING($1, 0, 50))
             OR tokens @@ PLAINTO_TSQUERY('simple', $1)
         )
+        AND (CASE WHEN $7 != '' THEN status = $7::entry_status ELSE TRUE END)
 ),
 tokenMatch AS (
     -- Full text search for words with proper tokens either from a built-in Postgres dictionary
@@ -29,10 +30,12 @@ tokenMatch AS (
         AND (COALESCE(CARDINALITY($6::TEXT[]), 0) = 0 OR tags && $6)
         AND tokens @@ (SELECT query FROM q)
         AND id NOT IN (SELECT id FROM directMatch)
+        AND (CASE WHEN $7 != '' THEN status = $7::entry_status ELSE TRUE END)
 )
 -- Combine results from direct matches and token matches. As directMatches ranks are
 -- forced to be negative, they will rank on top. 
-SELECT * FROM directMatch UNION ALL SELECT * FROM tokenMatch ORDER BY rank OFFSET $7 LIMIT $8;
+SELECT * FROM directMatch UNION ALL SELECT * FROM tokenMatch ORDER BY rank OFFSET $8 LIMIT $9;
+
 
 -- name: get-relations
 SELECT entries.*,
@@ -48,13 +51,20 @@ WHERE
     AND (COALESCE(CARDINALITY($3::TEXT[]), 0) = 0 OR relations.tags && $3)
     -- AND tokens @@ (CASE WHEN $4 != '' THEN plainto_tsquery($4::regconfig, $5::TEXT) ELSE to_tsquery($5) END)
     AND from_id = ANY($4::INT[])
+    AND (CASE WHEN $5 != '' THEN status = $5::entry_status ELSE TRUE END)
 ORDER BY relations.weight;
+
 
 -- name: get-initials
 -- Gets the list of unique "initial"s (first character) across all the words
 -- for a given language. Useful for building indexes and glossaries.
-SELECT DISTINCT(initial) as initial FROM entries WHERE lang=$1 AND initial != '' ORDER BY initial;
+SELECT DISTINCT(initial) as initial FROM entries
+    WHERE lang=$1 AND initial != '' AND status='enabled'
+    ORDER BY initial;
+
 
 -- name: get-glossary-words
 -- Gets words for a language to build a glossary.
-SELECT COUNT(*) OVER () AS total, id, guid, content FROM entries WHERE lang=$1 AND initial=$2 ORDER BY weight OFFSET $3 LIMIT $4;
+SELECT COUNT(*) OVER () AS total, id, guid, content FROM entries
+    WHERE lang=$1 AND initial=$2 AND status='enabled'
+    ORDER BY weight OFFSET $3 LIMIT $4;

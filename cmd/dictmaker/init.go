@@ -145,6 +145,9 @@ func registerHandlers(r *chi.Mux, app *App) {
 		})
 	}
 
+	// Admin handlers.
+	r.Get("/admin/api/config", wrap(app, handleGetConfig))
+
 	r.Get("/api/dictionary/{fromLang}/{toLang}/{q}", wrap(app, handleSearch))
 }
 
@@ -154,7 +157,9 @@ func loadLanguages(app *App) error {
 	for _, l := range ko.MapKeys("lang") {
 		var lang Lang
 
-		_ = ko.Unmarshal("lang."+l, &lang)
+		if err := ko.Unmarshal("lang."+l, &lang); err != nil {
+			return err
+		}
 
 		// Load external plugin.
 		logger.Printf("language: %s", l)

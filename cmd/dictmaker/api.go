@@ -70,7 +70,6 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 	app, _ := r.Context().Value("app").(*App)
 
 	_, out, err := doSearch(r, app)
-
 	if err != nil {
 		var s int
 
@@ -82,11 +81,10 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 		}
 
 		sendErrorResponse(err.Error(), s, nil, w)
-
 		return
 	}
 
-	sendResponse(okResp{out}, http.StatusOK, w)
+	sendResponse(out, http.StatusOK, w)
 }
 
 // doSearch is a helper function that takes an HTTP query context,
@@ -117,8 +115,12 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 		return search.Query{}, nil, errors.New("unknown `from` language")
 	}
 
-	if _, ok := app.lang[toLang]; !ok {
-		return search.Query{}, nil, errors.New("unknown `to` language")
+	if toLang == "*" {
+		toLang = ""
+	} else {
+		if _, ok := app.lang[toLang]; !ok {
+			return search.Query{}, nil, errors.New("unknown `to` language")
+		}
 	}
 
 	// Search query.
@@ -130,6 +132,7 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 		TokenizerName: app.lang[fromLang].TokenizerName,
 		Tokenizer:     app.lang[fromLang].Tokenizer,
 		Query:         q,
+		Status:        search.StatusEnabled,
 		Offset:        pg.Offset,
 		Limit:         pg.Limit,
 	}
@@ -165,6 +168,7 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 		ToLang: toLang,
 		Offset: pg.Offset,
 		Limit:  pg.Limit,
+		Status: search.StatusEnabled,
 	}, app.queries.GetRelations); err != nil {
 		app.logger.Printf("error querying db for defs: %v", err)
 		return query, nil, errors.New("error querying db for definitions")
@@ -292,14 +296,6 @@ func validateSearchQuery(q search.Query, l Languages) error {
 		return errors.New("empty search query")
 	}
 
-	if _, ok := l[q.FromLang]; !ok {
-		return fmt.Errorf("unknown language %s", q.FromLang)
-	}
-
-	if _, ok := l[q.ToLang]; !ok {
-		return fmt.Errorf("unknown language %s", q.ToLang)
-	}
-
 	for _, t := range q.Types {
 		if _, ok := l[q.FromLang].Types[t]; !ok {
 			return fmt.Errorf("unknown type %s", t)
@@ -311,8 +307,8 @@ func validateSearchQuery(q search.Query, l Languages) error {
 
 // sendResponse sends a JSON envelope to the HTTP response.
 func sendResponse(data interface{}, status int, w http.ResponseWriter) {
-	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
 
 	out, err := json.Marshal(httpResp{Status: "success", Data: data})
 	if err != nil {

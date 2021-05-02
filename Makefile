@@ -14,6 +14,14 @@ deps:
 build:
 	go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}'" cmd/${BIN}/*.go
 
+.PHONY: run
+run: build
+	./${BIN}
+
+.PHONY: run-admin-frontend
+run-admin-frontend:
+	cd admin && yarn serve
+
 .PHONY: build-tokenizers
 build-tokenizers:
 	go build -ldflags="-s -w" -buildmode=plugin -o kannada.tk tokenizers/kannada/kannada.go
@@ -40,5 +48,4 @@ release-dry:
 release:
 	goreleaser --parallelism 1 --rm-dist --skip-validate
 
-
-.DEFAULT_GOAL := build
+.DEFAULT_GOAL := dist

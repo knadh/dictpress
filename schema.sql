@@ -1,3 +1,6 @@
+DROP TYPE IF EXISTS entry_status CASCADE; CREATE TYPE entry_status AS ENUM ('pending', 'enabled', 'disabled');
+
+-- entries
 DROP TABLE IF EXISTS entries CASCADE;
 CREATE TABLE entries (
     id              SERIAL PRIMARY KEY,
@@ -32,6 +35,7 @@ CREATE TABLE entries (
     -- Optional text notes
     notes           TEXT NOT NULL DEFAULT '',
 
+    status          entry_status NOT NULL DEFAULT 'enabled',
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -43,6 +47,7 @@ DROP INDEX IF EXISTS idx_entries_tokens; CREATE INDEX idx_entries_tokens ON entr
 DROP INDEX IF EXISTS idx_entries_types; CREATE INDEX idx_entries_types ON entries(types);
 DROP INDEX IF EXISTS idx_entries_tags; CREATE INDEX idx_entries_tags ON entries(tags);
 
+-- relations
 DROP TABLE IF EXISTS relations CASCADE;
 CREATE TABLE relations (
     from_id         INTEGER REFERENCES entries(id) ON DELETE CASCADE ON UPDATE CASCADE,	
