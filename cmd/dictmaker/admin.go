@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/knadh/dictmaker/internal/search"
+	"github.com/knadh/dictmaker/internal/data"
 )
 
 // handleGetConfig returns the language configuration.
@@ -19,10 +19,10 @@ func handleGetConfig(w http.ResponseWriter, r *http.Request) {
 	)
 
 	out := struct {
-		RootURL   string         `json:"root_url"`
-		Languages search.LangMap `json:"languages"`
-		Version   string         `json:"version"`
-	}{app.constants.RootURL, app.search.Langs, buildString}
+		RootURL   string       `json:"root_url"`
+		Languages data.LangMap `json:"languages"`
+		Version   string       `json:"version"`
+	}{app.constants.RootURL, app.data.Langs, buildString}
 
 	sendResponse(out, http.StatusOK, w)
 }
@@ -33,7 +33,7 @@ func handleGetStats(w http.ResponseWriter, r *http.Request) {
 		app = r.Context().Value("app").(*App)
 	)
 
-	out, err := app.search.GetStats()
+	out, err := app.data.GetStats()
 	if err != nil {
 		sendErrorResponse(err.Error(), http.StatusInternalServerError, nil, w)
 		return
@@ -56,7 +56,7 @@ func handleInsertEntry(w http.ResponseWriter, r *http.Request) {
 		app = r.Context().Value("app").(*App)
 	)
 
-	var e search.Entry
+	var e data.Entry
 	if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
 		sendErrorResponse(fmt.Sprintf("error parsing request: %v", err), http.StatusBadRequest, nil, w)
 		return
@@ -67,7 +67,7 @@ func handleInsertEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	guid, err := app.search.InsertEntry(e)
+	guid, err := app.data.InsertEntry(e)
 	if err != nil {
 		sendErrorResponse(fmt.Sprintf("error inserting entry: %v", err), http.StatusInternalServerError, nil, w)
 		return
@@ -88,18 +88,18 @@ func handleUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		guid = chi.URLParam(r, "guid")
 	)
 
-	var e search.Entry
+	var e data.Entry
 	if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
 		sendErrorResponse(fmt.Sprintf("error parsing request: %v", err), http.StatusBadRequest, nil, w)
 		return
 	}
 
-	if err := app.search.UpdateEntry(guid, e); err != nil {
+	if err := app.data.UpdateEntry(guid, e); err != nil {
 		sendErrorResponse(fmt.Sprintf("error updating entry: %v", err), http.StatusInternalServerError, nil, w)
 		return
 	}
 
-	sendResponse(app.search.Langs, http.StatusOK, w)
+	sendResponse(app.data.Langs, http.StatusOK, w)
 }
 
 // handleDeleteEntry deletes a dictionary entry.
@@ -109,7 +109,7 @@ func handleDeleteEntry(w http.ResponseWriter, r *http.Request) {
 		guid = chi.URLParam(r, "guid")
 	)
 
-	if err := app.search.DeleteEntry(guid); err != nil {
+	if err := app.data.DeleteEntry(guid); err != nil {
 		sendErrorResponse(fmt.Sprintf("error deleting entry: %v", err), http.StatusInternalServerError, nil, w)
 		return
 	}
@@ -125,18 +125,18 @@ func handleAddRelation(w http.ResponseWriter, r *http.Request) {
 		toGuid   = chi.URLParam(r, "toGuid")
 	)
 
-	var rel search.Relation
+	var rel data.Relation
 	if err := json.NewDecoder(r.Body).Decode(&rel); err != nil {
 		sendErrorResponse(fmt.Sprintf("error parsing request: %v", err), http.StatusBadRequest, nil, w)
 		return
 	}
 
-	if err := app.search.InsertRelation(fromGuid, toGuid, rel); err != nil {
+	if err := app.data.InsertRelation(fromGuid, toGuid, rel); err != nil {
 		sendErrorResponse(fmt.Sprintf("error updating relation: %v", err), http.StatusInternalServerError, nil, w)
 		return
 	}
 
-	sendResponse(app.search.Langs, http.StatusOK, w)
+	sendResponse(app.data.Langs, http.StatusOK, w)
 }
 
 // handleUpdateRelation updates a relation's properties.
@@ -146,18 +146,18 @@ func handleUpdateRelation(w http.ResponseWriter, r *http.Request) {
 		relID, _ = strconv.Atoi(chi.URLParam(r, "relID"))
 	)
 
-	var rel search.Relation
+	var rel data.Relation
 	if err := json.NewDecoder(r.Body).Decode(&rel); err != nil {
 		sendErrorResponse(fmt.Sprintf("error parsing request: %v", err), http.StatusBadRequest, nil, w)
 		return
 	}
 
-	if err := app.search.UpdateRelation(relID, rel); err != nil {
+	if err := app.data.UpdateRelation(relID, rel); err != nil {
 		sendErrorResponse(fmt.Sprintf("error updating relation: %v", err), http.StatusInternalServerError, nil, w)
 		return
 	}
 
-	sendResponse(app.search.Langs, http.StatusOK, w)
+	sendResponse(app.data.Langs, http.StatusOK, w)
 }
 
 // handleReorderRelations reorders the weights of the relation IDs in the given order.
@@ -175,7 +175,7 @@ func handleReorderRelations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := app.search.ReorderRelations(ids); err != nil {
+	if err := app.data.ReorderRelations(ids); err != nil {
 		sendErrorResponse(fmt.Sprintf("error reordering relations: %v", err), http.StatusInternalServerError, nil, w)
 		return
 	}
@@ -191,7 +191,7 @@ func handleDeleteRelation(w http.ResponseWriter, r *http.Request) {
 		toGuid   = chi.URLParam(r, "toGuid")
 	)
 
-	if err := app.search.DeleteRelation(fromGuid, toGuid); err != nil {
+	if err := app.data.DeleteRelation(fromGuid, toGuid); err != nil {
 		sendErrorResponse(fmt.Sprintf("error deleting entry: %v", err), http.StatusInternalServerError, nil, w)
 		return
 	}
@@ -217,7 +217,7 @@ func adminPage(tpl string) http.HandlerFunc {
 	})
 }
 
-func validateEntry(e search.Entry) error {
+func validateEntry(e data.Entry) error {
 	if strings.TrimSpace(e.Content) == "" {
 		return errors.New("invalid `content`.")
 	}

@@ -16,7 +16,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/jmoiron/sqlx"
-	"github.com/knadh/dictmaker/internal/search"
+	"github.com/knadh/dictmaker/internal/data"
 	"github.com/knadh/koanf"
 	"github.com/knadh/stuffbin"
 )
@@ -109,9 +109,9 @@ func initAdminTemplates(path string) *template.Template {
 	return t
 }
 
-// loadTokenizerPlugin loads a tokenizer plugin that implements search.Tokenizer
+// loadTokenizerPlugin loads a tokenizer plugin that implements data.Tokenizer
 // from the given path.
-func loadTokenizerPlugin(path string) (search.Tokenizer, error) {
+func loadTokenizerPlugin(path string) (data.Tokenizer, error) {
 	plg, err := plugin.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("error loading tokenizer plugin '%s': %v", path, err)
@@ -122,7 +122,7 @@ func loadTokenizerPlugin(path string) (search.Tokenizer, error) {
 		return nil, fmt.Errorf("New() function not found in plugin '%s': %v", path, err)
 	}
 
-	f, ok := newFunc.(func() (search.Tokenizer, error))
+	f, ok := newFunc.(func() (data.Tokenizer, error))
 	if !ok {
 		return nil, fmt.Errorf("New() function is of invalid type in plugin '%s'", path)
 	}
@@ -182,12 +182,12 @@ func initHandlers(r *chi.Mux, app *App) {
 }
 
 // initLangs loads language configuration into a given *App instance.
-func initLangs(ko *koanf.Koanf) search.LangMap {
-	out := make(search.LangMap)
+func initLangs(ko *koanf.Koanf) data.LangMap {
+	out := make(data.LangMap)
 
 	// Language configuration.
 	for _, l := range ko.MapKeys("lang") {
-		lang := search.Lang{Types: make(map[string]string)}
+		lang := data.Lang{Types: make(map[string]string)}
 		if err := ko.UnmarshalWithConf("lang."+l, &lang, koanf.UnmarshalConf{Tag: "json"}); err != nil {
 			log.Fatalf("error loading languages: %v", err)
 		}

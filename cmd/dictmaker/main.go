@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/jmoiron/sqlx"
-	"github.com/knadh/dictmaker/internal/search"
+	"github.com/knadh/dictmaker/internal/data"
 	"github.com/knadh/goyesql"
 	goyesqlx "github.com/knadh/goyesql/sqlx"
 	"github.com/knadh/koanf"
@@ -31,7 +31,7 @@ type Lang struct {
 	Types         map[string]string `koanf:"types" json:"types"`
 	TokenizerName string            `koanf:"tokenizer" json:"tokenizer"`
 	TokenizerType string            `koanf:"tokenizer_type" json:"tokenizer_type"`
-	Tokenizer     search.Tokenizer  `koanf:"-" json:"-"`
+	Tokenizer     data.Tokenizer    `koanf:"-" json:"-"`
 }
 
 type constants struct {
@@ -46,8 +46,8 @@ type App struct {
 	siteTpl    *template.Template
 	adminTpl   *template.Template
 	db         *sqlx.DB
-	queries    *search.Queries
-	search     *search.Search
+	queries    *data.Queries
+	data       *data.Data
 	fs         stuffbin.FileSystem
 	resultsPg  *paginator.Paginator
 	glossaryPg *paginator.Paginator
@@ -159,7 +159,7 @@ func main() {
 	}
 
 	// Map queries to the query container.
-	var q search.Queries
+	var q data.Queries
 
 	if err := goyesqlx.ScanToStruct(&q, qMap, db.Unsafe()); err != nil {
 		logger.Fatalf("no SQL queries loaded: %v", err)
@@ -171,7 +171,7 @@ func main() {
 		logger.Fatal("0 languages in config")
 	}
 
-	app.search = search.New(&q, langs)
+	app.data = data.New(&q, langs)
 	app.queries = &q
 
 	// Pagination.

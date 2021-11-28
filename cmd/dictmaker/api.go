@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/knadh/dictmaker/internal/search"
+	"github.com/knadh/dictmaker/internal/data"
 	"github.com/knadh/paginator"
 )
 
@@ -23,9 +23,9 @@ const (
 
 // Results represents a set of results.
 type Results struct {
-	FromLang string         `json:"-"`
-	ToLang   string         `json:"-"`
-	Entries  []search.Entry `json:"entries"`
+	FromLang string       `json:"-"`
+	ToLang   string       `json:"-"`
+	Entries  []data.Entry `json:"entries"`
 
 	// Pagination fields.
 	paginator.Set
@@ -33,9 +33,9 @@ type Results struct {
 
 // Glossary represents a set of glossary words.
 type Glossary struct {
-	FromLang string                `json:"-"`
-	ToLang   string                `json:"-"`
-	Words    []search.GlossaryWord `json:"entries"`
+	FromLang string              `json:"-"`
+	ToLang   string              `json:"-"`
+	Words    []data.GlossaryWord `json:"entries"`
 
 	// Pagination fields.
 	paginator.Set
@@ -94,7 +94,7 @@ func handleGetEntry(w http.ResponseWriter, r *http.Request) {
 		guid = chi.URLParam(r, "guid")
 	)
 
-	e, err := app.search.GetEntry(guid)
+	e, err := app.data.GetEntry(guid)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			sendErrorResponse("entry not found", http.StatusBadRequest, nil, w)
@@ -105,10 +105,10 @@ func handleGetEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e.Relations = make(search.Entries, 0)
+	e.Relations = make(data.Entries, 0)
 
-	entries := search.Entries{e}
-	if err := entries.SearchAndLoadRelations(search.Query{}, app.queries.SearchRelations); err != nil {
+	entries := data.Entries{e}
+	if err := entries.SearchAndLoadRelations(data.Query{}, app.queries.SearchRelations); err != nil {
 		app.logger.Printf("error querying db for defs: %v", err)
 		sendErrorResponse(fmt.Sprintf("error loading relations: %v", err), http.StatusBadRequest, nil, w)
 	}
@@ -123,7 +123,7 @@ func handleGetParentEntries(w http.ResponseWriter, r *http.Request) {
 		guid = chi.URLParam(r, "guid")
 	)
 
-	out, err := app.search.GetParentEntries(guid)
+	out, err := app.data.GetParentEntries(guid)
 	if err != nil {
 		sendErrorResponse(err.Error(), http.StatusInternalServerError, nil, w)
 		return
@@ -134,7 +134,7 @@ func handleGetParentEntries(w http.ResponseWriter, r *http.Request) {
 
 // doSearch is a helper function that takes an HTTP query context,
 // gets search params from it, performs a search and returns results.
-func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
+func doSearch(r *http.Request, app *App) (data.Query, *Results, error) {
 	var (
 		fromLang = chi.URLParam(r, "fromLang")
 		toLang   = chi.URLParam(r, "toLang")
@@ -151,36 +151,36 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 
 	q, err := url.QueryUnescape(q)
 	if err != nil {
-		return search.Query{}, nil, fmt.Errorf("error parsing query: %v", err)
+		return data.Query{}, nil, fmt.Errorf("error parsing query: %v", err)
 	}
 
 	q = strings.TrimSpace(q)
 
-	if _, ok := app.search.Langs[fromLang]; !ok {
-		return search.Query{}, nil, errors.New("unknown `from` language")
+	if _, ok := app.data.Langs[fromLang]; !ok {
+		return data.Query{}, nil, errors.New("unknown `from` language")
 	}
 
 	if toLang == "*" {
 		toLang = ""
 	} else {
-		if _, ok := app.search.Langs[toLang]; !ok {
-			return search.Query{}, nil, errors.New("unknown `to` language")
+		if _, ok := app.data.Langs[toLang]; !ok {
+			return data.Query{}, nil, errors.New("unknown `to` language")
 		}
 	}
 
 	// Search query.
-	query := search.Query{
+	query := data.Query{
 		FromLang: fromLang,
 		ToLang:   toLang,
 		Types:    qp["type"],
 		Tags:     qp["tag"],
 		Query:    q,
-		Status:   search.StatusEnabled,
+		Status:   data.StatusEnabled,
 		Offset:   pg.Offset,
 		Limit:    pg.Limit,
 	}
 
-	if err = validateSearchQuery(query, app.search.Langs); err != nil {
+	if err = validateSearchQuery(query, app.data.Langs); err != nil {
 		return query, out, err
 	}
 
@@ -188,10 +188,10 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 	out = &Results{}
 	out.Page = pg.Page
 	out.PerPage = pg.PerPage
-	out.Entries = search.Entries{}
+	out.Entries = data.Entries{}
 
 	// Find entries matching the query.
-	res, total, err := app.search.Search(query)
+	res, total, err := app.data.Search(query)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return query, out, nil
@@ -206,11 +206,11 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 	}
 
 	// Load relations into the matches.
-	if err := res.SearchAndLoadRelations(search.Query{
+	if err := res.SearchAndLoadRelations(data.Query{
 		ToLang: toLang,
 		Offset: pg.Offset,
 		Limit:  pg.Limit,
-		Status: search.StatusEnabled,
+		Status: data.StatusEnabled,
 	}, app.queries.SearchRelations); err != nil {
 		app.logger.Printf("error querying db for defs: %v", err)
 		return query, nil, errors.New("error querying db for definitions")
@@ -219,7 +219,7 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 	// Replace nulls with [].
 	for i := range res {
 		if res[i].Relations == nil {
-			res[i].Relations = search.Entries{}
+			res[i].Relations = data.Entries{}
 		}
 	}
 
@@ -236,10 +236,10 @@ func getGlossaryWords(lang, initial string, pg paginator.Set, app *App) (*Glossa
 	out := &Glossary{}
 	out.Page = pg.Page
 	out.PerPage = pg.PerPage
-	out.Words = []search.GlossaryWord{}
+	out.Words = []data.GlossaryWord{}
 
 	// Get glossary words.
-	res, total, err := app.search.GetGlossaryWords(lang, initial, pg.Offset, pg.Limit)
+	res, total, err := app.data.GetGlossaryWords(lang, initial, pg.Offset, pg.Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return out, nil
@@ -332,8 +332,8 @@ func (p *pagination) GenerateNumbers() {
 }
 
 // validateSearchQuery does basic validation and sanity checks
-// on search.Query (useful for params coming from the outside world).
-func validateSearchQuery(q search.Query, langs search.LangMap) error {
+// on data.Query (useful for params coming from the outside world).
+func validateSearchQuery(q data.Query, langs data.LangMap) error {
 	if q.Query == "" {
 		return errors.New("empty search query")
 	}

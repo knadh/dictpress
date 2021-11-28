@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/knadh/dictmaker/internal/search"
+	"github.com/knadh/dictmaker/internal/data"
 	"github.com/knadh/knphone"
 )
 
@@ -15,7 +15,7 @@ type Kannada struct {
 }
 
 // New returns a new instance of the Kannada tokenizer.
-func New() (search.Tokenizer, error) {
+func New() (data.Tokenizer, error) {
 	return &Kannada{
 		ph: knphone.New(),
 	}, nil
@@ -36,17 +36,17 @@ func (*Kannada) Name() string {
 func (kn *Kannada) ToTokens(s string) []string {
 	var (
 		chunks = strings.Split(s, " ")
-		tokens = make([]search.Token, 0, len(chunks)*3)
+		tokens = make([]data.Token, 0, len(chunks)*3)
 	)
 	for _, c := range chunks {
 		key0, key1, key2 := kn.ph.Encode(c)
 		tokens = append(tokens,
-			search.Token{Token: key0, Weight: 3},
-			search.Token{Token: key1, Weight: 2},
-			search.Token{Token: key2, Weight: 1})
+			data.Token{Token: key0, Weight: 3},
+			data.Token{Token: key1, Weight: 2},
+			data.Token{Token: key2, Weight: 1})
 	}
 
-	return search.TokensToTSVector(tokens)
+	return data.TokensToTSVector(tokens)
 }
 
 // ToQuery tokenizes a Kannada string into Romanized (knphone) Postgres

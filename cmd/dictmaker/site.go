@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/knadh/dictmaker/internal/search"
+	"github.com/knadh/dictmaker/internal/data"
 	"github.com/knadh/paginator"
 )
 
@@ -25,7 +25,7 @@ type sitePage struct {
 	Description string
 	MetaTags    string
 
-	Query    *search.Query
+	Query    *data.Query
 	Results  *Results
 	Glossary *Glossary
 	Initial  string
@@ -42,7 +42,7 @@ type siteMsg struct {
 	Title       string
 	Heading     string
 	Description string
-	Query       *search.Query
+	Query       *data.Query
 }
 
 // handleIndexPage renders the homepage.
@@ -90,7 +90,7 @@ func handleGlossaryPage(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Get the alphabets.
-	initials, err := app.search.GetInitials(fromLang)
+	initials, err := app.data.GetInitials(fromLang)
 	if err != nil {
 		app.logger.Printf("error getting initials: %v", err)
 		sendTpl(http.StatusInternalServerError, "message", app.siteTpl, siteMsg{

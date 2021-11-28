@@ -1,4 +1,4 @@
-package search
+package data
 
 import (
 	"database/sql"
@@ -69,8 +69,8 @@ type Queries struct {
 	GetStats           *sqlx.Stmt `query:"get-stats"`
 }
 
-// Search represents the dictionary search interface.
-type Search struct {
+// Data represents the dictionary search interface.
+type Data struct {
 	queries *Queries
 	Langs   LangMap
 }
@@ -151,8 +151,8 @@ type Stats struct {
 }
 
 // New returns an instance of the search interface.
-func New(q *Queries, langs LangMap) *Search {
-	return &Search{
+func New(q *Queries, langs LangMap) *Data {
+	return &Data{
 		queries: q,
 		Langs:   langs,
 	}
@@ -161,7 +161,7 @@ func New(q *Queries, langs LangMap) *Search {
 // Search returns the entries filtered and paginated by a
 // given Query along with the total number of matches in the
 // database.
-func (s *Search) Search(q Query) (Entries, int, error) {
+func (d *Data) Search(q Query) (Entries, int, error) {
 	// Is there a Tokenizer?
 	var (
 		tsVectorLang  = ""
@@ -169,7 +169,7 @@ func (s *Search) Search(q Query) (Entries, int, error) {
 		out           Entries
 	)
 
-	lang, ok := s.Langs[q.FromLang]
+	lang, ok := d.Langs[q.FromLang]
 	if !ok {
 		return out, 0, fmt.Errorf("unknown language %s", q.FromLang)
 	}
@@ -198,7 +198,7 @@ func (s *Search) Search(q Query) (Entries, int, error) {
 	// $7 - offset
 	// $8 - limit
 
-	if err := s.queries.Search.Select(&out,
+	if err := d.queries.Search.Select(&out,
 		q.Query,
 		tsVectorLang,
 		tsVectorQuery,
@@ -215,10 +215,10 @@ func (s *Search) Search(q Query) (Entries, int, error) {
 
 // GetInitials gets the list of all unique initials (first character) across
 // all the words for a given language.
-func (s *Search) GetInitials(lang string) ([]string, error) {
+func (d *Data) GetInitials(lang string) ([]string, error) {
 	out := make([]string, 0, 200)
 
-	rows, err := s.queries.GetInitials.Query(lang)
+	rows, err := d.queries.GetInitials.Query(lang)
 	if err != nil {
 		return out, err
 	}
@@ -244,9 +244,9 @@ func (s *Search) GetInitials(lang string) ([]string, error) {
 
 // GetGlossaryWords gets words ordered by weight for a language
 // to build a glossary.
-func (s *Search) GetGlossaryWords(lang, initial string, offset, limit int) ([]GlossaryWord, int, error) {
+func (d *Data) GetGlossaryWords(lang, initial string, offset, limit int) ([]GlossaryWord, int, error) {
 	var out []GlossaryWord
-	if err := s.queries.GetGlossaryWords.Select(&out, lang, initial, offset, limit); err != nil || len(out) == 0 {
+	if err := d.queries.GetGlossaryWords.Select(&out, lang, initial, offset, limit); err != nil || len(out) == 0 {
 		if len(out) == 0 {
 			err = fmt.Errorf("glossary is empty")
 		}
@@ -258,9 +258,9 @@ func (s *Search) GetGlossaryWords(lang, initial string, offset, limit int) ([]Gl
 }
 
 // GetEntry returns an entry by its guid.
-func (s *Search) GetEntry(guid string) (Entry, error) {
+func (d *Data) GetEntry(guid string) (Entry, error) {
 	var out Entry
-	if err := s.queries.GetEntry.Get(&out, guid); err != nil {
+	if err := d.queries.GetEntry.Get(&out, guid); err != nil {
 		return out, err
 	}
 
@@ -268,9 +268,9 @@ func (s *Search) GetEntry(guid string) (Entry, error) {
 }
 
 // GetParentEntries returns the parent entries of an entry by its guid.
-func (s *Search) GetParentEntries(guid string) (Entries, error) {
+func (d *Data) GetParentEntries(guid string) (Entries, error) {
 	var out Entries
-	if err := s.queries.GetParentRelations.Select(&out, guid); err != nil {
+	if err := d.queries.GetParentRelations.Select(&out, guid); err != nil {
 		return out, err
 	}
 
@@ -278,8 +278,8 @@ func (s *Search) GetParentEntries(guid string) (Entries, error) {
 }
 
 // InsertEntry inserts a new dictionart entry.
-func (s *Search) InsertEntry(e Entry) (string, error) {
-	lang, ok := s.Langs[e.Lang]
+func (d *Data) InsertEntry(e Entry) (string, error) {
+	lang, ok := d.Langs[e.Lang]
 	if !ok {
 		return "", fmt.Errorf("unknown language %s", e.Lang)
 	}
@@ -301,7 +301,7 @@ func (s *Search) InsertEntry(e Entry) (string, error) {
 	}
 
 	var guid string
-	err := s.queries.InsertEntry.Get(&guid,
+	err := d.queries.InsertEntry.Get(&guid,
 		e.GUID,
 		e.Content,
 		e.Initial,
@@ -326,8 +326,8 @@ func (s *Search) InsertEntry(e Entry) (string, error) {
 }
 
 // UpdateEntry updates a dictionary entry.
-func (s *Search) UpdateEntry(guid string, e Entry) error {
-	_, err := s.queries.UpdateEntry.Exec(guid,
+func (d *Data) UpdateEntry(guid string, e Entry) error {
+	_, err := d.queries.UpdateEntry.Exec(guid,
 		e.Content,
 		e.Initial,
 		e.Weight,
@@ -341,8 +341,8 @@ func (s *Search) UpdateEntry(guid string, e Entry) error {
 }
 
 // InsertRelation adds a relation between to entries.
-func (s *Search) InsertRelation(fromGuid, toGuid string, r Relation) error {
-	_, err := s.queries.InsertRelation.Exec(fromGuid,
+func (d *Data) InsertRelation(fromGuid, toGuid string, r Relation) error {
+	_, err := d.queries.InsertRelation.Exec(fromGuid,
 		toGuid,
 		r.Types,
 		r.Tags,
@@ -352,8 +352,8 @@ func (s *Search) InsertRelation(fromGuid, toGuid string, r Relation) error {
 }
 
 // UpdateRelation updates a relation's properties.
-func (s *Search) UpdateRelation(id int, r Relation) error {
-	_, err := s.queries.UpdateRelation.Exec(id,
+func (d *Data) UpdateRelation(id int, r Relation) error {
+	_, err := d.queries.UpdateRelation.Exec(id,
 		r.Types,
 		r.Tags,
 		r.Notes,
@@ -362,30 +362,30 @@ func (s *Search) UpdateRelation(id int, r Relation) error {
 }
 
 // ReorderRelations updates the weights of the given relation IDs in the given order.
-func (s *Search) ReorderRelations(ids []int) error {
-	_, err := s.queries.ReorderRelations.Exec(pq.Array(ids))
+func (d *Data) ReorderRelations(ids []int) error {
+	_, err := d.queries.ReorderRelations.Exec(pq.Array(ids))
 	return err
 }
 
 // DeleteEntry deletes a dictionary entry by its guid.
-func (s *Search) DeleteEntry(guid string) error {
-	_, err := s.queries.DeleteEntry.Exec(guid)
+func (d *Data) DeleteEntry(guid string) error {
+	_, err := d.queries.DeleteEntry.Exec(guid)
 	return err
 }
 
 // DeleteRelation deletes a dictionary entry by its guid.
-func (s *Search) DeleteRelation(fromGuid, toGuid string) error {
+func (s *Data) DeleteRelation(fromGuid, toGuid string) error {
 	_, err := s.queries.DeleteRelation.Exec(fromGuid, toGuid)
 	return err
 }
 
 // GetStats returns DB stats.
-func (s *Search) GetStats() (Stats, error) {
+func (d *Data) GetStats() (Stats, error) {
 	var (
 		out Stats
 		b   json.RawMessage
 	)
-	if err := s.queries.GetStats.Get(&b); err != nil {
+	if err := d.queries.GetStats.Get(&b); err != nil {
 		return out, err
 	}
 

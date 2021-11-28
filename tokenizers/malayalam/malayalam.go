@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/knadh/dictmaker/internal/search"
+	"github.com/knadh/dictmaker/internal/data"
 	"gitlab.com/joice/mlphone-go"
 )
 
@@ -15,7 +15,7 @@ type Malayalam struct {
 }
 
 // New returns a new instance of the Malayalam tokenizer.
-func New() (search.Tokenizer, error) {
+func New() (data.Tokenizer, error) {
 	return &Malayalam{
 		ph: mlphone.New(),
 	}, nil
@@ -35,17 +35,17 @@ func (*Malayalam) Name() string {
 func (m *Malayalam) ToTokens(s string) []string {
 	var (
 		chunks = strings.Split(s, " ")
-		tokens = make([]search.Token, 0, len(chunks)*3)
+		tokens = make([]data.Token, 0, len(chunks)*3)
 	)
 	for _, c := range chunks {
 		key0, key1, key2 := m.ph.Encode(c)
 		tokens = append(tokens,
-			search.Token{Token: key0, Weight: 3},
-			search.Token{Token: key1, Weight: 2},
-			search.Token{Token: key2, Weight: 1})
+			data.Token{Token: key0, Weight: 3},
+			data.Token{Token: key1, Weight: 2},
+			data.Token{Token: key2, Weight: 1})
 	}
 
-	return search.TokensToTSVector(tokens)
+	return data.TokensToTSVector(tokens)
 }
 
 // ToQuery tokenizes a Malayalam string into Romanized (mlphone) Postgres
