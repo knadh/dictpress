@@ -34,19 +34,17 @@ type Lang struct {
 	Tokenizer     search.Tokenizer  `koanf:"-" json:"-"`
 }
 
-// Languages represents a map of Langs.
-type Languages map[string]Lang
-
 type constants struct {
-	Site string
+	Site    string
+	RootURL string
 }
 
 // App contains the "global" components that are
 // passed around, especially through HTTP handlers.
 type App struct {
-	lang       Languages
-	constants  *constants
-	site       *template.Template
+	constants  constants
+	siteTpl    *template.Template
+	adminTpl   *template.Template
 	db         *sqlx.DB
 	queries    *search.Queries
 	search     *search.Search
@@ -134,10 +132,10 @@ func main() {
 
 	// Initialize the app context that's passed around.
 	app := &App{
-		constants: &constants{
-			Site: ko.String("site"),
+		constants: constants{
+			Site:    ko.String("site"),
+			RootURL: ko.String("app.root_url"),
 		},
-		lang:   make(map[string]Lang),
 		db:     db,
 		fs:     fs,
 		logger: logger,
@@ -167,7 +165,13 @@ func main() {
 		logger.Fatalf("no SQL queries loaded: %v", err)
 	}
 
-	app.search = search.NewSearch(&q)
+	// Language configuration.
+	langs := initLangs(ko)
+	if len(langs) == 0 {
+		logger.Fatal("0 languages in config")
+	}
+
+	app.search = search.New(&q, langs)
 	app.queries = &q
 
 	// Pagination.
@@ -182,14 +186,8 @@ func main() {
 	o.NumPageNums = ko.Int("glossary.num_page_nums")
 	app.glossaryPg = paginator.New(o)
 
-	// Language configuration.
-	if err := loadLanguages(app); err != nil {
-		logger.Fatalf("error loading language conf: %v", err)
-	}
-
-	if len(app.lang) == 0 {
-		logger.Fatal("0 languages in config")
-	}
+	// Load admin theme.
+	app.adminTpl = initAdminTemplates("admin")
 
 	// Load site theme.
 	if app.constants.Site != "" {
@@ -200,12 +198,12 @@ func main() {
 			logger.Fatalf("error loading site theme: %v", err)
 		}
 
-		app.site = t
+		app.siteTpl = t
 	}
 
 	// Start the HTTP server.
 	r := chi.NewRouter()
-	registerHandlers(r, app)
+	initHandlers(r, app)
 	logger.Println("listening on", ko.String("app.address"))
 	logger.Fatal(http.ListenAndServe(ko.String("app.address"), r))
 }

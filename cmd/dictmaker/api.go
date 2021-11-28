@@ -87,6 +87,51 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 	sendResponse(out, http.StatusOK, w)
 }
 
+// handleGetEntry returns an entry by its guid.
+func handleGetEntry(w http.ResponseWriter, r *http.Request) {
+	var (
+		app  = r.Context().Value("app").(*App)
+		guid = chi.URLParam(r, "guid")
+	)
+
+	e, err := app.search.GetEntry(guid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			sendErrorResponse("entry not found", http.StatusBadRequest, nil, w)
+			return
+		}
+
+		sendErrorResponse(err.Error(), http.StatusInternalServerError, nil, w)
+		return
+	}
+
+	e.Relations = make(search.Entries, 0)
+
+	entries := search.Entries{e}
+	if err := entries.SearchAndLoadRelations(search.Query{}, app.queries.SearchRelations); err != nil {
+		app.logger.Printf("error querying db for defs: %v", err)
+		sendErrorResponse(fmt.Sprintf("error loading relations: %v", err), http.StatusBadRequest, nil, w)
+	}
+
+	sendResponse(entries[0], http.StatusOK, w)
+}
+
+// handleGetParentEntries returns the parent entries of an entry by its guid.
+func handleGetParentEntries(w http.ResponseWriter, r *http.Request) {
+	var (
+		app  = r.Context().Value("app").(*App)
+		guid = chi.URLParam(r, "guid")
+	)
+
+	out, err := app.search.GetParentEntries(guid)
+	if err != nil {
+		sendErrorResponse(err.Error(), http.StatusInternalServerError, nil, w)
+		return
+	}
+
+	sendResponse(out, http.StatusOK, w)
+}
+
 // doSearch is a helper function that takes an HTTP query context,
 // gets search params from it, performs a search and returns results.
 func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
@@ -111,33 +156,31 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 
 	q = strings.TrimSpace(q)
 
-	if _, ok := app.lang[fromLang]; !ok {
+	if _, ok := app.search.Langs[fromLang]; !ok {
 		return search.Query{}, nil, errors.New("unknown `from` language")
 	}
 
 	if toLang == "*" {
 		toLang = ""
 	} else {
-		if _, ok := app.lang[toLang]; !ok {
+		if _, ok := app.search.Langs[toLang]; !ok {
 			return search.Query{}, nil, errors.New("unknown `to` language")
 		}
 	}
 
 	// Search query.
 	query := search.Query{
-		FromLang:      fromLang,
-		ToLang:        toLang,
-		Types:         qp["type"],
-		Tags:          qp["tag"],
-		TokenizerName: app.lang[fromLang].TokenizerName,
-		Tokenizer:     app.lang[fromLang].Tokenizer,
-		Query:         q,
-		Status:        search.StatusEnabled,
-		Offset:        pg.Offset,
-		Limit:         pg.Limit,
+		FromLang: fromLang,
+		ToLang:   toLang,
+		Types:    qp["type"],
+		Tags:     qp["tag"],
+		Query:    q,
+		Status:   search.StatusEnabled,
+		Offset:   pg.Offset,
+		Limit:    pg.Limit,
 	}
 
-	if err = validateSearchQuery(query, app.lang); err != nil {
+	if err = validateSearchQuery(query, app.search.Langs); err != nil {
 		return query, out, err
 	}
 
@@ -148,14 +191,13 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 	out.Entries = search.Entries{}
 
 	// Find entries matching the query.
-	res, total, err := app.search.FindEntries(query)
+	res, total, err := app.search.Search(query)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return query, out, nil
 		}
 
 		app.logger.Printf("error querying db: %v", err)
-
 		return query, nil, errors.New("error querying db")
 	}
 
@@ -164,12 +206,12 @@ func doSearch(r *http.Request, app *App) (search.Query, *Results, error) {
 	}
 
 	// Load relations into the matches.
-	if err := res.LoadRelations(search.Query{
+	if err := res.SearchAndLoadRelations(search.Query{
 		ToLang: toLang,
 		Offset: pg.Offset,
 		Limit:  pg.Limit,
 		Status: search.StatusEnabled,
-	}, app.queries.GetRelations); err != nil {
+	}, app.queries.SearchRelations); err != nil {
 		app.logger.Printf("error querying db for defs: %v", err)
 		return query, nil, errors.New("error querying db for definitions")
 	}
@@ -291,13 +333,13 @@ func (p *pagination) GenerateNumbers() {
 
 // validateSearchQuery does basic validation and sanity checks
 // on search.Query (useful for params coming from the outside world).
-func validateSearchQuery(q search.Query, l Languages) error {
+func validateSearchQuery(q search.Query, langs search.LangMap) error {
 	if q.Query == "" {
 		return errors.New("empty search query")
 	}
 
 	for _, t := range q.Types {
-		if _, ok := l[q.FromLang].Types[t]; !ok {
+		if _, ok := langs[q.FromLang].Types[t]; !ok {
 			return fmt.Errorf("unknown type %s", t)
 		}
 	}

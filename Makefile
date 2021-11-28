@@ -15,12 +15,8 @@ build:
 	go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}'" cmd/${BIN}/*.go
 
 .PHONY: run
-run: build
+run: build build-tokenizers
 	./${BIN}
-
-.PHONY: run-admin-frontend
-run-admin-frontend:
-	cd admin && yarn serve
 
 .PHONY: build-tokenizers
 build-tokenizers:
@@ -29,7 +25,7 @@ build-tokenizers:
 
 # Compile bin and bundle static assets.
 .PHONY: dist
-dist: build
+dist: build build-tokenizers
 	stuffbin -a stuff -in ${BIN} -out ${BIN} ${STATIC}
 
 # pack-releases runn stuffbin packing on the given binary. This is used

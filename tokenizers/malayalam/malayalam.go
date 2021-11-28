@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/knadh/dictmaker/internal/search"
 	"gitlab.com/joice/mlphone-go"
@@ -30,9 +31,26 @@ func (*Malayalam) Name() string {
 	return "Malayalam"
 }
 
-// Tokenize tokenizes a Kannada string into Romanized (mlphone) Postgres
+// ToTokens tokenizes a Malaylam string and returns an array of tsvector tokens.
+func (m *Malayalam) ToTokens(s string) []string {
+	var (
+		chunks = strings.Split(s, " ")
+		tokens = make([]search.Token, 0, len(chunks)*3)
+	)
+	for _, c := range chunks {
+		key0, key1, key2 := m.ph.Encode(c)
+		tokens = append(tokens,
+			search.Token{Token: key0, Weight: 3},
+			search.Token{Token: key1, Weight: 2},
+			search.Token{Token: key2, Weight: 1})
+	}
+
+	return search.TokensToTSVector(tokens)
+}
+
+// ToQuery tokenizes a Malayalam string into Romanized (mlphone) Postgres
 // tsquery string.
-func (ml *Malayalam) Tokenize(in string) string {
+func (ml *Malayalam) ToQuery(in string) string {
 	key0, key1, key2 := ml.ph.Encode(in)
 	if key0 == "" {
 		return ""

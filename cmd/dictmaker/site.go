@@ -48,7 +48,7 @@ type siteMsg struct {
 // handleIndexPage renders the homepage.
 func handleIndexPage(w http.ResponseWriter, r *http.Request) {
 	app, _ := r.Context().Value("app").(*App)
-	sendTpl(http.StatusOK, "index", app.site, sitePage{
+	sendTpl(http.StatusOK, "index", app.siteTpl, sitePage{
 		Path: r.RequestURI,
 		Page: pageIndex,
 	}, w)
@@ -61,7 +61,7 @@ func handleSearchPage(w http.ResponseWriter, r *http.Request) {
 	query, out, err := doSearch(r, app)
 	if err != nil {
 		app.logger.Printf("error searching: %v", err)
-		sendTpl(http.StatusInternalServerError, "message", app.site, siteMsg{
+		sendTpl(http.StatusInternalServerError, "message", app.siteTpl, siteMsg{
 			Title:       "Error",
 			Heading:     "Error",
 			Description: err.Error(),
@@ -71,7 +71,7 @@ func handleSearchPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Render the results.
-	sendTpl(http.StatusOK, "search", app.site, sitePage{
+	sendTpl(http.StatusOK, "search", app.siteTpl, sitePage{
 		Path:    r.RequestURI,
 		Page:    pageSearch,
 		Results: out,
@@ -93,7 +93,7 @@ func handleGlossaryPage(w http.ResponseWriter, r *http.Request) {
 	initials, err := app.search.GetInitials(fromLang)
 	if err != nil {
 		app.logger.Printf("error getting initials: %v", err)
-		sendTpl(http.StatusInternalServerError, "message", app.site, siteMsg{
+		sendTpl(http.StatusInternalServerError, "message", app.siteTpl, siteMsg{
 			Title:       "Error",
 			Heading:     "Error",
 			Description: "Error fetching glossary initials.",
@@ -102,7 +102,7 @@ func handleGlossaryPage(w http.ResponseWriter, r *http.Request) {
 
 	if len(initials) == 0 {
 		// No glossary initials found.
-		sendTpl(http.StatusOK, "glossary", app.site, sitePage{
+		sendTpl(http.StatusOK, "glossary", app.siteTpl, sitePage{
 			Path:    r.RequestURI,
 			Page:    pageGlossary,
 			Initial: initial,
@@ -120,7 +120,7 @@ func handleGlossaryPage(w http.ResponseWriter, r *http.Request) {
 	gloss, err := getGlossaryWords(fromLang, initial, pg, app)
 	if err != nil {
 		app.logger.Printf("error getting glossary words: %v", err)
-		sendTpl(http.StatusInternalServerError, "message", app.site, siteMsg{
+		sendTpl(http.StatusInternalServerError, "message", app.siteTpl, siteMsg{
 			Title:       "Error",
 			Heading:     "Error",
 			Description: "Error fetching glossary words.",
@@ -134,7 +134,7 @@ func handleGlossaryPage(w http.ResponseWriter, r *http.Request) {
 	pg.SetTotal(gloss.Total)
 
 	// Render the results.
-	sendTpl(http.StatusOK, "glossary", app.site, sitePage{
+	sendTpl(http.StatusOK, "glossary", app.siteTpl, sitePage{
 		Path:     r.RequestURI,
 		Page:     pageGlossary,
 		Initial:  initial,
@@ -152,12 +152,12 @@ func handleStaticPage(w http.ResponseWriter, r *http.Request) {
 		id  = "page-" + chi.URLParam(r, "page")
 	)
 
-	if app.site.Lookup(id) == nil {
+	if app.siteTpl.Lookup(id) == nil {
 		sendErrorResponse("Page not found", http.StatusNotFound, nil, w)
 		return
 	}
 
-	sendTpl(http.StatusOK, id, app.site, sitePage{
+	sendTpl(http.StatusOK, id, app.siteTpl, sitePage{
 		Path: r.RequestURI,
 		Page: pageStatic,
 	}, w)

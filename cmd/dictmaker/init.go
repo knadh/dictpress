@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,8 +14,10 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictmaker/internal/search"
+	"github.com/knadh/koanf"
 	"github.com/knadh/stuffbin"
 )
 
@@ -61,7 +64,7 @@ func initFileSystem() (stuffbin.FileSystem, error) {
 	return fs, nil
 }
 
-// loadTheme loads a theme from a directory.
+// loadSiteTheme loads a theme from a directory.
 func loadSiteTheme(path string, loadPages bool) (*template.Template, error) {
 	t := template.New("theme")
 
@@ -97,6 +100,15 @@ func loadSiteTheme(path string, loadPages bool) (*template.Template, error) {
 	return t, nil
 }
 
+// initAdminTemplates loads admin UI HTML templates.
+func initAdminTemplates(path string) *template.Template {
+	t, err := template.New("admin").ParseGlob(path + "/*.html")
+	if err != nil {
+		log.Fatalf("error loading admin templates: %v", err)
+	}
+	return t
+}
+
 // loadTokenizerPlugin loads a tokenizer plugin that implements search.Tokenizer
 // from the given path.
 func loadTokenizerPlugin(path string) (search.Tokenizer, error) {
@@ -124,8 +136,11 @@ func loadTokenizerPlugin(path string) (search.Tokenizer, error) {
 	return p, err
 }
 
-// registerHandlers registers HTTP handlers.
-func registerHandlers(r *chi.Mux, app *App) {
+// initHandlers registers HTTP handlers.
+func initHandlers(r *chi.Mux, app *App) {
+	r.Use(middleware.StripSlashes)
+
+	// Dictionary site HTML views.
 	if app.constants.Site != "" {
 		r.Get("/", wrap(app, handleIndexPage))
 		r.Get("/dictionary/{fromLang}/{toLang}/{q}", wrap(app, handleSearchPage))
@@ -146,19 +161,35 @@ func registerHandlers(r *chi.Mux, app *App) {
 	}
 
 	// Admin handlers.
-	r.Get("/admin/api/config", wrap(app, handleGetConfig))
+	r.Get("/admin/static/*", http.StripPrefix("/admin/static", http.FileServer(http.Dir("admin/static"))).ServeHTTP)
+	r.Get("/admin", wrap(app, adminPage("index")))
+	r.Get("/admin/search", wrap(app, adminPage("search")))
+	r.Get("/admin/entries/{guid}", wrap(app, adminPage("entry")))
 
+	// APIs.
+	r.Get("/api/config", wrap(app, handleGetConfig))
+	r.Get("/api/stats", wrap(app, handleGetStats))
+	r.Post("/api/entries", wrap(app, handleInsertEntry))
+	r.Get("/api/entries/{guid}", wrap(app, handleGetEntry))
+	r.Get("/api/entries/{guid}/parents", wrap(app, handleGetParentEntries))
+	r.Delete("/api/entries/{guid}", wrap(app, handleDeleteEntry))
+	r.Delete("/api/entries/{fromGuid}/relations/{toGuid}", wrap(app, handleDeleteRelation))
+	r.Post("/api/entries/{fromGuid}/relations/{toGuid}", wrap(app, handleAddRelation))
+	r.Put("/api/entries/{guid}/relations/weights", wrap(app, handleReorderRelations))
+	r.Put("/api/entries/{guid}/relations/{relID}", wrap(app, handleUpdateRelation))
+	r.Put("/api/entries/{guid}", wrap(app, handleUpdateEntry))
 	r.Get("/api/dictionary/{fromLang}/{toLang}/{q}", wrap(app, handleSearch))
 }
 
-// loadLanguages loads language configuration into a given *App instance.
-func loadLanguages(app *App) error {
+// initLangs loads language configuration into a given *App instance.
+func initLangs(ko *koanf.Koanf) search.LangMap {
+	out := make(search.LangMap)
+
 	// Language configuration.
 	for _, l := range ko.MapKeys("lang") {
-		var lang Lang
-
-		if err := ko.Unmarshal("lang."+l, &lang); err != nil {
-			return err
+		lang := search.Lang{Types: make(map[string]string)}
+		if err := ko.UnmarshalWithConf("lang."+l, &lang, koanf.UnmarshalConf{Tag: "json"}); err != nil {
+			log.Fatalf("error loading languages: %v", err)
 		}
 
 		// Load external plugin.
@@ -167,7 +198,7 @@ func loadLanguages(app *App) error {
 		if lang.TokenizerType == "plugin" {
 			tk, err := loadTokenizerPlugin(lang.TokenizerName)
 			if err != nil {
-				return err
+				log.Fatalf("error loading tokenizer plugin for %s: %v", l, err)
 			}
 
 			lang.Tokenizer = tk
@@ -178,10 +209,10 @@ func loadLanguages(app *App) error {
 			logger.Printf("loaded tokenizer %s", lang.TokenizerName)
 		}
 
-		app.lang[l] = lang
+		out[l] = lang
 	}
 
-	return nil
+	return out
 }
 
 func generateNewFiles() error {
