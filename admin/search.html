@@ -1,0 +1,59 @@
+{{ define "search" }}
+{{ template "header" . }}
+
+<section x-data="searchResultsComponent()" x-init="onLoad" @search.window="onSearch">
+	<template x-if="!guid && loading['entries.search'] !== true">
+		<h3><span x-text="total"></span> results for &ldquo;<span x-text="query"></span>&rdquo;</h3>
+	</template>
+	<template x-if="loading['entries.search'] === true">
+		<span class="loading"></span>
+	</template>
+
+	<ol class="entries">
+		<template x-for="e in entries" :key="e.guid">
+			<li class="entry box">
+				<div class="float-right actions">
+					<a x-bind:href="makeURL({guid: e.guid})" @click.prevent="onEditEntry(e)">Edit</a>
+					<a href="#" @click.prevent="onDeleteEntry(e.guid)">Delete</a>
+				</div>
+
+				<h3 class="heading">
+					<a x-bind:href="makeURL({guid: e.guid})" @click.prevent="onEditEntry(e)" x-text="e.content"></a>
+				</h3>
+				<div class="phones">♪ <span class="pronun" x-text="e.phones.join(', ')"></span></div>
+
+				<ol class="relations">
+					<template x-for="(r, n) in e.relations" :key="r.id">
+						<li class="rel" :class="{ highlight: order[e.guid] && order[e.guid].changedRels[r.guid] }">
+							<p><span class="types" x-text="r.relation.types"></span> <span x-text="r.content" class="content"></span></p>
+							<p class="actions">
+								<a href="#" @click.prevent="onDetatchRelation(e.guid, r.guid)">Detatch</a>
+								<a x-bind:href="`${_urls.admin}/entries/${r.guid}?parent=${e.guid}`" @click.prevent="onEditRelation(r, e)">Edit relation</a>
+								<a x-bind:href="`${_urls.admin}/entries/${r.guid}?parent=${e.guid}`" @click.prevent="onEditEntry(r, e)">Edit entry</a>
+								<a x-bind:href="`${_urls.admin}/entries/${r.guid}?parent=${e.guid}`" @click.prevent="onDeleteRelationEntry(r.guid)">Delete entry</a>
+								<span>
+									<a href="#" @click.prevent="onReorderRelation(e, r, n, -1)" title="Move up">&uarr;</a>
+									<a href="#" @click.prevent="onReorderRelation(e, r, n, 1)" title="Move down">&darr;</a>
+								</span>
+							</p>
+						</li>
+					</template>
+				</ol>
+				<p><a href="" @click.prevent="onAddDefinition(e)">+ Add definition</a> 
+				<template x-if="order[e.guid]">
+					<div class="float-right">
+						<button class="button-outline" @click.prevent="onResetRelationOrder(e)">Reset</button>
+						<button class="button" @click.prevent="onSaveRelationOrder(e)">Save order</button>
+					</div>
+				</template>
+				<div class="clearfix"></div>
+			</li>
+		</template>
+	</ol>
+</section>
+
+{{ template "relation" . }}
+{{ template "definition" . }}
+
+{{ template "footer" . }}
+{{ end}}

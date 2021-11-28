@@ -1,0 +1,58 @@
+{{ define "header" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>{{ .Title }} {{ if .Title }}|{{ end}} dictmaker</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="/admin/static/grid.css">
+	<link rel="stylesheet" type="text/css" href="/admin/static/style.css">
+
+	<script defer src="/admin/static/main.js"></script>
+	<script defer src="/admin/static/alpine.js"></script>
+</head>
+<body x-init="onLoad()" x-data="globalComponent()">
+<template x-if="ready">
+	<div class="container wrap">
+		<header class="header">
+			<div class="row">
+				<div class="three columns logo">
+					<a href="/admin"><img src="/admin/static/logo.svg" alt="logo" /></a>
+					<template x-if="Object.keys(loading).length > 0"><span class="loading"></span></template>
+				</div>
+				<nav class="eight columns">
+					<a href="" @click.prevent="onNewEntry">Add new</a>
+				</nav>
+			</div>
+		</header>
+
+		<form class="search" action="/admin/search" x-data="searchFormComponent()" @submit="onSearch">
+			<fieldset class="row">
+				<div class="column four">
+	    			<select name="from_lang" x-model="fromLang">
+	    				<option value="*guid">*GUID</option>
+					    <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
+					      <option :value="id" x-text="l.name" x-bind:selected="id === fromLang"></option>
+					    </template>
+	    			</select>
+	    		</div>
+				<div class="column six">
+	    			<input type="text" name="query" x-model="query" placeholder="Search" required />
+	    		</div>
+				<div class="column two">
+	    			<button class="button" type="submit" x-bind:disabled="loading['entries.search'] === true">Search</button>
+	    		</div>
+			</fieldset>
+		</form>
+
+{{ end }}
+
+{{ define "footer" }}
+	{{ template "entry" . }}
+	</div>
+</template>
+<footer class="footer">
+	<a href="https://dict.press">DictPress <span x-text="config.version"></span></a>
+</footer>
+</body>
+</html>
+{{ end }}
