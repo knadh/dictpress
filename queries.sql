@@ -58,12 +58,12 @@ WHERE
 ORDER BY relations.weight;
 
 -- name: get-entry
-SELECT * FROM entries WHERE guid=$1;
+SELECT * FROM entries WHERE id=$1;
 
 -- name: get-parent-relations
 SELECT entries.*, relations.id as relation_id FROM entries
     LEFT JOIN relations ON (relations.from_id = entries.id)
-    WHERE to_id = (SELECT id FROM entries WHERE guid=$1)
+    WHERE to_id = $1
     ORDER BY weight;
 
 
@@ -77,7 +77,7 @@ SELECT DISTINCT(initial) as initial FROM entries
 
 -- name: get-glossary-words
 -- Gets words for a language to build a glossary.
-SELECT COUNT(*) OVER () AS total, id, guid, content FROM entries
+SELECT COUNT(*) OVER () AS total, id, content FROM entries
     WHERE lang=$1 AND initial=$2 AND status='enabled'
     ORDER BY weight OFFSET $3 LIMIT $4;
 
@@ -85,20 +85,20 @@ SELECT COUNT(*) OVER () AS total, id, guid, content FROM entries
 WITH w AS (
     -- If weight ($4) is 0, compute a new weight by looking up the last weight
     -- for the initial of the given word and add +1 to it.
-    SELECT (weight+1) AS weight FROM entries WHERE initial=$3 AND $4=0 ORDER BY content DESC LIMIT 1
+    SELECT (weight+1) AS weight FROM entries WHERE initial=$2 AND $3=0 ORDER BY content DESC LIMIT 1
 )
-INSERT INTO entries (guid, content, initial, weight, tokens, lang, tags, phones, notes, status)
-    VALUES((CASE WHEN $1 = '' THEN MD5($2) ELSE $1 END),
+INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes, status)
+        VALUES(
+        $1,
         $2,
-        $3,
-        COALESCE((SELECT weight FROM w), $4),
-        (CASE WHEN $6::TEXT != '' THEN TO_TSVECTOR($6::regconfig, $5::TEXT) ELSE $5::TSVECTOR END),
+        COALESCE((SELECT weight FROM w), $3),
+        (CASE WHEN $4::TEXT != '' THEN TO_TSVECTOR($5::regconfig, $4::TEXT) ELSE $4::TSVECTOR END),
+        $6,
         $7,
         $8,
         $9,
-        $10,
-        $11)
-    RETURNING guid;
+        $10)
+    RETURNING id;
 
 -- name: update-entry
 UPDATE entries SET
@@ -112,24 +112,16 @@ UPDATE entries SET
     notes = (CASE WHEN $9 != '' THEN $9 ELSE notes END),
     status = (CASE WHEN $10 != '' THEN $10::entry_status ELSE status END),
     updated_at = NOW()
-    WHERE guid = $1;
+    WHERE id = $1;
 
 -- name: insert-relation
-WITH fromId AS (
-    SELECT id FROM entries WHERE guid=$1
-),
-w AS (
+WITH w AS (
     -- If weight ($4) is 0, compute a new weight by looking up the last weight
     -- for the initial of the given word and add +1 to it.
-    SELECT MAX(weight) + 1 AS weight FROM relations WHERE from_id=(SELECT id FROM fromId) AND $6=0
+    SELECT MAX(weight) + 1 AS weight FROM relations WHERE from_id=$1 AND $6=0
 )
 INSERT INTO relations (from_id, to_id, types, tags, notes, weight)
-    VALUES(
-        (SELECT id FROM fromId),
-        (SELECT id FROM entries WHERE guid=$2),
-        $3, $4, $5,
-        COALESCE((SELECT weight FROM w), $6)
-    );
+    VALUES($1, $2, $3, $4, $5, COALESCE((SELECT weight FROM w), $6));
 
 -- name: update-relation
 UPDATE relations SET
@@ -147,11 +139,10 @@ UPDATE relations AS r SET weight = c.weight
     WHERE c.id = r.id;
 
 -- name: delete-entry
-DELETE FROM entries WHERE guid=$1;
+DELETE FROM entries WHERE id=$1;
 
 -- name: delete-relation
-DELETE FROM relations WHERE
-    from_id=(SELECT id FROM entries WHERE guid=$1) AND to_id=(SELECT id FROM entries WHERE guid=$2);
+DELETE FROM relations WHERE from_id=$1 AND to_id=$2;
 
 -- name: get-stats
 SELECT JSON_BUILD_OBJECT('entries', (SELECT COUNT(*) FROM entries),

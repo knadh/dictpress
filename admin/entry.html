@@ -18,13 +18,7 @@
 						<span class="help">First letter</span>
 					</div>
 				</fieldset>
-				<template x-if="isNew">
-					<fieldset>
-						<label>GUID</label>
-						<input type="text" name="guid" x-model="entry.guid" />						
-						<span class="help">Leave empty to auto-generate.</span>
-					</fieldset>
-				</template>
+
 				<p>
 					<a href="" @click.prevent="onToggleOptions">
 						<span x-text="!isFormOpen ? 'More options +' : 'Hide options -'"></span>
@@ -91,10 +85,9 @@
 
 			<template x-if="!isNew">
 				<ul class="no meta">
+					<li><label>ID</label> <span x-text="entry.id"></span></li>
 					<li><label>Created</label> <span x-text="entry.created_at.slice(0, 16).replace('T', ' ')"></span></li>
 					<li><label>Updated</label> <span x-text="entry.updated_at.slice(0, 16).replace('T', ' ')"></span></li>
-					<li><label>GUID</label> <span x-text="entry.guid"></span></li>
-					<li><label>ID</label> <span x-text="entry.id"></span></li>
 				</ul>
 			</template>
 
@@ -105,7 +98,7 @@
 						<template x-for="r in parentEntries" :key="r.id">
 							<li class="rel">
 								<p>
-									<a x-bind:href="makeURL({'guid': r.guid})" x-text="r.content" class="content"></a>
+									<a x-bind:href="makeURL({'id': r.id})" x-text="r.content" class="content"></a>
 									<template x-if="r.phones.length > 0">
 										<span class="phones" x-text="r.phones.join(', ')"></span>
 									</template>

@@ -3,7 +3,6 @@ package data
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -90,7 +89,6 @@ type Query struct {
 // Entry represents a dictionary entry.
 type Entry struct {
 	ID        int            `json:"id" db:"id"`
-	GUID      string         `json:"guid" db:"guid"`
 	Weight    float64        `json:"weight" db:"weight"`
 	Initial   string         `json:"initial" db:"initial"`
 	Lang      string         `json:"lang" db:"lang"`
@@ -138,7 +136,6 @@ type Entries []Entry
 // GlossaryWord to read glosary content from db.
 type GlossaryWord struct {
 	ID      int    `json:"id" db:"id"`
-	GUID    string `json:"guid" db:"guid"`
 	Content string `json:"content" db:"content"`
 	Total   int    `json:"-" db:"total"`
 }
@@ -257,20 +254,20 @@ func (d *Data) GetGlossaryWords(lang, initial string, offset, limit int) ([]Glos
 	return out, out[0].Total, nil
 }
 
-// GetEntry returns an entry by its guid.
-func (d *Data) GetEntry(guid string) (Entry, error) {
+// GetEntry returns an entry by its id.
+func (d *Data) GetEntry(id int) (Entry, error) {
 	var out Entry
-	if err := d.queries.GetEntry.Get(&out, guid); err != nil {
+	if err := d.queries.GetEntry.Get(&out, id); err != nil {
 		return out, err
 	}
 
 	return out, nil
 }
 
-// GetParentEntries returns the parent entries of an entry by its guid.
-func (d *Data) GetParentEntries(guid string) (Entries, error) {
+// GetParentEntries returns the parent entries of an entry by its id.
+func (d *Data) GetParentEntries(id int) (Entries, error) {
 	var out Entries
-	if err := d.queries.GetParentRelations.Select(&out, guid); err != nil {
+	if err := d.queries.GetParentRelations.Select(&out, id); err != nil {
 		return out, err
 	}
 
@@ -278,10 +275,10 @@ func (d *Data) GetParentEntries(guid string) (Entries, error) {
 }
 
 // InsertEntry inserts a new dictionart entry.
-func (d *Data) InsertEntry(e Entry) (string, error) {
+func (d *Data) InsertEntry(e Entry) (int, error) {
 	lang, ok := d.Langs[e.Lang]
 	if !ok {
-		return "", fmt.Errorf("unknown language %s", e.Lang)
+		return 0, fmt.Errorf("unknown language %s", e.Lang)
 	}
 
 	// No tokens. Automatically generate.
@@ -300,9 +297,8 @@ func (d *Data) InsertEntry(e Entry) (string, error) {
 		}
 	}
 
-	var guid string
-	err := d.queries.InsertEntry.Get(&guid,
-		e.GUID,
+	var id int
+	err := d.queries.InsertEntry.Get(&id,
 		e.Content,
 		e.Initial,
 		e.Weight,
@@ -313,21 +309,13 @@ func (d *Data) InsertEntry(e Entry) (string, error) {
 		e.Phones,
 		e.Notes,
 		e.Status)
-	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Constraint == "idx_entries_guid" {
-			if e.GUID == "" {
-				return "", errors.New("the entry already exists.")
-			}
-			return "", errors.New("the guid already exists.")
-		}
-	}
 
-	return guid, err
+	return id, err
 }
 
 // UpdateEntry updates a dictionary entry.
-func (d *Data) UpdateEntry(guid string, e Entry) error {
-	_, err := d.queries.UpdateEntry.Exec(guid,
+func (d *Data) UpdateEntry(id int, e Entry) error {
+	_, err := d.queries.UpdateEntry.Exec(id,
 		e.Content,
 		e.Initial,
 		e.Weight,
@@ -341,9 +329,9 @@ func (d *Data) UpdateEntry(guid string, e Entry) error {
 }
 
 // InsertRelation adds a relation between to entries.
-func (d *Data) InsertRelation(fromGuid, toGuid string, r Relation) error {
-	_, err := d.queries.InsertRelation.Exec(fromGuid,
-		toGuid,
+func (d *Data) InsertRelation(fromID, toID int, r Relation) error {
+	_, err := d.queries.InsertRelation.Exec(fromID,
+		toID,
 		r.Types,
 		r.Tags,
 		r.Notes,
@@ -367,15 +355,15 @@ func (d *Data) ReorderRelations(ids []int) error {
 	return err
 }
 
-// DeleteEntry deletes a dictionary entry by its guid.
-func (d *Data) DeleteEntry(guid string) error {
-	_, err := d.queries.DeleteEntry.Exec(guid)
+// DeleteEntry deletes a dictionary entry by its id.
+func (d *Data) DeleteEntry(id int) error {
+	_, err := d.queries.DeleteEntry.Exec(id)
 	return err
 }
 
-// DeleteRelation deletes a dictionary entry by its guid.
-func (s *Data) DeleteRelation(fromGuid, toGuid string) error {
-	_, err := s.queries.DeleteRelation.Exec(fromGuid, toGuid)
+// DeleteRelation deletes a dictionary entry by its id.
+func (s *Data) DeleteRelation(fromID, toID int) error {
+	_, err := s.queries.DeleteRelation.Exec(fromID, toID)
 	return err
 }
 

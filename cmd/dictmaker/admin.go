@@ -67,7 +67,7 @@ func handleInsertEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	guid, err := app.data.InsertEntry(e)
+	id, err := app.data.InsertEntry(e)
 	if err != nil {
 		sendErrorResponse(fmt.Sprintf("error inserting entry: %v", err), http.StatusInternalServerError, nil, w)
 		return
@@ -75,8 +75,8 @@ func handleInsertEntry(w http.ResponseWriter, r *http.Request) {
 
 	// Proxy to the get request to respond with the newly inserted entry.
 	ctx := chi.RouteContext(r.Context())
-	ctx.URLParams.Keys = append(ctx.URLParams.Keys, "guid")
-	ctx.URLParams.Values = append(ctx.URLParams.Values, guid)
+	ctx.URLParams.Keys = append(ctx.URLParams.Keys, "id")
+	ctx.URLParams.Values = append(ctx.URLParams.Values, fmt.Sprintf("%d", id))
 
 	handleGetEntry(w, r)
 }
@@ -84,8 +84,8 @@ func handleInsertEntry(w http.ResponseWriter, r *http.Request) {
 // handleUpdateEntry updates a dictionary entry.
 func handleUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	var (
-		app  = r.Context().Value("app").(*App)
-		guid = chi.URLParam(r, "guid")
+		app   = r.Context().Value("app").(*App)
+		id, _ = strconv.Atoi(chi.URLParam(r, "id"))
 	)
 
 	var e data.Entry
@@ -94,7 +94,7 @@ func handleUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := app.data.UpdateEntry(guid, e); err != nil {
+	if err := app.data.UpdateEntry(id, e); err != nil {
 		sendErrorResponse(fmt.Sprintf("error updating entry: %v", err), http.StatusInternalServerError, nil, w)
 		return
 	}
@@ -105,11 +105,11 @@ func handleUpdateEntry(w http.ResponseWriter, r *http.Request) {
 // handleDeleteEntry deletes a dictionary entry.
 func handleDeleteEntry(w http.ResponseWriter, r *http.Request) {
 	var (
-		app  = r.Context().Value("app").(*App)
-		guid = chi.URLParam(r, "guid")
+		app   = r.Context().Value("app").(*App)
+		id, _ = strconv.Atoi(chi.URLParam(r, "id"))
 	)
 
-	if err := app.data.DeleteEntry(guid); err != nil {
+	if err := app.data.DeleteEntry(id); err != nil {
 		sendErrorResponse(fmt.Sprintf("error deleting entry: %v", err), http.StatusInternalServerError, nil, w)
 		return
 	}
@@ -120,9 +120,9 @@ func handleDeleteEntry(w http.ResponseWriter, r *http.Request) {
 // handleAddRelation updates a relation's properties.
 func handleAddRelation(w http.ResponseWriter, r *http.Request) {
 	var (
-		app      = r.Context().Value("app").(*App)
-		fromGuid = chi.URLParam(r, "fromGuid")
-		toGuid   = chi.URLParam(r, "toGuid")
+		app       = r.Context().Value("app").(*App)
+		fromID, _ = strconv.Atoi(chi.URLParam(r, "fromID"))
+		toID, _   = strconv.Atoi(chi.URLParam(r, "toID"))
 	)
 
 	var rel data.Relation
@@ -131,7 +131,7 @@ func handleAddRelation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := app.data.InsertRelation(fromGuid, toGuid, rel); err != nil {
+	if err := app.data.InsertRelation(fromID, toID, rel); err != nil {
 		sendErrorResponse(fmt.Sprintf("error updating relation: %v", err), http.StatusInternalServerError, nil, w)
 		return
 	}
@@ -186,12 +186,12 @@ func handleReorderRelations(w http.ResponseWriter, r *http.Request) {
 // handleDeleteRelation deletes a relation between two entres.
 func handleDeleteRelation(w http.ResponseWriter, r *http.Request) {
 	var (
-		app      = r.Context().Value("app").(*App)
-		fromGuid = chi.URLParam(r, "fromGuid")
-		toGuid   = chi.URLParam(r, "toGuid")
+		app       = r.Context().Value("app").(*App)
+		fromID, _ = strconv.Atoi(chi.URLParam(r, "fromID"))
+		toID, _   = strconv.Atoi(chi.URLParam(r, "toID"))
 	)
 
-	if err := app.data.DeleteRelation(fromGuid, toGuid); err != nil {
+	if err := app.data.DeleteRelation(fromID, toID); err != nil {
 		sendErrorResponse(fmt.Sprintf("error deleting entry: %v", err), http.StatusInternalServerError, nil, w)
 		return
 	}

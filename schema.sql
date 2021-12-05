@@ -1,12 +1,15 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 DROP TYPE IF EXISTS entry_status CASCADE; CREATE TYPE entry_status AS ENUM ('pending', 'enabled', 'disabled');
 
 -- entries
 DROP TABLE IF EXISTS entries CASCADE;
 CREATE TABLE entries (
+    -- Internal unique ID.
     id              SERIAL PRIMARY KEY,
 
-    -- A custom, unique GUID for every entry, like an MD5 hash.
-    guid            TEXT NOT NULL,
+    -- Publicly visible unique ID (used in public APIs such as submissions and corrections).
+    guid            UUID NOT NULL UNIQUE DEFAULT GEN_RANDOM_UUID(),
 
     -- Actual language content. Dictionary word or definition entries
     content         TEXT NOT NULL,
@@ -36,7 +39,6 @@ CREATE TABLE entries (
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-DROP INDEX IF EXISTS idx_entries_guid; CREATE UNIQUE INDEX idx_entries_guid ON entries(guid);
 DROP INDEX IF EXISTS idx_content; CREATE INDEX idx_entries_content ON entries((LOWER(SUBSTRING(content, 0, 50))));
 DROP INDEX IF EXISTS idx_entries_initial; CREATE INDEX idx_entries_initial ON entries(initial);
 DROP INDEX IF EXISTS idx_entries_lang; CREATE INDEX idx_entries_lang ON entries(lang);

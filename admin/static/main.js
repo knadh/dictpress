@@ -78,8 +78,8 @@ function globalComponent() {
 		makeURL(p) {
 			const u = new URLSearchParams();
 
-			if (p.guid) {
-				u.set("guid", p.guid);
+			if (p.id) {
+				u.set("id", p.id);
 			}
 			if (p.fromLang) {
 				u.set("from_lang", p.fromLang);
@@ -123,7 +123,7 @@ function homeComponent() {
 // Search form component.
 function searchFormComponent() {
 	return {
-		fromLang: localStorage.fromLang || '*guid',
+		fromLang: localStorage.fromLang || '*id',
 		toLang: '',
 		query: '',
         
@@ -136,10 +136,10 @@ function searchFormComponent() {
 			localStorage.fromLang = this.fromLang;
 			localStorage.toLang = this.toLang;
 
-			// If GUID is selected, redirect to the GUID page. Otherwise, let the form normally submit.
-			if (this.fromLang === '*guid') {
+			// If id is selected, redirect to the id page. Otherwise, let the form normally submit.
+			if (this.fromLang === '*id') {
 				e.preventDefault();
-				document.location.href = `${_urls.admin}/search?guid=${this.query}`;
+				document.location.href = `${_urls.admin}/search?id=${this.query}`;
 			}
 		}
 	}
@@ -147,7 +147,7 @@ function searchFormComponent() {
 
 function searchResultsComponent() {
 	return {
-		guid: null,
+		id: null,
 		query: null,
 		fromLang: null,
 		toLang: null,
@@ -155,7 +155,7 @@ function searchResultsComponent() {
 		entries: [],
 		hasEntryReordered: {},
 
-		// entryi-guid -> { changedRels{}, originalOrder[] }
+		// entry-id -> { changedRels{}, originalOrder[] }
 		order: {},
 		hasRelReordered: {},
 
@@ -166,11 +166,11 @@ function searchResultsComponent() {
 		onSearch() {
 			// Query params.
 			const q = new URLSearchParams(document.location.search);
-			[this.guid, this.query, this.fromLang, this.toLang] = [q.get("guid"), q.get("query"), q.get("from_lang"), q.get("to_lang")];
+			[this.id, this.query, this.fromLang, this.toLang] = [q.get("id"), q.get("query"), q.get("from_lang"), q.get("to_lang")];
 
-			// Fetch one entry buy GUID.
-			if (this.guid) {
-				this.api('entries.get', `/entries/${this.guid}`).then((data) => {
+			// Fetch one entry by id.
+			if (this.id) {
+				this.api('entries.get', `/entries/${this.id}`).then((data) => {
 					this.entries = [data];
 				})
 			} else if (this.fromLang && this.query) {
@@ -194,33 +194,33 @@ function searchResultsComponent() {
 				return;
 			}
 
-			if (!this.order.hasOwnProperty(entry.guid)) {
-				this.order[entry.guid] = { original: [...entry.relations], changedRels: {} }
+			if (!this.order.hasOwnProperty(entry.id)) {
+				this.order[entry.id] = { original: [...entry.relations], changedRels: {} }
 			}
 
-			this.order[entry.guid].changedRels[rel.guid] = true;
+			this.order[entry.id].changedRels[rel.id] = true;
 			const i = entry.relations.splice(n, 1)[0];
 			entry.relations.splice(n + d, 0, i);
 		},
 
 		onResetRelationOrder(entry) {
-			entry.relations = [...this.order[entry.guid].original];
-			delete (this.order[entry.guid]);
+			entry.relations = [...this.order[entry.id].original];
+			delete (this.order[entry.id]);
 		},
 
 		onSaveRelationOrder(entry) {
 			const ids = entry.relations.map((r) => r.relation.id);
-			this.api('entries.reorder', `/entries/${entry.guid}/relations/weights`, 'PUT', ids).then(() => {
-				delete (this.order[entry.guid]);
+			this.api('entries.reorder', `/entries/${entry.id}/relations/weights`, 'PUT', ids).then(() => {
+				delete (this.order[entry.id]);
 			});
 		},
 
-		onDetatchRelation(fromGuid, toGuid) {
+		onDetatchRelation(fromId, toId) {
 			if (!confirm("Detatch this definition from the above entry? It will not be deleted from the database and may still be attached to other entries.")) {
 				return;
 			}
 
-			this.api('relations.detatch', `/entries/${fromGuid}/relations/${toGuid}`, 'DELETE').then(() => this.onSearch());
+			this.api('relations.detatch', `/entries/${fromId}/relations/${toId}`, 'DELETE').then(() => this.onSearch());
 		},
 
 		onEditEntry(entry, parent) {
@@ -243,18 +243,18 @@ function searchResultsComponent() {
 			});
 		},
 
-		onDeleteEntry(guid) {
+		onDeleteEntry(id) {
 			if (!confirm("Delete this entry? The definitions are not deleted and may be attached to other entries.")) {
 				return;
 			}
-			this.api('entries.delete', `/entries/${guid}`, 'DELETE').then(() => this.onSearch());
+			this.api('entries.delete', `/entries/${id}`, 'DELETE').then(() => this.onSearch());
 		},
 
-		onDeleteRelationEntry(guid) {
+		onDeleteRelationEntry(id) {
 			if (!confirm("Delete this entry? It will be deleted from all entries in the database it may be attached to.")) {
 				return;
 			}
-			this.api('relations.delete', `/entries/${guid}`, 'DELETE').then(() => this.onSearch());
+			this.api('relations.delete', `/entries/${id}`, 'DELETE').then(() => this.onSearch());
 		}
 	}
 }
@@ -281,7 +281,7 @@ function entryComponent() {
 				tokens: data.tokens.split(' ').join('\n')
 			};
 			this.parentEntries = [];
-			this.isNew = !this.entry.guid ? true : false;
+			this.isNew = !this.entry.id ? true : false;
 			this.isVisible = true;
 
 			this.$nextTick(() => {
@@ -289,7 +289,7 @@ function entryComponent() {
 			});
 
 			if (this.entry.parent) {
-				this.getParentEntries(this.entry.guid);
+				this.getParentEntries(this.entry.id);
 			}
 		},
 
@@ -327,10 +327,10 @@ function entryComponent() {
 			if (this.isNew) {
 				this.api('entries.create', `/entries`, 'POST', data).then((data) => {
 					this.onClose()
-					document.location.href = `${_urls.admin}/search?guid=${data.guid}`;
+					document.location.href = `${_urls.admin}/search?id=${data.id}`;
 				});
 			} else {
-				this.api('entries.update', `/entries/${this.entry.guid}`, 'PUT', data).then(() => this.onClose());
+				this.api('entries.update', `/entries/${this.entry.id}`, 'PUT', data).then(() => this.onClose());
 			}
 		},
 
@@ -340,14 +340,14 @@ function entryComponent() {
 				return;
 			}
 
-			this.api('entries.delete', `/entries/${this.entry.guid}`, 'DELETE').then(() => {
+			this.api('entries.delete', `/entries/${this.entry.id}`, 'DELETE').then(() => {
 				this.onClose();
 			});
 		},
 
 
-		getParentEntries(guid) {
-			this.api('entries.getParents', `/entries/${guid}/parents`).then((data) => {
+		getParentEntries(id) {
+			this.api('entries.getParents', `/entries/${id}/parents`).then((data) => {
 				this.parentEntries = data;
 			});
 		}
@@ -384,7 +384,7 @@ function relationComponent() {
 				notes: this.entry.relation.notes
 			};
 
-			this.api('relations.update', `/entries/${this.entry.parent.guid}/relations/${this.entry.relation.id}`, 'PUT', data).then(() => {
+			this.api('relations.update', `/entries/${this.entry.parent.id}/relations/${this.entry.relation.id}`, 'PUT', data).then(() => {
 				this.onClose();
 				this.$dispatch('search');
 			});
@@ -416,7 +416,7 @@ function definitionComponent() {
 		},
 
 		onSave() {
-			const data = {
+			const params = {
 				content: this.def.content,
 				initial: this.def.content[0].toUpperCase(),
 				lang: this.def.lang,
@@ -426,14 +426,14 @@ function definitionComponent() {
 			};
 
 			// Insert the definition entry first.
-			this.api(`/entries`, 'POST', data).then((data) => {
+			this.api('entries.create', `/entries`, 'POST', params).then((data) => {
 				// Add the relation.
 				const rel = {
 					types: this.def.types,
 					tags: linesToList(this.def.tags),
 					notes: this.def.notes,
 				};
-				api('relations.add', `/entries/${this.parent.guid}/relations/${data.guid}`, 'POST', rel).then(() => {
+				this.api('relations.add', `/entries/${this.parent.id}/relations/${data.id}`, 'POST', rel).then(() => {
 					this.$dispatch('search');
 					this.onClose();
 				});

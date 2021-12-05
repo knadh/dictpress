@@ -90,11 +90,11 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 // handleGetEntry returns an entry by its guid.
 func handleGetEntry(w http.ResponseWriter, r *http.Request) {
 	var (
-		app  = r.Context().Value("app").(*App)
-		guid = chi.URLParam(r, "guid")
+		app   = r.Context().Value("app").(*App)
+		id, _ = strconv.Atoi(chi.URLParam(r, "id"))
 	)
 
-	e, err := app.data.GetEntry(guid)
+	e, err := app.data.GetEntry(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			sendErrorResponse("entry not found", http.StatusBadRequest, nil, w)
@@ -119,11 +119,11 @@ func handleGetEntry(w http.ResponseWriter, r *http.Request) {
 // handleGetParentEntries returns the parent entries of an entry by its guid.
 func handleGetParentEntries(w http.ResponseWriter, r *http.Request) {
 	var (
-		app  = r.Context().Value("app").(*App)
-		guid = chi.URLParam(r, "guid")
+		app   = r.Context().Value("app").(*App)
+		id, _ = strconv.Atoi(chi.URLParam(r, "id"))
 	)
 
-	out, err := app.data.GetParentEntries(guid)
+	out, err := app.data.GetParentEntries(id)
 	if err != nil {
 		sendErrorResponse(err.Error(), http.StatusInternalServerError, nil, w)
 		return

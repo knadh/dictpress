@@ -29,7 +29,7 @@
 			<fieldset class="row">
 				<div class="column four">
 	    			<select name="from_lang" x-model="fromLang">
-	    				<option value="*guid">*GUID</option>
+	    				<option value="*id">*ID</option>
 					    <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
 					      <option :value="id" x-text="l.name" x-bind:selected="id === fromLang"></option>
 					    </template>
