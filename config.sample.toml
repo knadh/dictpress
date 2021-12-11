@@ -1,6 +1,6 @@
 [app]
 # Network address for the server to listen on.
-address = ":8080"
+address = ":9000"
 
 # The website URL to be used on the frontend pages.
 # Example: yourdictionary.site.com
