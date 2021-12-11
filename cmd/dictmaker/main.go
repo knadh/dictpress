@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"net/http"
 	"os"
 
-	"github.com/go-chi/chi"
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictmaker/internal/data"
 	"github.com/knadh/goyesql"
@@ -43,8 +41,8 @@ type constants struct {
 // passed around, especially through HTTP handlers.
 type App struct {
 	constants  constants
-	siteTpl    *template.Template
 	adminTpl   *template.Template
+	siteTpl    *template.Template
 	db         *sqlx.DB
 	queries    *data.Queries
 	data       *data.Data
@@ -113,11 +111,11 @@ func init() {
 
 func main() {
 	// Connect to the DB.
-	db := initDB(ko.String("db.host"),
-		ko.Int("db.port"),
-		ko.String("db.user"),
-		ko.String("db.password"),
-		ko.String("db.db"),
+	db := initDB(ko.MustString("db.host"),
+		ko.MustInt("db.port"),
+		ko.MustString("db.user"),
+		ko.MustString("db.password"),
+		ko.MustString("db.db"),
 	)
 	defer db.Close()
 
@@ -125,7 +123,7 @@ func main() {
 	app := &App{
 		constants: constants{
 			Site:    ko.String("site"),
-			RootURL: ko.String("app.root_url"),
+			RootURL: ko.MustString("app.root_url"),
 		},
 		db:     db,
 		fs:     initFS(),
@@ -156,7 +154,7 @@ func main() {
 		logger.Fatalf("no SQL queries loaded: %v", err)
 	}
 
-	// Language configuration.
+	// Load language config.
 	langs := initLangs(ko)
 	if len(langs) == 0 {
 		logger.Fatal("0 languages in config")
@@ -165,36 +163,43 @@ func main() {
 	app.data = data.New(&q, langs)
 	app.queries = &q
 
-	// Pagination.
-	o := paginator.Default()
-	o.DefaultPerPage = ko.MustInt("results.default_per_page")
-	o.MaxPerPage = ko.MustInt("results.max_per_page")
-	o.NumPageNums = ko.MustInt("results.num_page_nums")
-	app.resultsPg = paginator.New(o)
+	// Result paginators.
+	app.resultsPg = paginator.New(paginator.Opt{
+		DefaultPerPage: ko.MustInt("results.default_per_page"),
+		MaxPerPage:     ko.MustInt("results.max_per_page"),
+		NumPageNums:    ko.MustInt("results.num_page_nums"),
+		PageParam:      "page", PerPageParam: "PerPageParam",
+	})
+	app.glossaryPg = paginator.New(paginator.Opt{
+		DefaultPerPage: ko.MustInt("glossary.default_per_page"),
+		MaxPerPage:     ko.MustInt("glossary.max_per_page"),
+		NumPageNums:    ko.MustInt("glossary.num_page_nums"),
+		PageParam:      "page", PerPageParam: "PerPageParam",
+	})
 
-	o.DefaultPerPage = ko.MustInt("glossary.default_per_page")
-	o.MaxPerPage = ko.MustInt("glossary.max_per_page")
-	o.NumPageNums = ko.MustInt("glossary.num_page_nums")
-	app.glossaryPg = paginator.New(o)
+	// Load admin HTML templates.
+	app.adminTpl = initAdminTemplates(app)
 
-	// Load admin theme.
-	app.adminTpl = initAdminTemplates("admin")
+	// Initialize the echo HTTP server.
+	srv := initHTTPServer(app)
 
-	// Load site theme.
+	// Load optional HTML website.
 	if app.constants.Site != "" {
-		logger.Printf("loading site theme: %v", app.constants.Site)
-
-		t, err := loadSiteTheme(app.constants.Site, ko.Bool("app.enable_pages"))
+		logger.Printf("loading site theme: %s", app.constants.Site)
+		t, err := loadSite(app.constants.Site, ko.Bool("app.enable_pages"))
 		if err != nil {
 			logger.Fatalf("error loading site theme: %v", err)
 		}
 
+		// Attach HTML template renderer.
 		app.siteTpl = t
+		srv.Renderer = &tplRenderer{
+			tpls:    t,
+			RootURL: app.constants.RootURL}
 	}
 
-	// Start the HTTP server.
-	r := chi.NewRouter()
-	initHandlers(r, app)
-	logger.Println("listening on", ko.String("app.address"))
-	logger.Fatal(http.ListenAndServe(ko.String("app.address"), r))
+	logger.Printf("starting server on %s", ko.MustString("app.address"))
+	if err := srv.Start(ko.MustString("app.address")); err != nil {
+		logger.Fatalf("error starting HTTP server: %v", err)
+	}
 }

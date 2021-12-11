@@ -6,18 +6,15 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictmaker/internal/data"
 	"github.com/knadh/dictmaker/tokenizers/indicphone"
 	"github.com/knadh/koanf"
 	"github.com/knadh/stuffbin"
+	"github.com/labstack/echo/v4"
 )
 
 // initDB initializes a database connection.
@@ -53,59 +50,24 @@ func initFS() stuffbin.FileSystem {
 		"config.toml.sample",
 		"queries.sql",
 		"schema.sql",
+		"admin",
 	}
 
 	fs, err = stuffbin.NewLocalFS("/", files...)
 	if err != nil {
-		logger.Fatalf("failed to initialize local file for assets: %v", err)
+		logger.Fatalf("failed to load local static files: %v", err)
 	}
 
 	return fs
 }
 
-// loadSiteTheme loads a theme from a directory.
-func loadSiteTheme(path string, loadPages bool) (*template.Template, error) {
-	t := template.New("theme")
-
-	// Helper functions.
-	t = t.Funcs(template.FuncMap{"JoinStrings": strings.Join})
-	t = t.Funcs(template.FuncMap{"ToUpper": strings.ToUpper})
-	t = t.Funcs(template.FuncMap{"ToLower": strings.ToLower})
-	t = t.Funcs(template.FuncMap{"Title": strings.Title})
-
-	// Go percentage encodes unicode characters printed in <a href>,
-	// but the encoded values are in lowercase hex (for some reason)
-	// See: https://github.com/golang/go/issues/33596
-	t = t.Funcs(template.FuncMap{"UnicodeURL": func(s string) template.URL {
-		return template.URL(url.PathEscape(s))
-	}})
-
-	_, err := t.ParseGlob(path + "/*.html")
+func initAdminTemplates(app *App) *template.Template {
+	// Init admin templates.
+	tpls, err := stuffbin.ParseTemplatesGlob(nil, app.fs, "/admin/*.html")
 	if err != nil {
-		return t, err
+		logger.Fatalf("error parsing e-mail notif templates: %v", err)
 	}
-
-	// Load arbitrary pages from (site_dir/pages/*.html).
-	// For instance, "about" for site_dir/pages/about.html will be
-	// rendered on site.com/pages/about where the template is defined
-	// with the name {{ define "page-about" }}. All template name definitions
-	// should be "page-*".
-	if loadPages {
-		if _, err := t.ParseGlob(path + "/pages/*.html"); err != nil {
-			return t, err
-		}
-	}
-
-	return t, nil
-}
-
-// initAdminTemplates loads admin UI HTML templates.
-func initAdminTemplates(path string) *template.Template {
-	t, err := template.New("admin").ParseGlob(path + "/*.html")
-	if err != nil {
-		logger.Fatalf("error loading admin templates: %v", err)
-	}
-	return t
+	return tpls
 }
 
 // initTokenizers initializes all bundled tokenizers.
@@ -115,49 +77,67 @@ func initTokenizers() map[string]data.Tokenizer {
 	}
 }
 
-// initHandlers registers HTTP handlers.
-func initHandlers(r *chi.Mux, app *App) {
-	r.Use(middleware.StripSlashes)
+func initHTTPServer(app *App) *echo.Echo {
+	srv := echo.New()
+	srv.HideBanner = true
+
+	// Register app (*App) to be injected into all HTTP handlers.
+	srv.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Set("app", app)
+			return next(c)
+		}
+	})
+
+	var (
+		// Public and admin handler groups.
+		p = srv.Group("")
+		a = srv.Group("")
+	)
 
 	// Dictionary site HTML views.
 	if app.constants.Site != "" {
-		r.Get("/", wrap(app, handleIndexPage))
-		r.Get("/dictionary/{fromLang}/{toLang}/{q}", wrap(app, handleSearchPage))
-		r.Get("/dictionary/{fromLang}/{toLang}", wrap(app, handleGlossaryPage))
-		r.Get("/glossary/{fromLang}/{toLang}/{initial}", wrap(app, handleGlossaryPage))
-		r.Get("/glossary/{fromLang}/{toLang}", wrap(app, handleGlossaryPage))
-		r.Get("/pages/{page}", wrap(app, handleStaticPage))
+		p.GET("/", handleIndexPage)
+		p.GET("/dictionary/:fromLang/:toLang/:q", handleSearchPage)
+		p.GET("/dictionary/:fromLang/:toLang", handleGlossaryPage)
+		p.GET("/glossary/:fromLang/:toLang/:initial", handleGlossaryPage)
+		p.GET("/glossary/:fromLang/:toLang", handleGlossaryPage)
+		p.GET("/pages/:page", handleStaticPage)
 
 		// Static files.
 		fs := http.StripPrefix("/static", http.FileServer(
 			http.Dir(filepath.Join(app.constants.Site, "static"))))
-		r.Get("/static/*", fs.ServeHTTP)
+		srv.GET("/static/*", echo.WrapHandler(fs))
+
 	} else {
 		// API greeting if there's no site.
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			sendResponse("welcome to dictmaker", http.StatusOK, w)
+		p.GET("/", func(c echo.Context) error {
+			return c.JSON(http.StatusOK, okResp{"welcome"})
 		})
 	}
 
-	// Admin handlers.
-	r.Get("/admin/static/*", http.StripPrefix("/admin/static", http.FileServer(http.Dir("admin/static"))).ServeHTTP)
-	r.Get("/admin", wrap(app, adminPage("index")))
-	r.Get("/admin/search", wrap(app, adminPage("search")))
-	r.Get("/admin/entries/{id}", wrap(app, adminPage("entry")))
+	// Public APIs.
+	p.GET("/api/config", handleGetConfig)
+	p.GET("/api/dictionary/:fromLang/:toLang/:q", handleSearch)
 
-	// APIs.
-	r.Get("/api/config", wrap(app, handleGetConfig))
-	r.Get("/api/stats", wrap(app, handleGetStats))
-	r.Post("/api/entries", wrap(app, handleInsertEntry))
-	r.Get("/api/entries/{id}", wrap(app, handleGetEntry))
-	r.Get("/api/entries/{id}/parents", wrap(app, handleGetParentEntries))
-	r.Delete("/api/entries/{id}", wrap(app, handleDeleteEntry))
-	r.Delete("/api/entries/{fromID}/relations/{toID}", wrap(app, handleDeleteRelation))
-	r.Post("/api/entries/{fromID}/relations/{toID}", wrap(app, handleAddRelation))
-	r.Put("/api/entries/{id}/relations/weights", wrap(app, handleReorderRelations))
-	r.Put("/api/entries/{id}/relations/{relID}", wrap(app, handleUpdateRelation))
-	r.Put("/api/entries/{id}", wrap(app, handleUpdateEntry))
-	r.Get("/api/dictionary/{fromLang}/{toLang}/{q}", wrap(app, handleSearch))
+	// Admin handlers and APIs.
+	a.Static("/admin/static/*", "admin/static")
+	a.GET("/admin", adminPage("index"))
+	a.GET("/admin/search", adminPage("search"))
+	a.GET("/admin/entries/:id", adminPage("entry"))
+
+	a.GET("/api/stats", handleGetStats)
+	a.POST("/api/entries", handleInsertEntry)
+	a.GET("/api/entries/:id", handleGetEntry)
+	a.GET("/api/entries/:id/parents", handleGetParentEntries)
+	a.DELETE("/api/entries/:id", handleDeleteEntry)
+	a.DELETE("/api/entries/:fromID/relations/:toID", handleDeleteRelation)
+	a.POST("/api/entries/:fromID/relations/:toID", handleAddRelation)
+	a.PUT("/api/entries/:id/relations/weights", handleReorderRelations)
+	a.PUT("/api/entries/:id/relations/:relID", handleUpdateRelation)
+	a.PUT("/api/entries/:id", handleUpdateEntry)
+
+	return srv
 }
 
 // initLangs loads language configuration into a given *App instance.

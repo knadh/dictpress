@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,14 +9,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-chi/chi"
 	"github.com/knadh/dictmaker/internal/data"
+	"github.com/labstack/echo/v4"
 )
 
 // handleGetConfig returns the language configuration.
-func handleGetConfig(w http.ResponseWriter, r *http.Request) {
+func handleGetConfig(c echo.Context) error {
 	var (
-		app = r.Context().Value("app").(*App)
+		app = c.Get("app").(*App)
 	)
 
 	out := struct {
@@ -24,197 +25,165 @@ func handleGetConfig(w http.ResponseWriter, r *http.Request) {
 		Version   string       `json:"version"`
 	}{app.constants.RootURL, app.data.Langs, buildString}
 
-	sendResponse(out, http.StatusOK, w)
+	return c.JSON(http.StatusOK, okResp{out})
 }
 
 // handleGetStats returns DB statistics.
-func handleGetStats(w http.ResponseWriter, r *http.Request) {
+func handleGetStats(c echo.Context) error {
 	var (
-		app = r.Context().Value("app").(*App)
+		app = c.Get("app").(*App)
 	)
 
 	out, err := app.data.GetStats()
 	if err != nil {
-		sendErrorResponse(err.Error(), http.StatusInternalServerError, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	sendResponse(out, http.StatusOK, w)
-}
-
-func handleAdminEntryPage(w http.ResponseWriter, r *http.Request) {
-	var (
-		app = r.Context().Value("app").(*App)
-	)
-
-	sendTpl(http.StatusOK, "entry", app.adminTpl, nil, w)
+	return c.JSON(http.StatusOK, okResp{out})
 }
 
 // handleInsertEntry inserts a new dictionary entry.
-func handleInsertEntry(w http.ResponseWriter, r *http.Request) {
-	var (
-		app = r.Context().Value("app").(*App)
-	)
+func handleInsertEntry(c echo.Context) error {
+	app := c.Get("app").(*App)
 
 	var e data.Entry
-	if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
-		sendErrorResponse(fmt.Sprintf("error parsing request: %v", err), http.StatusBadRequest, nil, w)
-		return
+	if err := c.Bind(&e); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			fmt.Sprintf("error parsing request: %v", err))
 	}
 
 	if err := validateEntry(e); err != nil {
-		sendErrorResponse(err.Error(), http.StatusBadRequest, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	id, err := app.data.InsertEntry(e)
 	if err != nil {
-		sendErrorResponse(fmt.Sprintf("error inserting entry: %v", err), http.StatusInternalServerError, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error inserting entry: %v", err))
 	}
 
 	// Proxy to the get request to respond with the newly inserted entry.
-	ctx := chi.RouteContext(r.Context())
-	ctx.URLParams.Keys = append(ctx.URLParams.Keys, "id")
-	ctx.URLParams.Values = append(ctx.URLParams.Values, fmt.Sprintf("%d", id))
-
-	handleGetEntry(w, r)
+	c.SetParamNames("id")
+	c.SetParamValues(fmt.Sprintf("%d", id))
+	return handleGetEntry(c)
 }
 
 // handleUpdateEntry updates a dictionary entry.
-func handleUpdateEntry(w http.ResponseWriter, r *http.Request) {
+func handleUpdateEntry(c echo.Context) error {
 	var (
-		app   = r.Context().Value("app").(*App)
-		id, _ = strconv.Atoi(chi.URLParam(r, "id"))
+		app   = c.Get("app").(*App)
+		id, _ = strconv.Atoi(c.Param("id"))
 	)
 
 	var e data.Entry
-	if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
-		sendErrorResponse(fmt.Sprintf("error parsing request: %v", err), http.StatusBadRequest, nil, w)
-		return
+	if err := c.Bind(&e); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			fmt.Sprintf("error parsing request: %v", err))
 	}
 
 	if err := app.data.UpdateEntry(id, e); err != nil {
-		sendErrorResponse(fmt.Sprintf("error updating entry: %v", err), http.StatusInternalServerError, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error updating entry: %v", err))
 	}
 
-	sendResponse(app.data.Langs, http.StatusOK, w)
+	// Proxy to the get request to respond with the newly inserted entry.
+	c.SetParamNames("id")
+	c.SetParamValues(fmt.Sprintf("%d", id))
+	return handleGetEntry(c)
 }
 
 // handleDeleteEntry deletes a dictionary entry.
-func handleDeleteEntry(w http.ResponseWriter, r *http.Request) {
+func handleDeleteEntry(c echo.Context) error {
 	var (
-		app   = r.Context().Value("app").(*App)
-		id, _ = strconv.Atoi(chi.URLParam(r, "id"))
+		app   = c.Get("app").(*App)
+		id, _ = strconv.Atoi(c.Param("id"))
 	)
 
 	if err := app.data.DeleteEntry(id); err != nil {
-		sendErrorResponse(fmt.Sprintf("error deleting entry: %v", err), http.StatusInternalServerError, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error deleting entry: %v", err))
 	}
 
-	sendResponse(true, http.StatusOK, w)
+	return c.JSON(http.StatusOK, okResp{true})
 }
 
 // handleAddRelation updates a relation's properties.
-func handleAddRelation(w http.ResponseWriter, r *http.Request) {
+func handleAddRelation(c echo.Context) error {
 	var (
-		app       = r.Context().Value("app").(*App)
-		fromID, _ = strconv.Atoi(chi.URLParam(r, "fromID"))
-		toID, _   = strconv.Atoi(chi.URLParam(r, "toID"))
+		app       = c.Get("app").(*App)
+		fromID, _ = strconv.Atoi(c.Param("fromID"))
+		toID, _   = strconv.Atoi(c.Param("toID"))
 	)
 
 	var rel data.Relation
-	if err := json.NewDecoder(r.Body).Decode(&rel); err != nil {
-		sendErrorResponse(fmt.Sprintf("error parsing request: %v", err), http.StatusBadRequest, nil, w)
-		return
+	if err := c.Bind(&rel); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			fmt.Sprintf("error parsing request: %v", err))
 	}
 
 	if err := app.data.InsertRelation(fromID, toID, rel); err != nil {
-		sendErrorResponse(fmt.Sprintf("error updating relation: %v", err), http.StatusInternalServerError, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error inserting relation: %v", err))
 	}
 
-	sendResponse(app.data.Langs, http.StatusOK, w)
+	return c.JSON(http.StatusOK, okResp{true})
 }
 
 // handleUpdateRelation updates a relation's properties.
-func handleUpdateRelation(w http.ResponseWriter, r *http.Request) {
+func handleUpdateRelation(c echo.Context) error {
 	var (
-		app      = r.Context().Value("app").(*App)
-		relID, _ = strconv.Atoi(chi.URLParam(r, "relID"))
+		app      = c.Get("app").(*App)
+		relID, _ = strconv.Atoi(c.Param("relID"))
 	)
 
 	var rel data.Relation
-	if err := json.NewDecoder(r.Body).Decode(&rel); err != nil {
-		sendErrorResponse(fmt.Sprintf("error parsing request: %v", err), http.StatusBadRequest, nil, w)
-		return
+	if err := c.Bind(&rel); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			fmt.Sprintf("error parsing request: %v", err))
 	}
 
 	if err := app.data.UpdateRelation(relID, rel); err != nil {
-		sendErrorResponse(fmt.Sprintf("error updating relation: %v", err), http.StatusInternalServerError, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error updating relation: %v", err))
 	}
 
-	sendResponse(app.data.Langs, http.StatusOK, w)
+	return c.JSON(http.StatusOK, okResp{true})
 }
 
 // handleReorderRelations reorders the weights of the relation IDs in the given order.
-func handleReorderRelations(w http.ResponseWriter, r *http.Request) {
+func handleReorderRelations(c echo.Context) error {
 	var (
-		app = r.Context().Value("app").(*App)
+		app = c.Get("app").(*App)
 	)
 
-	// ids := struct {
-	// 	IDs []int `json:ids`
-	// }{}
 	var ids []int
-	if err := json.NewDecoder(r.Body).Decode(&ids); err != nil {
-		sendErrorResponse(fmt.Sprintf("error parsing request: %v", err), http.StatusBadRequest, nil, w)
-		return
+	if err := json.NewDecoder(c.Request().Body).Decode(&ids); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			fmt.Sprintf("error parsing request: %v", err))
 	}
 
 	if err := app.data.ReorderRelations(ids); err != nil {
-		sendErrorResponse(fmt.Sprintf("error reordering relations: %v", err), http.StatusInternalServerError, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error updating relation: %v", err))
 	}
 
-	sendResponse(true, http.StatusOK, w)
+	return c.JSON(http.StatusOK, okResp{true})
 }
 
 // handleDeleteRelation deletes a relation between two entres.
-func handleDeleteRelation(w http.ResponseWriter, r *http.Request) {
+func handleDeleteRelation(c echo.Context) error {
 	var (
-		app       = r.Context().Value("app").(*App)
-		fromID, _ = strconv.Atoi(chi.URLParam(r, "fromID"))
-		toID, _   = strconv.Atoi(chi.URLParam(r, "toID"))
+		app       = c.Get("app").(*App)
+		fromID, _ = strconv.Atoi(c.Param("fromID"))
+		toID, _   = strconv.Atoi(c.Param("toID"))
 	)
 
 	if err := app.data.DeleteRelation(fromID, toID); err != nil {
-		sendErrorResponse(fmt.Sprintf("error deleting entry: %v", err), http.StatusInternalServerError, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error deleting relation: %v", err))
 	}
 
-	sendResponse(true, http.StatusOK, w)
-}
-
-func adminPage(tpl string) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var (
-			app = r.Context().Value("app").(*App)
-		)
-
-		title := ""
-		switch tpl {
-		case "search":
-			title = fmt.Sprintf("Search '%s'", r.URL.Query().Get("query"))
-		}
-
-		sendTpl(http.StatusOK, tpl, app.adminTpl, struct {
-			Title string
-		}{title}, w)
-	})
+	return c.JSON(http.StatusOK, okResp{true})
 }
 
 func validateEntry(e data.Entry) error {
@@ -229,4 +198,28 @@ func validateEntry(e data.Entry) error {
 	}
 
 	return nil
+}
+
+// handleAdminPage is the root handler that renders the Javascript admin frontend.
+func adminPage(tpl string) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		app := c.Get("app").(*App)
+
+		title := ""
+		switch tpl {
+		case "search":
+			title = fmt.Sprintf("Search '%s'", c.Request().URL.Query().Get("query"))
+		}
+
+		b := &bytes.Buffer{}
+		err := app.adminTpl.ExecuteTemplate(b, tpl, struct {
+			Title string
+		}{title})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError,
+				fmt.Sprintf("error compiling template: %v", err))
+		}
+
+		return c.HTMLBlob(http.StatusOK, b.Bytes())
+	}
 }

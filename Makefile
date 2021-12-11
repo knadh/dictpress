@@ -2,7 +2,7 @@ LAST_COMMIT := $(shell git rev-parse --short HEAD)
 VERSION := $(shell git describe --tags --abbrev=0)
 BUILDSTR := ${VERSION} (\#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
 
-STATIC := config.toml.sample schema.sql queries.sql
+STATIC := config.toml.sample schema.sql queries.sql admin
 BIN := dictmaker
 
 # Install dependencies needed for building
@@ -20,7 +20,7 @@ run:
 
 # Compile bin and bundle static assets.
 .PHONY: dist
-dist: build build-tokenizers
+dist: build
 	stuffbin -a stuff -in ${BIN} -out ${BIN} ${STATIC}
 
 # pack-releases runn stuffbin packing on the given binary. This is used

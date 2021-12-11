@@ -86,6 +86,7 @@ type Query struct {
 // Entry represents a dictionary entry.
 type Entry struct {
 	ID        int            `json:"id" db:"id"`
+	GUID      string         `json:"guid" db:"guid"`
 	Weight    float64        `json:"weight" db:"weight"`
 	Initial   string         `json:"initial" db:"initial"`
 	Lang      string         `json:"lang" db:"lang"`

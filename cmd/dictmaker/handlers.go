@@ -2,18 +2,16 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/go-chi/chi"
 	"github.com/knadh/dictmaker/internal/data"
 	"github.com/knadh/paginator"
+	"github.com/labstack/echo/v4"
 )
 
 // Results represents a set of results.
@@ -48,10 +46,8 @@ type httpResp struct {
 }
 
 // handleSearch performs a search and responds with JSON results.
-func handleSearch(w http.ResponseWriter, r *http.Request) {
-	app, _ := r.Context().Value("app").(*App)
-
-	_, out, err := doSearch(r, app)
+func handleSearch(c echo.Context) error {
+	_, out, err := doSearch(c)
 	if err != nil {
 		var s int
 
@@ -62,80 +58,73 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 			s = http.StatusInternalServerError
 		}
 
-		sendErrorResponse(err.Error(), s, nil, w)
-		return
+		return echo.NewHTTPError(s, err.Error())
 	}
 
-	sendResponse(out, http.StatusOK, w)
+	return c.JSON(http.StatusOK, okResp{out})
 }
 
 // handleGetEntry returns an entry by its guid.
-func handleGetEntry(w http.ResponseWriter, r *http.Request) {
+func handleGetEntry(c echo.Context) error {
 	var (
-		app   = r.Context().Value("app").(*App)
-		id, _ = strconv.Atoi(chi.URLParam(r, "id"))
+		app   = c.Get("app").(*App)
+		id, _ = strconv.Atoi(c.Param("id"))
 	)
 
 	e, err := app.data.GetEntry(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			sendErrorResponse("entry not found", http.StatusBadRequest, nil, w)
-			return
+			return echo.NewHTTPError(http.StatusBadRequest, "entry not found")
 		}
 
-		sendErrorResponse(err.Error(), http.StatusInternalServerError, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	e.Relations = make(data.Entries, 0)
 
 	entries := data.Entries{e}
 	if err := entries.SearchAndLoadRelations(data.Query{}, app.queries.SearchRelations); err != nil {
-		app.logger.Printf("error querying db for defs: %v", err)
-		sendErrorResponse(fmt.Sprintf("error loading relations: %v", err), http.StatusBadRequest, nil, w)
+		app.logger.Printf("error loading relations: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "error loading relations")
 	}
 
-	sendResponse(entries[0], http.StatusOK, w)
+	return c.JSON(http.StatusOK, okResp{entries[0]})
 }
 
 // handleGetParentEntries returns the parent entries of an entry by its guid.
-func handleGetParentEntries(w http.ResponseWriter, r *http.Request) {
+func handleGetParentEntries(c echo.Context) error {
 	var (
-		app   = r.Context().Value("app").(*App)
-		id, _ = strconv.Atoi(chi.URLParam(r, "id"))
+		app   = c.Get("app").(*App)
+		id, _ = strconv.Atoi(c.Param("id"))
 	)
 
 	out, err := app.data.GetParentEntries(id)
 	if err != nil {
-		sendErrorResponse(err.Error(), http.StatusInternalServerError, nil, w)
-		return
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	sendResponse(out, http.StatusOK, w)
+	return c.JSON(http.StatusOK, okResp{out})
 }
 
 // doSearch is a helper function that takes an HTTP query context,
 // gets search params from it, performs a search and returns results.
-func doSearch(r *http.Request, app *App) (data.Query, *Results, error) {
+func doSearch(c echo.Context) (data.Query, *Results, error) {
 	var (
-		fromLang = chi.URLParam(r, "fromLang")
-		toLang   = chi.URLParam(r, "toLang")
-		q        = strings.TrimSpace(chi.URLParam(r, "q"))
+		app = c.Get("app").(*App)
 
-		qp  = r.URL.Query()
-		pg  = app.resultsPg.NewFromURL(r.URL.Query())
+		fromLang = c.Param("fromLang")
+		toLang   = c.Param("toLang")
+		q        = strings.TrimSpace(c.Param("q"))
+
+		qp  = c.Request().URL.Query()
+		pg  = app.resultsPg.NewFromURL(qp)
 		out = &Results{}
 	)
-
-	if q == "" {
-		q = qp.Get("q")
-	}
 
 	q, err := url.QueryUnescape(q)
 	if err != nil {
 		return data.Query{}, nil, fmt.Errorf("error parsing query: %v", err)
 	}
-
 	q = strings.TrimSpace(q)
 
 	if _, ok := app.data.Langs[fromLang]; !ok {
@@ -262,40 +251,4 @@ func validateSearchQuery(q data.Query, langs data.LangMap) error {
 	}
 
 	return nil
-}
-
-// sendResponse sends a JSON envelope to the HTTP response.
-func sendResponse(data interface{}, status int, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-
-	out, err := json.Marshal(httpResp{Status: "success", Data: data})
-	if err != nil {
-		sendErrorResponse("Internal Server Error", http.StatusInternalServerError, nil, w)
-		return
-	}
-
-	_, _ = w.Write(out)
-}
-
-// sendTpl executes a template and writes the results to the HTTP response.
-func sendTpl(status int, tplName string, tpl *template.Template, data interface{}, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status)
-
-	_ = tpl.ExecuteTemplate(w, tplName, data)
-}
-
-// sendErrorResponse sends a JSON error envelope to the HTTP response.
-func sendErrorResponse(message string, status int, data interface{}, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-
-	resp := httpResp{Status: "error",
-		Message: message,
-		Data:    data}
-
-	out, _ := json.Marshal(resp)
-
-	_, _ = w.Write(out)
 }
