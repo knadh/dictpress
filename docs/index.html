@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>DictPress - Easily build and publish dictionary websites for any language</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="description" content="Webserver application for building and publishing dictionary websites" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+	<link href="https://fonts.googleapis.com/css?family=Inter:400,600" rel="stylesheet" defer />
+	<meta property="og:image" content="https://dict.press/static/images/thumb.png">
+	<link rel="stylesheet" type="text/css" href="static/style.css" />
+</head>
+<body>
+
+<div class="container">
+	<header class="header">
+		<div class="logo">
+			<a href="/"><img src="static/logo.png" alt="DictPress" /></a>
+		</div>
+		<nav class="nav">
+			<a href="docs#download">Download</a>
+			<a href="docs">Docs</a>
+			<a href="https://github.com/knadh/dictpress">GitHub</a>
+		</nav>
+	</header>
+	<section class="intro">
+		<h1><span>Build dictionary websites for any language</span></h1>
+
+		<p>
+			DictPress is a lightweight, standalone, single binary webserver application for building
+			and publishing fast, searchable dictionary websites for any language.
+			Free and Open Source.
+		</p>
+	</section>
+
+	<section>
+		<h2>Live dictionaries</h2>
+		<ul>
+			<li><a href="https://alar.ink">Alar</a>: Kannada-English dictionary</li>
+			<li><a href="https://olam.in">Olam</a>: English-Malayalam, Malayalam-Malayalam dictionary</li>
+		</ul>
+		<br />
+		<figure class="box">
+			<a href="https://olam.in"><img src="static/demo.png" alt="Screenshot of Olam"></a>
+			<figcaption>Screenshot of Olam (English-Malayalam) dictionary</figcaption>
+		</figure>
+	</section>
+
+	<section>
+		<h2>How it works</h2>
+		<p>DictPress is language agnostic and has no concept of language semantics.
+			It stores all data in a <a href="https://www.postgresql.org/">Postgres</a> database.
+			To make a universal dictionary interface possible,
+			it treats all dictionary entries as UTF-8 strings that can be searched with Postgres DB's fulltext capabilities
+			by storing <a href="https://www.postgresql.org/docs/10/datatype-textsearch.html#DATATYPE-TSVECTOR">tsvector</a>
+			tokens alongside them. The tokens that encode and make the entries searchable
+			can be anything&mdash;simple stemmed words or phonetic hashes like Metaphone.
+		</p>
+		<p>
+			Postgres comes with built-in tokenizers
+			for two dozen languages (<code>\dFd</code> to see the full list on psql).
+		</p>
+		For languages that do not have Postgres fulltext dictionaries, search tokens can be generated externally and plugged in.
+		For example, <a href="https://olam.in">Olam</a> uses <a href="https://github.com/knadh/mlphone">MLPhone</a>,
+		a simple Metaphone like phonetic hashing algorithm that allows Malayalam words in the dictionary to be searched
+		by how they sound.
+	</section>
+
+	<section>
+		<h2>Features</h2>
+		<ul dir="auto">
+			<li>HTTP/JSON APIs for everything.</li>
+			<li>Support for custom themes and templates to publish dictionary websites.</li>
+			<li>Paginated A-Z (or any alphabet for any language) glossaries.</li>
+			<li>Admin dashboard for managing and curating dictionary data.</li>
+			<li>Accept and moderate user submissions (new dictionary entries and corrections) from the dictionary website.</li>
+			<li>Generic entry-relation-entry structure for dictionary data in a Postgres database with just two tables (entries, relations).</li>
+			<li>Works with any language. Use built in Postgres tokenizers or plug in external tokenizers.</li>
+			<li>Store dictionaries for any number of languages in a single database.</li>
+			<li>Extremely light weight and fast.</li>
+		</ul>
+	</section>
+
+	<section>
+		<h2>Why?</h2>
+		<p>
+			Dictionaries are key to making languages accessible to all.
+			Every language should ideally have high quality, open source, easily accessible
+			dictionaries and datasets. That few languages in the world have this, is sad.
+		</p>
+		<p>
+			DictPress provides an easy means to publish online dictionaries whether one is a student,
+			linguist, university, or a government. The project hopes to see many more open dictionaries like Alar and Olam go online.
+		</p>
+		<p>See <a href="https://zerodha.tech/blog/alar-the-making-of-an-open-source-dictionary/">this article</a> for
+			historical context on the project.</p>
+	</section>
+
+	<section>
+		<h2>Logo</h2>
+		<p>
+			While the logo shows a key with a fingernail on it signifying publishing with a keypress,
+			it represents a printing press movable type
+			block of the <a href="https://en.wikipedia.org/wiki/Malayalam">Malayalam</a>
+			character <strong><code>മ</code></strong> (<em>ma</em>).
+		</p>
+	</section>
+
+	<section>
+		<h1>Getting started</h1>
+		<ol>
+			<li><a href="docs#download">Download</a> the latest version of DictPress.</li>
+			<li><a href="docs">Refer to the docs</a> for installation and usage instructions.</li>
+		</ol>
+	</section>
+</div>
+
+<footer>
+	<p><a href="https://nadh.in">Kailash Nadh</a> &copy; 2019-2021</p>
+</footer>
+
+</body>
+</html>
