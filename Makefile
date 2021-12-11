@@ -2,8 +2,8 @@ LAST_COMMIT := $(shell git rev-parse --short HEAD)
 VERSION := $(shell git describe --tags --abbrev=0)
 BUILDSTR := ${VERSION} (\#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
 
-STATIC := config.toml.sample schema.sql queries.sql admin
-BIN := dictmaker
+STATIC := config.sample.toml schema.sql queries.sql admin
+BIN := dictpress
 
 # Install dependencies needed for building
 .PHONY: deps

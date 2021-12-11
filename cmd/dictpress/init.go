@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/knadh/dictmaker/internal/data"
-	"github.com/knadh/dictmaker/tokenizers/indicphone"
+	"github.com/knadh/dictpress/internal/data"
+	"github.com/knadh/dictpress/tokenizers/indicphone"
 	"github.com/knadh/koanf"
 	"github.com/knadh/stuffbin"
 	"github.com/labstack/echo/v4"
@@ -47,7 +47,7 @@ func initFS() stuffbin.FileSystem {
 	logger.Printf("using local filesystem for static assets")
 
 	files := []string{
-		"config.toml.sample",
+		"config.sample.toml",
 		"queries.sql",
 		"schema.sql",
 		"admin",

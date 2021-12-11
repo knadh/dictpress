@@ -1,4 +1,4 @@
-module github.com/knadh/dictmaker
+module github.com/knadh/dictpress
 
 go 1.17
 

@@ -1,7 +1,6 @@
-# dictmaker
-![dictmaker](https://user-images.githubusercontent.com/547147/63648814-ade19a80-c752-11e9-9c63-cbf5dfb2269e.png)
+# DictPress
 
-**dictmaker** is a stand-alone, single-binary server application for building and publishing dictionary websites. [Alar](https://alar.ink) (Kannada-English dictionary) is an example in production.
+**DictPress** is a stand-alone, single-binary server application for building and publishing dictionary websites. [Alar](https://alar.ink) (Kannada-English dictionary) is an example in production.
 
 - Generic entry-relation (many)-entry structure for dictionary data in a Postgres database with just two tables (entries, relations)
 - Entirely built on top of Postgres full text search using [tsvector](https://www.postgresql.org/docs/10/datatype-textsearch.html) tokens
@@ -12,7 +11,7 @@
 - Paginated A-Z (or any alphabet for any language) glossary generation for dictionary words
 
 ## How it works
-dictmaker has no concept of language or semantics. To make a universal dictionary interface possible, it treats all data as unicode strings that can be searched with Postgres DB's fulltext capabilities, where search tokens are generated and stored along with the dictionary entries. There are several built-in fulltext dictionaries and tokenizers that Postgres supports out of the box, mostly European languages (`\dFd` lists installed dictionaries). For languages that do not have fulltext dictionaries, it is possible to generate search tokens manually using an external algorithm. For instance, to make a phonetic English dictionary, [Metaphone](https://en.wikipedia.org/wiki/Metaphone) tokens can be generated manually and search queries issued against them.
+DictPress has no concept of language or semantics. To make a universal dictionary interface possible, it treats all data as unicode strings that can be searched with Postgres DB's fulltext capabilities, where search tokens are generated and stored along with the dictionary entries. There are several built-in fulltext dictionaries and tokenizers that Postgres supports out of the box, mostly European languages (`\dFd` lists installed dictionaries). For languages that do not have fulltext dictionaries, it is possible to generate search tokens manually using an external algorithm. For instance, to make a phonetic English dictionary, [Metaphone](https://en.wikipedia.org/wiki/Metaphone) tokens can be generated manually and search queries issued against them.
 
 ### Concepts
 - There can be any number of languages defined in the dictionary. eg: 'english', 'malayalam', 'kannada' etc.
@@ -22,7 +21,7 @@ dictmaker has no concept of language or semantics. To make a universal dictionar
 ## entries table schema
 | `id`      | `SERIAL`   |                                                                                                                                     |
 |-----------|------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| `guid`    | `TEXT`     | A custom, unique GUID for every entry, like a UUID or a hash                                                                             |
+| `guid`    | `TEXT`     | UUID used in public facing APIs                                      |
 | `content` | `TEXT`     | Actual language content. Dictionary word or definition entries                                                                      |
 | `initial` | `TEXT`     | The first "alphabet" of the content. For English, for the word `Apple`, the initial is `A`                                          |
 | `weight`  | `INT`      | An optional numeric value to order search results                                                                                   |
@@ -42,12 +41,12 @@ dictmaker has no concept of language or semantics. To make a universal dictionar
 | `notes`   | `TEXT`   | Optional text notes                                                    |
 
 # Installation
-1. Download the latest release [release](https://github.com/knadh/dictmaker/releases).
-1. Run `./dictmaker --new` to generate a sample config.toml. Edit the config.
+1. Download the latest release [release](https://github.com/knadh/dictpress/releases).
+1. Run `./dictpress --new` to generate a sample config.toml. Edit the config.
 1. Define your dictionary's languages and properties along with other config in `config.toml`
-1. Run `./dictmaker --install` to install the Postgres DB schema.
+1. Run `./dictpress --install` to install the Postgres DB schema.
 1. Populate the `entries` and `relations` tables with your dictionary data. See the "Sample dictionary" section below
-1. Run the dictionary server: `./dictmaker`
+1. Run the dictionary server: `./dictpress`
  
 ## Dictionary query API
 ```shell
@@ -66,9 +65,6 @@ curl localhost:8080/api/dictionary/english/italian/apple
 ```
 
 ## Themes
-See the [alar-dict/alar.ink](https://github.com/alar-dict/alar.ink) repository that powers the [Alar](https://alar.ink) dictionary. A theme is a directory with a collection of Go HTML templates. Run a theme by passing `./dictmaker --site=theme_dir`.
-
-## Tokenizer plugins
-For languages that do not have Postgres fulltext dictionaries and tokenizers, dictmaker supports loading compiled Go tokenizer plugins that implement the `search.Tokenizer` interface. See `tokenizers/kannada` (and `Makefile` for compilation help).
+See the [alar-dict/alar.ink](https://github.com/alar-dict/alar.ink) repository that powers the [Alar](https://alar.ink) dictionary. A theme is a directory with a collection of Go HTML templates. Run a theme by passing `./dictpress --site=theme_dir`.
 
 Licensed under the AGPL v3 license.

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/knadh/dictmaker/internal/data"
+	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/paginator"
 	"github.com/labstack/echo/v4"
 )

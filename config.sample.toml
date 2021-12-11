@@ -12,7 +12,7 @@ root_url = "http://localhost:9000"
 # with the name {{ define "page-about" }}. All template name definitions
 # should be "page-*".
 #
-# This is relevant when starting dictmaker with a site theme (--site param).
+# This is relevant when starting the app with a site theme (--site param).
 enable_pages = false
 
 

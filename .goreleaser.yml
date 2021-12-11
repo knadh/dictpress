@@ -3,8 +3,8 @@ env:
   - CGO_ENABLED=0
 
 builds:
-  - binary: dictmaker
-    main: ./cmd/dictmaker
+  - binary: dictpress
+    main: ./cmd/dictpress
     goos:
       - darwin
       - linux

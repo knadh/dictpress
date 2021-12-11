@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/knadh/dictmaker/internal/data"
+	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/goyesql"
 	goyesqlx "github.com/knadh/goyesql/sqlx"
 	"github.com/knadh/koanf"

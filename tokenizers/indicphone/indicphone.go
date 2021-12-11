@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/knadh/dictmaker/internal/data"
+	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/knphone"
 	"gitlab.com/joice/mlphone-go"
 )
