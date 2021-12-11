@@ -73,14 +73,14 @@ type Data struct {
 
 // Query represents the parameters of a single search query.
 type Query struct {
-	Query    string
-	FromLang string
-	ToLang   string
-	Types    []string
-	Tags     []string
-	Status   string
-	Offset   int
-	Limit    int
+	Query    string   `json:"query"`
+	FromLang string   `json:"from_lang"`
+	ToLang   string   `json:"to_lang"`
+	Types    []string `json:"types"`
+	Tags     []string `json:"tags"`
+	Status   string   `json:"status"`
+	Offset   int      `json:"offset"`
+	Limit    int      `json:"limit"`
 }
 
 // Entry represents a dictionary entry.
