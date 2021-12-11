@@ -12,11 +12,11 @@ deps:
 
 .PHONY: build
 build:
-	go build -gcflags="-G=3" -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}'" cmd/${BIN}/*.go
+	go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}'" cmd/${BIN}/*.go
 
 .PHONY: run
 run:
-	./${BIN}
+	go run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}'" cmd/${BIN}/*.go
 
 # Compile bin and bundle static assets.
 .PHONY: dist
