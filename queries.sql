@@ -29,11 +29,17 @@ tokenMatch AS (
         AND tokens @@ (SELECT query FROM q)
         AND id NOT IN (SELECT id FROM directMatch)
         AND (CASE WHEN $6 != '' THEN status = $6::entry_status ELSE TRUE END)
+),
+totals AS (
+    -- Pre-compute the total from both queries as either may return null. This total
+    -- is then be selected with every row in the final UNION.
+    SELECT COALESCE((SELECT total FROM directMatch LIMIT 1), 0) + COALESCE((SELECT total FROM tokenMatch LIMIT 1), 0) AS total
 )
 -- Combine results from direct matches and token matches. As directMatches ranks are
 -- forced to be negative, they will rank on top. 
-SELECT *, COALESCE((SELECT total FROM directMatch LIMIT 1), 0) + COALESCE((SELECT total FROM tokenMatch LIMIT 1), 0) AS total
-    FROM directMatch UNION ALL SELECT *, 0 as total FROM tokenMatch ORDER BY rank OFFSET $7 LIMIT $8;
+SELECT *, (SELECT total FROM totals) AS total FROM directMatch
+    UNION ALL
+    SELECT *, (SELECT total FROM totals) AS total FROM tokenMatch ORDER BY rank OFFSET $7 LIMIT $8;
 
 
 -- name: search-relations
