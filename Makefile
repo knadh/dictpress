@@ -12,16 +12,11 @@ deps:
 
 .PHONY: build
 build:
-	go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}'" cmd/${BIN}/*.go
+	go build -gcflags="-G=3" -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}'" cmd/${BIN}/*.go
 
 .PHONY: run
-run: build build-tokenizers
+run:
 	./${BIN}
-
-.PHONY: build-tokenizers
-build-tokenizers:
-	go build -ldflags="-s -w" -buildmode=plugin -o kannada.tk tokenizers/kannada/kannada.go
-	go build -ldflags="-s -w" -buildmode=plugin -o malayalam.tk tokenizers/malayalam/malayalam.go
 
 # Compile bin and bundle static assets.
 .PHONY: dist

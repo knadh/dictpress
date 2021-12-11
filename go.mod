@@ -1,6 +1,6 @@
 module github.com/knadh/dictmaker
 
-go 1.12
+go 1.17
 
 require (
 	github.com/go-chi/chi v4.1.2+incompatible
@@ -10,13 +10,13 @@ require (
 	github.com/knadh/koanf v0.15.0
 	github.com/knadh/paginator v0.0.0-20210310070812-ae09d514e148
 	github.com/knadh/stuffbin v1.1.0
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.10.0
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5
 	gitlab.com/joice/mlphone-go v0.0.0-20201001084309-2bb02984eed8
 	golang.org/x/sys v0.0.0-20210326220804-49726bf1d181 // indirect
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/volatiletech/null.v6 v6.0.0-20170828023728-0bef4e07ae1b
 )
+
+require github.com/fsnotify/fsnotify v1.4.9 // indirect

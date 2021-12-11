@@ -77,7 +77,7 @@ func init() {
 	f.Bool("version", false, "current version of the build")
 
 	if err := f.Parse(os.Args[1:]); err != nil {
-		log.Fatalf("error parsing flags: %v", err)
+		logger.Fatalf("error parsing flags: %v", err)
 	}
 
 	if ok, _ := f.GetBool("version"); ok {
@@ -113,22 +113,13 @@ func init() {
 
 func main() {
 	// Connect to the DB.
-	db, err := connectDB(ko.String("db.host"),
+	db := initDB(ko.String("db.host"),
 		ko.Int("db.port"),
 		ko.String("db.user"),
 		ko.String("db.password"),
 		ko.String("db.db"),
 	)
-	if err != nil {
-		logger.Fatalf("error connecting to DB: %v", err)
-	}
-
 	defer db.Close()
-
-	fs, err := initFileSystem()
-	if err != nil {
-		logger.Fatal(err)
-	}
 
 	// Initialize the app context that's passed around.
 	app := &App{
@@ -137,7 +128,7 @@ func main() {
 			RootURL: ko.String("app.root_url"),
 		},
 		db:     db,
-		fs:     fs,
+		fs:     initFS(),
 		logger: logger,
 	}
 
@@ -148,7 +139,7 @@ func main() {
 	}
 
 	// Load SQL queries.
-	qB, err := fs.Read("/queries.sql")
+	qB, err := app.fs.Read("/queries.sql")
 	if err != nil {
 		logger.Fatalf("error reading queries.sql: %v", err)
 	}

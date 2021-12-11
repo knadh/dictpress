@@ -32,16 +32,13 @@ type LangMap map[string]Lang
 // Tokenizer represents a function that takes a string
 // and returns a list of Postgres tsvector tokens.
 type Tokenizer interface {
-	ID() string
-	Name() string
-
 	// Tokenize takes a string and tokenizes it into a list of tsvector tokens
 	// that can be stored in the database for fulltext search.
-	ToTokens(string) []string
+	ToTokens(s string, lang string) ([]string, error)
 
 	// ToTSQuery takes a search string and returns a Postgres tsquery string,
 	// for example 'fat & cat`.
-	ToQuery(string) string
+	ToQuery(s string, lang string) (string, error)
 }
 
 // Token represents a Postgres tsvector token.
@@ -182,7 +179,11 @@ func (d *Data) Search(q Query) (Entries, int, error) {
 	} else {
 		// If there's an external tokenizer loaded, run it to get the tokens
 		// and pass it to the DB directly instructing the DB not to tokenize internally.
-		tsVectorQuery = tk.ToQuery(q.Query)
+		var err error
+		tsVectorQuery, err = tk.ToQuery(q.Query, q.FromLang)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	// Filters ($1 to $3)
@@ -293,7 +294,11 @@ func (d *Data) InsertEntry(e Entry) (int, error) {
 		} else {
 			// If there's an external tokenizer loaded, run it to get the tokens
 			// and pass it to the DB directly instructing the DB not to tokenize internally.
-			tokens = strings.Join(lang.Tokenizer.ToTokens(e.Content), " ")
+			t, err := lang.Tokenizer.ToTokens(e.Content, e.Lang)
+			if err != nil {
+				return 0, nil
+			}
+			tokens = strings.Join(t, " ")
 		}
 	}
 

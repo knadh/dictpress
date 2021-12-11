@@ -5,44 +5,43 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-	"plugin"
 	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictmaker/internal/data"
+	"github.com/knadh/dictmaker/tokenizers/indicphone"
 	"github.com/knadh/koanf"
 	"github.com/knadh/stuffbin"
 )
 
-// connectDB initializes a database connection.
-func connectDB(host string, port int, user, pwd, dbName string) (*sqlx.DB, error) {
+// initDB initializes a database connection.
+func initDB(host string, port int, user, pwd, dbName string) *sqlx.DB {
 	db, err := sqlx.Connect("postgres",
 		fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, pwd, dbName))
 	if err != nil {
-		return nil, err
+		logger.Fatalf("error intiializing DB: %v", err)
 	}
 
-	return db, nil
+	return db
 }
 
-// initFileSystem initializes the stuffbin FileSystem to provide
+// initFS initializes the stuffbin FileSystem to provide
 // access to bunded static assets to the app.
-func initFileSystem() (stuffbin.FileSystem, error) {
+func initFS() stuffbin.FileSystem {
 	path, err := os.Executable()
 	if err != nil {
-		return nil, err
+		logger.Fatalf("error getting executable path: %v", err)
 	}
 
 	fs, err := stuffbin.UnStuff(path)
 	if err == nil {
-		return fs, nil
+		return fs
 	}
 
 	// Running in local mode. Load the required static assets into
@@ -58,10 +57,10 @@ func initFileSystem() (stuffbin.FileSystem, error) {
 
 	fs, err = stuffbin.NewLocalFS("/", files...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize local file for assets: %v", err)
+		logger.Fatalf("failed to initialize local file for assets: %v", err)
 	}
 
-	return fs, nil
+	return fs
 }
 
 // loadSiteTheme loads a theme from a directory.
@@ -104,36 +103,16 @@ func loadSiteTheme(path string, loadPages bool) (*template.Template, error) {
 func initAdminTemplates(path string) *template.Template {
 	t, err := template.New("admin").ParseGlob(path + "/*.html")
 	if err != nil {
-		log.Fatalf("error loading admin templates: %v", err)
+		logger.Fatalf("error loading admin templates: %v", err)
 	}
 	return t
 }
 
-// loadTokenizerPlugin loads a tokenizer plugin that implements data.Tokenizer
-// from the given path.
-func loadTokenizerPlugin(path string) (data.Tokenizer, error) {
-	plg, err := plugin.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("error loading tokenizer plugin '%s': %v", path, err)
+// initTokenizers initializes all bundled tokenizers.
+func initTokenizers() map[string]data.Tokenizer {
+	return map[string]data.Tokenizer{
+		"indicphone": indicphone.New(),
 	}
-
-	newFunc, err := plg.Lookup("New")
-	if err != nil {
-		return nil, fmt.Errorf("New() function not found in plugin '%s': %v", path, err)
-	}
-
-	f, ok := newFunc.(func() (data.Tokenizer, error))
-	if !ok {
-		return nil, fmt.Errorf("New() function is of invalid type in plugin '%s'", path)
-	}
-
-	// Initialize the plugin.
-	p, err := f()
-	if err != nil {
-		return nil, fmt.Errorf("error initializing provider plugin '%s': %v", path, err)
-	}
-
-	return p, err
 }
 
 // initHandlers registers HTTP handlers.
@@ -183,32 +162,29 @@ func initHandlers(r *chi.Mux, app *App) {
 
 // initLangs loads language configuration into a given *App instance.
 func initLangs(ko *koanf.Koanf) data.LangMap {
-	out := make(data.LangMap)
+	var (
+		tks = initTokenizers()
+		out = make(data.LangMap)
+	)
 
 	// Language configuration.
 	for _, l := range ko.MapKeys("lang") {
 		lang := data.Lang{Types: make(map[string]string)}
 		if err := ko.UnmarshalWithConf("lang."+l, &lang, koanf.UnmarshalConf{Tag: "json"}); err != nil {
-			log.Fatalf("error loading languages: %v", err)
+			logger.Fatalf("error loading languages: %v", err)
+		}
+
+		// Does the language use a bundled tokenizer?
+		if lang.TokenizerType == "custom" {
+			t, ok := tks[lang.TokenizerName]
+			if !ok {
+				logger.Fatalf("unknown custom tokenizer '%s'", lang.TokenizerName)
+			}
+			lang.Tokenizer = t
 		}
 
 		// Load external plugin.
 		logger.Printf("language: %s", l)
-
-		if lang.TokenizerType == "plugin" {
-			tk, err := loadTokenizerPlugin(lang.TokenizerName)
-			if err != nil {
-				log.Fatalf("error loading tokenizer plugin for %s: %v", l, err)
-			}
-
-			lang.Tokenizer = tk
-
-			// Tokenizations for search queries are looked up by the tokenizer
-			// ID() returned by the plugin and not the filename in the config.
-			lang.TokenizerName = tk.ID()
-			logger.Printf("loaded tokenizer %s", lang.TokenizerName)
-		}
-
 		out[l] = lang
 	}
 
@@ -222,10 +198,7 @@ func generateNewFiles() error {
 
 	// Initialize the static file system into which all
 	// required static assets (.sql, .js files etc.) are loaded.
-	fs, err := initFileSystem()
-	if err != nil {
-		return err
-	}
+	fs := initFS()
 
 	// Generate config file.
 	b, err := fs.Read("config.toml.sample")
