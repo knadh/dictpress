@@ -167,14 +167,14 @@ func main() {
 
 	// Pagination.
 	o := paginator.Default()
-	o.DefaultPerPage = ko.Int("results.default_per_page")
-	o.MaxPerPage = ko.Int("results.max_per_page")
-	o.NumPageNums = ko.Int("results.num_page_nums")
+	o.DefaultPerPage = ko.MustInt("results.default_per_page")
+	o.MaxPerPage = ko.MustInt("results.max_per_page")
+	o.NumPageNums = ko.MustInt("results.num_page_nums")
 	app.resultsPg = paginator.New(o)
 
-	o.DefaultPerPage = ko.Int("glossary.default_per_page")
-	o.MaxPerPage = ko.Int("glossary.max_per_page")
-	o.NumPageNums = ko.Int("glossary.num_page_nums")
+	o.DefaultPerPage = ko.MustInt("glossary.default_per_page")
+	o.MaxPerPage = ko.MustInt("glossary.max_per_page")
+	o.NumPageNums = ko.MustInt("glossary.num_page_nums")
 	app.glossaryPg = paginator.New(o)
 
 	// Load admin theme.

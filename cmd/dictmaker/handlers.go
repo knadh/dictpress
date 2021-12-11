@@ -16,11 +16,6 @@ import (
 	"github.com/knadh/paginator"
 )
 
-const (
-	entriesPerPage = 20
-	// glossaryPerPage = 100
-)
-
 // Results represents a set of results.
 type Results struct {
 	FromLang string       `json:"-"`
@@ -39,19 +34,6 @@ type Glossary struct {
 
 	// Pagination fields.
 	paginator.Set
-}
-
-// pagination represents a query's pagination (limit, offset) related values.
-type pagination struct {
-	PerPage int `json:"per_page"`
-	Page    int `json:"page"`
-	Offset  int `json:"offset"`
-	Limit   int `json:"limit"`
-	Total   int `json:"total"`
-
-	PageStart int   `json:"-"`
-	Pages     []int `json:"-"`
-	PageEnd   int   `json:"-"`
 }
 
 // okResp represents the HTTP response wrapper.
@@ -141,7 +123,7 @@ func doSearch(r *http.Request, app *App) (data.Query, *Results, error) {
 		q        = strings.TrimSpace(chi.URLParam(r, "q"))
 
 		qp  = r.URL.Query()
-		pg  = getPagination(qp, entriesPerPage, entriesPerPage)
+		pg  = app.resultsPg.NewFromURL(r.URL.Query())
 		out = &Results{}
 	)
 
@@ -184,13 +166,10 @@ func doSearch(r *http.Request, app *App) (data.Query, *Results, error) {
 		return query, out, err
 	}
 
-	// HTTP response.
-	out = &Results{}
-	out.Page = pg.Page
-	out.PerPage = pg.PerPage
-	out.Entries = data.Entries{}
-
-	// Find entries matching the query.
+	// Search and compose results.
+	out = &Results{
+		Entries: data.Entries{},
+	}
 	res, total, err := app.data.Search(query)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -223,8 +202,13 @@ func doSearch(r *http.Request, app *App) (data.Query, *Results, error) {
 		}
 	}
 
-	out.Total = total
 	out.Entries = res
+
+	pg.SetTotal(total)
+	out.Page = pg.Page
+	out.PerPage = pg.PerPage
+	out.TotalPages = pg.TotalPages
+	out.Total = total
 
 	return query, out, nil
 }
@@ -233,10 +217,9 @@ func doSearch(r *http.Request, app *App) (data.Query, *Results, error) {
 // gets params from it and returns a glossary of words for a language.
 func getGlossaryWords(lang, initial string, pg paginator.Set, app *App) (*Glossary, error) {
 	// HTTP response.
-	out := &Glossary{}
-	out.Page = pg.Page
-	out.PerPage = pg.PerPage
-	out.Words = []data.GlossaryWord{}
+	out := &Glossary{
+		Words: []data.GlossaryWord{},
+	}
 
 	// Get glossary words.
 	res, total, err := app.data.GetGlossaryWords(lang, initial, pg.Offset, pg.Limit)
@@ -254,81 +237,15 @@ func getGlossaryWords(lang, initial string, pg paginator.Set, app *App) (*Glossa
 		return out, nil
 	}
 
-	out.Total = total
 	out.Words = res
 
+	pg.SetTotal(total)
+	out.Page = pg.Page
+	out.PerPage = pg.PerPage
+	out.TotalPages = pg.TotalPages
+	out.Total = total
+
 	return out, nil
-}
-
-// getPagination takes form values and extracts pagination values from it.
-func getPagination(q url.Values, defaultPerPage, maxPerPage int) pagination {
-	var (
-		perPage, _ = strconv.Atoi(q.Get("per_page"))
-		page, _    = strconv.Atoi(q.Get("page"))
-	)
-
-	if perPage < 1 || perPage > defaultPerPage {
-		perPage = maxPerPage
-	}
-
-	if page < 1 {
-		page = 0
-	} else {
-		page--
-	}
-
-	return pagination{
-		Page:    page + 1,
-		PerPage: perPage,
-		Offset:  page * perPage,
-		Limit:   perPage,
-	}
-}
-
-func (p *pagination) GenerateNumbers() {
-	if p.Total <= p.PerPage {
-		return
-	}
-
-	var (
-		// Page divisor.
-		div      = p.Total / p.PerPage
-		divStart = 1
-		hints    = 0
-	)
-
-	if p.Total%p.PerPage == 0 {
-		div = div - 1
-	}
-
-	div++
-
-	if div > 10 {
-		hints = div
-		div = 10
-	}
-
-	// Generate the page numbers
-	if p.Page >= 10 {
-		divStart = p.PerPage - 5
-		div = divStart + 15
-	}
-
-	if (div * p.PerPage) > (p.Total + p.PerPage) {
-		div = (p.Total) / p.PerPage
-	}
-
-	// If the page number has exceeded the limit, fix the first to
-	// print to 1.
-	if p.Page >= 10 {
-		p.PageStart = 1
-	} else {
-		p.PageStart = 1
-	}
-
-	if hints-10 > p.Page {
-		p.PageEnd = hints
-	}
 }
 
 // validateSearchQuery does basic validation and sanity checks
