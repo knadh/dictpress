@@ -121,7 +121,7 @@ func initHTTPServer(app *App) *echo.Echo {
 	p.GET("/api/dictionary/:fromLang/:toLang/:q", handleSearch)
 
 	// Admin handlers and APIs.
-	a.Static("/admin/static/*", "admin/static")
+	a.GET("/admin/static/*", echo.WrapHandler(app.fs.FileServer()))
 	a.GET("/admin", adminPage("index"))
 	a.GET("/admin/search", adminPage("search"))
 	a.GET("/admin/entries/:id", adminPage("entry"))
@@ -181,7 +181,7 @@ func generateNewFiles() error {
 	fs := initFS()
 
 	// Generate config file.
-	b, err := fs.Read("config.toml.sample")
+	b, err := fs.Read("config.sample.toml")
 	if err != nil {
 		return fmt.Errorf("error reading sample config (is binary stuffed?): %v", err)
 	}
