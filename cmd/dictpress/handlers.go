@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/subtle"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -251,4 +252,21 @@ func validateSearchQuery(q data.Query, langs data.LangMap) error {
 	}
 
 	return nil
+}
+
+// basicAuth middleware does an HTTP BasicAuth authentication for admin handlers.
+func basicAuth(username, password string, c echo.Context) (bool, error) {
+	app := c.Get("app").(*App)
+
+	// Auth is disabled.
+	if len(app.constants.AdminUsername) == 0 &&
+		len(app.constants.AdminPassword) == 0 {
+		return true, nil
+	}
+
+	if subtle.ConstantTimeCompare([]byte(username), app.constants.AdminUsername) == 1 &&
+		subtle.ConstantTimeCompare([]byte(password), app.constants.AdminPassword) == 1 {
+		return true, nil
+	}
+	return false, nil
 }

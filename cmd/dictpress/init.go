@@ -15,7 +15,27 @@ import (
 	"github.com/knadh/koanf"
 	"github.com/knadh/stuffbin"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
+
+func initConstants(ko *koanf.Koanf) constants {
+	c := constants{
+		Site:          ko.String("site"),
+		RootURL:       ko.MustString("app.root_url"),
+		AdminUsername: ko.MustBytes("app.admin_username"),
+		AdminPassword: ko.MustBytes("app.admin_password"),
+	}
+
+	if len(c.AdminUsername) < 6 {
+		logger.Fatal("admin_username should be min 6 characters")
+	}
+
+	if len(c.AdminPassword) < 8 {
+		logger.Fatal("admin_password should be min 8 characters")
+	}
+
+	return c
+}
 
 // initDB initializes a database connection.
 func initDB(host string, port int, user, pwd, dbName string) *sqlx.DB {
@@ -90,9 +110,11 @@ func initHTTPServer(app *App) *echo.Echo {
 	})
 
 	var (
-		// Public and admin handler groups.
+		// Public handlers with no auth.
 		p = srv.Group("")
-		a = srv.Group("")
+
+		// Admin handlers with auth.
+		a = srv.Group("", middleware.BasicAuth(basicAuth))
 	)
 
 	// Dictionary site HTML views.

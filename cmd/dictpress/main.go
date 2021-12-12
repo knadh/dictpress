@@ -33,8 +33,9 @@ type Lang struct {
 }
 
 type constants struct {
-	Site    string
-	RootURL string
+	Site                         string
+	RootURL                      string
+	AdminUsername, AdminPassword []byte
 }
 
 // App contains the "global" components that are
@@ -121,13 +122,10 @@ func main() {
 
 	// Initialize the app context that's passed around.
 	app := &App{
-		constants: constants{
-			Site:    ko.String("site"),
-			RootURL: ko.MustString("app.root_url"),
-		},
-		db:     db,
-		fs:     initFS(),
-		logger: logger,
+		constants: initConstants(ko),
+		db:        db,
+		fs:        initFS(),
+		logger:    logger,
 	}
 
 	// Install schema.

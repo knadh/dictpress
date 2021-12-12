@@ -15,6 +15,10 @@ root_url = "http://localhost:9000"
 # This is relevant when starting the app with a site theme (--site param).
 enable_pages = false
 
+# Admin dashboard and API credentials.
+admin_username = "your-user-name-min-6-chars"
+admin_password = "use-a-long-password-min-8-chars"
+
 
 [results]
 # Default number of entries to return per page when paginated.
