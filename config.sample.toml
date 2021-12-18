@@ -16,8 +16,8 @@ root_url = "http://localhost:9000"
 enable_pages = false
 
 # Admin dashboard and API credentials.
-admin_username = "your-user-name-min-6-chars"
-admin_password = "use-a-long-password-min-8-chars"
+admin_username = "dictpress"
+admin_password = "dictpress_admin_password"
 
 
 [results]

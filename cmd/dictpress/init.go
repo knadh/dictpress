@@ -1,13 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"html/template"
 	"io/ioutil"
+	mrand "math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
+	"unicode"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictpress/internal/data"
@@ -207,6 +211,19 @@ func generateNewFiles() error {
 	if err != nil {
 		return fmt.Errorf("error reading sample config (is binary stuffed?): %v", err)
 	}
+
+	// Inject a random password.
+	p := make([]byte, 12)
+	rand.Read(p)
+	pwd := []byte(fmt.Sprintf("%x", p))
+
+	for i, c := range pwd {
+		if mrand.Intn(4) == 1 {
+			pwd[i] = byte(unicode.ToUpper(rune(c)))
+		}
+	}
+
+	b = bytes.Replace(b, []byte("dictpress_admin_password"), pwd, -1)
 
 	if err := ioutil.WriteFile("config.toml", b, 0644); err != nil {
 		return err
