@@ -7,15 +7,25 @@
 		<div class="panel entry-form">
 			<h3 x-text="isNew ? 'New entry' : 'Edit entry'"></h3>
 			<form @submit.prevent="onSave">
-				<fieldset class="row box">
-					<div class="column nine">
-						<label>Content</label>
-						<textarea required autofocus name="content" x-ref="content" x-model="entry.content"></textarea>
+				<fieldset class="box">
+					<div class="row">
+						<div class="column nine">
+							<label>Content</label>
+							<textarea required autofocus name="content" x-ref="content" x-model="entry.content"></textarea>
+						</div>
+						<div class="column three">
+							<label>Initial</label>
+							<input required type="text" name="initial" x-model="entry.initial" @focus="onFocusInitial" />
+							<span class="help">First letter</span>
+						</div>
 					</div>
-					<div class="column three">
-						<label>Initial</label>
-						<input required type="text" name="initial" x-model="entry.initial" @focus="onFocusInitial" />
-						<span class="help">First letter</span>
+					<div>
+						<label>Language</label>
+		    			<select name="lang" x-model="entry.lang" required>
+						    <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
+						      <option :value="id" x-text="l.name" x-bind:selected="id === entry.lang"></option>
+						    </template>
+		    			</select>
 					</div>
 				</fieldset>
 
@@ -28,24 +38,16 @@
 					<div class="box">
 						<fieldset class="row">
 							<div class="column six">
-								<label>Language</label>
-				    			<select name="lang" x-model="entry.lang" required>
-								    <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
-								      <option :value="id" x-text="l.name" x-bind:selected="id === entry.lang"></option>
-								    </template>
-				    			</select>
-							</div>
-							<div class="column three">
 								<label>Status</label>
 				    			<select name="status" x-model="entry.status" required>
 								    <option value="enabled">Enabled</option>
 								    <option value="disabled">Disabled</option>
 				    			</select>
 							</div>
-							<div class="column three">
+							<div class="column six">
 								<label>Weight</label>
 								<input type="number" step="0.01" x-model="entry.weight" />
-								<span class="help">Sort order. Leave as 0 to automatically set.</span>
+								<span class="help">Sort order. Enter 0 to automatically set.</span>
 							</div>
 						</fieldset>
 
