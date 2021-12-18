@@ -23,7 +23,8 @@ func handleGetConfig(c echo.Context) error {
 		RootURL   string       `json:"root_url"`
 		Languages data.LangMap `json:"languages"`
 		Version   string       `json:"version"`
-	}{app.constants.RootURL, app.data.Langs, buildString}
+		BuildStr  string       `json:"build"`
+	}{app.constants.RootURL, app.data.Langs, versionString, buildString}
 
 	return c.JSON(http.StatusOK, okResp{out})
 }

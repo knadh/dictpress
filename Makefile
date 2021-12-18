@@ -1,6 +1,6 @@
 LAST_COMMIT := $(shell git rev-parse --short HEAD)
 VERSION := $(shell git describe --tags --abbrev=0)
-BUILDSTR := ${VERSION} (\#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
+BUILDSTR := \#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z")
 
 STATIC := config.sample.toml schema.sql queries.sql admin
 BIN := dictpress
@@ -12,7 +12,7 @@ deps:
 
 .PHONY: build
 build:
-	go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}'" cmd/${BIN}/*.go
+	go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/${BIN}/*.go
 
 .PHONY: run
 run:

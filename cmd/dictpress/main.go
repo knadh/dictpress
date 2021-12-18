@@ -20,7 +20,8 @@ import (
 )
 
 var (
-	buildString = "unknown"
+	buildString   = "unknown"
+	versionString = "unknown"
 )
 
 // Lang represents a language's configuration.
@@ -80,7 +81,7 @@ func init() {
 	}
 
 	if ok, _ := f.GetBool("version"); ok {
-		fmt.Println(buildString)
+		fmt.Printf("%s (%s)\n", versionString, buildString)
 		os.Exit(0)
 	}
 
