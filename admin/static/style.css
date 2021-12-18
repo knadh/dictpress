@@ -1,6 +1,7 @@
 :root {
 	--primary: #00aa44;
 	--secondary: #333;
+	--light: #999;
 }
 
 * {
@@ -223,6 +224,11 @@ form .help {
 }
 	.entries .heading {
 		margin: 0;
+	}
+	.entries .lang {
+		font-weight: normal;
+		color: var(--light);
+		font-size: 0.875rem;
 	}
 	.entries .edit:hover {
 		background: var(--secondary);
