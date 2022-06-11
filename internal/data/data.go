@@ -8,7 +8,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	null "gopkg.in/volatiletech/null.v6"
 )
 
 const (
@@ -49,27 +48,29 @@ type Token struct {
 
 // Queries contains prepared DB queries.
 type Queries struct {
-	Search                   *sqlx.Stmt `query:"search"`
-	SearchRelations          *sqlx.Stmt `query:"search-relations"`
-	GetEntry                 *sqlx.Stmt `query:"get-entry"`
+	Search             *sqlx.Stmt `query:"search"`
+	SearchRelations    *sqlx.Stmt `query:"search-relations"`
+	GetEntry           *sqlx.Stmt `query:"get-entry"`
+	GetParentRelations *sqlx.Stmt `query:"get-parent-relations"`
+	GetInitials        *sqlx.Stmt `query:"get-initials"`
+	GetGlossaryWords   *sqlx.Stmt `query:"get-glossary-words"`
+	InsertEntry        *sqlx.Stmt `query:"insert-entry"`
+	UpdateEntry        *sqlx.Stmt `query:"update-entry"`
+	InsertRelation     *sqlx.Stmt `query:"insert-relation"`
+	UpdateRelation     *sqlx.Stmt `query:"update-relation"`
+	ReorderRelations   *sqlx.Stmt `query:"reorder-relations"`
+	DeleteEntry        *sqlx.Stmt `query:"delete-entry"`
+	DeleteRelation     *sqlx.Stmt `query:"delete-relation"`
+	GetStats           *sqlx.Stmt `query:"get-stats"`
+
 	GetPendingEntries        *sqlx.Stmt `query:"get-pending-entries"`
-	GetParentRelations       *sqlx.Stmt `query:"get-parent-relations"`
-	GetInitials              *sqlx.Stmt `query:"get-initials"`
-	GetGlossaryWords         *sqlx.Stmt `query:"get-glossary-words"`
-	InsertEntry              *sqlx.Stmt `query:"insert-entry"`
-	UpdateEntry              *sqlx.Stmt `query:"update-entry"`
-	InsertRelation           *sqlx.Stmt `query:"insert-relation"`
-	UpdateRelation           *sqlx.Stmt `query:"update-relation"`
-	ReorderRelations         *sqlx.Stmt `query:"reorder-relations"`
-	DeleteEntry              *sqlx.Stmt `query:"delete-entry"`
-	DeleteRelation           *sqlx.Stmt `query:"delete-relation"`
 	InsertSubmissionEntry    *sqlx.Stmt `query:"insert-submission-entry"`
 	InsertSubmissionRelation *sqlx.Stmt `query:"insert-submission-relation"`
 	InsertChangeSubmission   *sqlx.Stmt `query:"insert-change"`
+	GetChanges               *sqlx.Stmt `query:"get-changes"`
 	DeleteChangeSubmission   *sqlx.Stmt `query:"delete-change"`
 	ApproveSubmission        *sqlx.Stmt `query:"approve-submission"`
 	RejectSubmission         *sqlx.Stmt `query:"reject-submission"`
-	GetStats                 *sqlx.Stmt `query:"get-stats"`
 }
 
 // Data represents the dictionary search interface.
@@ -88,77 +89,6 @@ type Query struct {
 	Status   string   `json:"status"`
 	Offset   int      `json:"offset"`
 	Limit    int      `json:"limit"`
-}
-
-// Entry represents a dictionary entry.
-type Entry struct {
-	ID        int            `json:"id" db:"id"`
-	GUID      string         `json:"guid" db:"guid"`
-	Weight    float64        `json:"weight" db:"weight"`
-	Initial   string         `json:"initial" db:"initial"`
-	Lang      string         `json:"lang" db:"lang"`
-	Content   string         `json:"content" db:"content"`
-	Tokens    string         `json:"tokens" db:"tokens"`
-	Tags      pq.StringArray `json:"tags" db:"tags"`
-	Phones    pq.StringArray `json:"phones" db:"phones"`
-	Notes     string         `json:"notes" db:"notes"`
-	Status    string         `json:"status" db:"status"`
-	Relations Entries        `json:"relations,omitempty" db:"relations"`
-	Total     int            `json:"-" db:"total"`
-	CreatedAt null.Time      `json:"created_at" db:"created_at"`
-	UpdatedAt null.Time      `json:"updated_at" db:"updated_at"`
-
-	// Non-public fields for scanning relationship data and populating Relation.
-	FromID            int            `json:"-" db:"from_id"`
-	RelationID        int            `json:"-" db:"relation_id"`
-	RelationTypes     pq.StringArray `json:"-" db:"relation_types"`
-	RelationTags      pq.StringArray `json:"-" db:"relation_tags"`
-	RelationNotes     string         `json:"-" db:"relation_notes"`
-	RelationWeight    float64        `json:"-" db:"relation_weight"`
-	RelationCreatedAt null.Time      `json:"-" db:"relation_created_at"`
-	RelationUpdatedAt null.Time      `json:"-" db:"relation_updated_at"`
-
-	// RelationEntry encompasses an Entry with added fields that
-	// describes its relationship to other Entries. This is only populated
-	// Entries in the Relations list.
-	Relation *Relation `json:"relation,omitempty"`
-}
-
-// Relation represents the relationship between two IDs.
-type Relation struct {
-	ID        int            `json:"id"`
-	Types     pq.StringArray `json:"types"`
-	Tags      pq.StringArray `json:"tags"`
-	Notes     string         `json:"notes"`
-	Weight    float64        `json:"weight"`
-	Status    string         `json:"status"`
-	CreatedAt null.Time      `json:"created_at"`
-	UpdatedAt null.Time      `json:"updated_at"`
-}
-
-// Entries represents a slice of Entry.
-type Entries []Entry
-
-// GlossaryWord to read glosary content from db.
-type GlossaryWord struct {
-	ID      int    `json:"id" db:"id"`
-	Content string `json:"content" db:"content"`
-	Total   int    `json:"-" db:"total"`
-}
-
-// ChangeSubmission is a comment for change submitted by the public that can be
-// reviewed and manually incorporated into entries.
-type ChangeSubmission struct {
-	FromGUID string `json:"from_guid"`
-	ToGUID   string `json:"to_guid"`
-	Notes    string `json:"notes"`
-}
-
-// Stats contains database statistics.
-type Stats struct {
-	Entries   int            `json:"entries"`
-	Relations int            `json:"relations"`
-	Languages map[string]int `json:"languages"`
 }
 
 // New returns an instance of the search interface.
@@ -388,11 +318,20 @@ func (s *Data) DeleteRelation(fromID, toID int) error {
 }
 
 // InsertChangeSubmission inserts a change suggestion from the public.
-func (d *Data) InsertChangeSubmission(s ChangeSubmission) error {
-	_, err := d.queries.InsertChangeSubmission.Exec(s.FromGUID,
-		s.ToGUID,
-		s.Notes)
+func (d *Data) InsertChangeSubmission(fromGUID, toGUID, comments string) error {
+	_, err := d.queries.InsertChangeSubmission.Exec(fromGUID, toGUID, comments)
 	return err
+}
+
+// GetChangeSubmissions retrieves change submissions.
+func (d *Data) GetChangeSubmissions() ([]Change, error) {
+	var out []Change
+
+	if err := d.queries.GetChanges.Select(&out); err != nil {
+		return nil, err
+	}
+
+	return out, nil
 }
 
 // DeleteChangeSubmission deletes a change suggestion from the public.
@@ -504,8 +443,56 @@ func (e Entries) SearchAndLoadRelations(q Query, stmt *sqlx.Stmt) error {
 			Tags:      r.RelationTags,
 			Notes:     r.RelationNotes,
 			Weight:    r.RelationWeight,
+			Status:    r.Status,
 			CreatedAt: r.RelationCreatedAt,
 			UpdatedAt: r.RelationUpdatedAt,
+		}
+
+		idx := idMap[r.FromID]
+		e[idx].Relations = append(e[idx].Relations, r)
+	}
+
+	return nil
+}
+
+// LoadPendingRelations loads pending relations to the entry.
+// Optionally, ig a list of IDs are given, they're also loaded. This
+// is used for loading entries with pending comments attached to them.
+func (e Entries) LoadPendingRelations(relIDs []int, stmt *sqlx.Stmt) error {
+	var (
+		IDs = make([]int64, len(e))
+
+		// Map that stores the slice indexes in e against Entry IDs
+		// to attach relations back into e.
+		idMap = make(map[int]int)
+	)
+
+	for i := 0; i < len(e); i++ {
+		IDs[i] = int64(e[i].ID)
+		e[i].Relations = make(Entries, 0)
+		idMap[e[i].ID] = i
+	}
+
+	var relEntries Entries
+	if err := stmt.Select(&relEntries, pq.Array(IDs)); err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+
+		return err
+	}
+
+	for _, r := range relEntries {
+		// Copy top-level relation fields to the Relation sub-struct.
+		r.Relation = &Relation{
+			ID:        r.RelationID,
+			Types:     r.RelationTypes,
+			Tags:      r.RelationTags,
+			Notes:     r.RelationNotes,
+			Weight:    r.RelationWeight,
+			CreatedAt: r.RelationCreatedAt,
+			UpdatedAt: r.RelationUpdatedAt,
+			Status:    r.Status,
 		}
 
 		idx := idMap[r.FromID]

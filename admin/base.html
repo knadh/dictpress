@@ -19,8 +19,9 @@
 					<a href="/admin"><img src="/admin/static/logo.svg" alt="logo" /></a>
 					<template x-if="Object.keys(loading).length > 0"><span class="loading"></span></template>
 				</div>
-				<nav class="eight columns">
+				<nav class="eight columns nav">
 					<a href="" @click.prevent="onNewEntry">Add new</a>
+					<a href="pending">Pending</a>
 				</nav>
 			</div>
 		</header>

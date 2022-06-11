@@ -76,6 +76,10 @@ func handleUpdateEntry(c echo.Context) error {
 		id, _ = strconv.Atoi(c.Param("id"))
 	)
 
+	if id < 1 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
+	}
+
 	var e data.Entry
 	if err := c.Bind(&e); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest,
@@ -100,6 +104,10 @@ func handleApproveSubmission(c echo.Context) error {
 		id, _ = strconv.Atoi(c.Param("id"))
 	)
 
+	if id < 1 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
+	}
+
 	if err := app.data.ApproveSubmission(id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error approving submission: %v", err))
@@ -114,6 +122,10 @@ func handleRejectSubmission(c echo.Context) error {
 		app   = c.Get("app").(*App)
 		id, _ = strconv.Atoi(c.Param("id"))
 	)
+
+	if id < 1 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
+	}
 
 	if err := app.data.RejectSubmission(id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
@@ -146,6 +158,10 @@ func handleAddRelation(c echo.Context) error {
 		toID, _   = strconv.Atoi(c.Param("toID"))
 	)
 
+	if fromID < 1 || toID < 1 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid IDs.")
+	}
+
 	var rel data.Relation
 	if err := c.Bind(&rel); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest,
@@ -166,6 +182,10 @@ func handleUpdateRelation(c echo.Context) error {
 		app      = c.Get("app").(*App)
 		relID, _ = strconv.Atoi(c.Param("relID"))
 	)
+
+	if relID < 1 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
+	}
 
 	var rel data.Relation
 	if err := c.Bind(&rel); err != nil {
@@ -209,9 +229,45 @@ func handleDeleteRelation(c echo.Context) error {
 		toID, _   = strconv.Atoi(c.Param("toID"))
 	)
 
+	if fromID < 1 || toID < 1 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid IDs.")
+	}
+
 	if err := app.data.DeleteRelation(fromID, toID); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error deleting relation: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, okResp{true})
+}
+
+func handleGetChangeSubmissions(c echo.Context) error {
+	var (
+		app = c.Get("app").(*App)
+	)
+
+	out, err := app.data.GetChangeSubmissions()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error deleting relation: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, okResp{out})
+}
+
+func handleDeleteChangeSubmission(c echo.Context) error {
+	var (
+		app   = c.Get("app").(*App)
+		id, _ = strconv.Atoi(c.Param("changeID"))
+	)
+
+	if id < 1 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
+	}
+
+	if err := app.data.DeleteChangeSubmission(id); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error deleting change: %v", err))
 	}
 
 	return c.JSON(http.StatusOK, okResp{true})

@@ -92,7 +92,7 @@ func handleGetPendingEntries(c echo.Context) error {
 	}
 
 	// Load relations into the matches.
-	if err := res.SearchAndLoadRelations(data.Query{Status: data.StatusPending},
+	if err := res.SearchAndLoadRelations(data.Query{},
 		app.queries.SearchRelations); err != nil {
 		app.logger.Printf("error querying db for defs: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

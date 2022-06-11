@@ -69,10 +69,9 @@ DROP INDEX IF EXISTS idx_relations; CREATE UNIQUE INDEX idx_relations ON relatio
 DROP TABLE IF EXISTS changes CASCADE;
 CREATE TABLE changes (
     id             SERIAL PRIMARY KEY,
-    from_id        INTEGER NULL REFERENCES entries(id) ON DELETE CASCADE ON UPDATE CASCADE, 
+    from_id        INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE ON UPDATE CASCADE, 
     to_id          INTEGER NULL REFERENCES entries(id) ON DELETE CASCADE ON UPDATE CASCADE, 
-    notes          TEXT NOT NULL DEFAULT '',
+    comments       TEXT NOT NULL DEFAULT '',
 
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-DROP INDEX IF EXISTS idx_changes; CREATE UNIQUE INDEX idx_changes ON changes(from_id, to_id);

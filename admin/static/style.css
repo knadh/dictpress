@@ -63,6 +63,7 @@ input[type="submit"], input[type="button"], button {
 	cursor: pointer;
 	width: auto;
 	min-width: 100px;
+	padding: 12px 20px;
 }
 	input[type="submit"]:hover, button:hover {
 		background: var(--secondary);
@@ -80,7 +81,18 @@ input[type="submit"], input[type="button"], button {
 		border-color: var(--secondary);
 		color: var(--secondary);
 	}
+	button.button-small {
+		font-size: 1rem;
+		padding: 5px 10px;
+	}
 
+	.buttons button, .buttons .button {
+		margin-right: 10px;
+	}
+	.buttons button:last-child,
+	.buttons .button:last-child {
+		margin-right: 0;
+	}
 	.button {
 		width: auto;
 	}
@@ -177,7 +189,7 @@ form .help {
 }
 .nav a {
 	display: inline-block;
-	margin-right: 45px;
+	margin-right: 20px;
 }
 
 .search {
@@ -222,13 +234,21 @@ form .help {
 	border-radius: 3px;
 	padding: 0 6px;
 }
-	.entries .heading {
+	.entries .heading h3 {
+		display: inline-block;
 		margin: 0;
 	}
-	.entries .lang {
+	.entries .comments {
+		background: #fff59c;
+		border-radius: 3px;
+		padding: 15px;
+		margin: 10px 0 10px 30px;
+	}
+	.entries .meta {
 		font-weight: normal;
 		color: var(--light);
 		font-size: 0.875rem;
+		margin-right: 10px;
 	}
 	.entries .edit:hover {
 		background: var(--secondary);
@@ -243,10 +263,6 @@ form .help {
 .entries .relations {
 	margin-top: 15px;	
 }
-	.entries .relations .types {
-		color: #888;
-		margin-right: 10px;
-	}
 	.entries .relations .actions {
 		visibility: hidden;
 	}
@@ -255,6 +271,20 @@ form .help {
 	}
 	.entries .relations .rel:hover .actions {
 		visibility: visible;
+	}
+	.entries .tag {
+		font-size: 0.775rem;
+		background: #fed;
+		color: #ed7b00;
+		text-transform: uppercase;
+		border: 1px solid;
+		padding: 3px 10px;
+		border-radius: 3px;
+		margin-right: 5px;
+	}
+	.entries .tag.new {
+		background: #c7ffdd;
+		color: #00aa44;
 	}
 
 .panel {

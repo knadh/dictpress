@@ -50,6 +50,7 @@ SELECT entries.*,
     relations.notes AS relation_notes,
     relations.id as relation_id,
     relations.weight as relation_weight,
+    relations.status as relation_status,
     relations.created_at as relation_created_at,
     relations.updated_at as relation_updated_at
 FROM entries
@@ -66,6 +67,8 @@ ORDER BY relations.weight;
 -- name: get-pending-entries
 WITH ids AS (
     SELECT DISTINCT from_id FROM relations WHERE status = 'pending'
+    UNION
+    SELECT DISTINCT from_id FROM changes
 )
 SELECT COUNT(*) OVER () AS total, e.* FROM entries e
     INNER JOIN ids ON (ids.from_id = e.id)
@@ -257,10 +260,13 @@ DELETE FROM relations WHERE from_id = $1 AND status = 'pending';
 
 -- name: insert-change
 -- Insert change suggestions coming from the public.
-WITH f AS (SELECT id FROM entries WHERE guid = $1),
-     t AS (SELECT id FROM entries WHERE guid = $2)
-INSERT INTO changes (from_id, to_id, notes)
+WITH f AS (SELECT id FROM entries WHERE $1::TEXT != '' AND guid = $1::UUID),
+     t AS (SELECT id FROM entries WHERE $2::TEXT != '' AND guid = $2::UUID)
+INSERT INTO changes (from_id, to_id, comments)
     VALUES((SELECT id FROM f), (SELECT id FROM t), $3);
+
+-- name: get-changes
+SELECT * FROM changes;
 
 -- name: delete-change
 DELETE FROM changes WHERE id = $1;

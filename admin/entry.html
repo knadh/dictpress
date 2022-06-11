@@ -88,6 +88,7 @@
 			<template x-if="!isNew">
 				<ul class="no meta">
 					<li><label>ID</label> <span x-text="entry.id"></span></li>
+					<li><label>GUID</label> <span x-text="entry.guid"></span></li>
 					<li><label>Created</label> <span x-text="entry.created_at.slice(0, 16).replace('T', ' ')"></span></li>
 					<li><label>Updated</label> <span x-text="entry.updated_at.slice(0, 16).replace('T', ' ')"></span></li>
 				</ul>

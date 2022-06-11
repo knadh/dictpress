@@ -23,6 +23,14 @@ type newSubmission struct {
 	RelationTypes   []string `form:"relation_type"`
 }
 
+// changeSubmission is a comment for change submitted by the public that can be
+// reviewed and manually incorporated into entries.
+type changeSubmission struct {
+	FromGUID string `json:"from_guid"`
+	ToGUID   string `json:"to_guid"`
+	Comments string `json:"comments"`
+}
+
 // handleNewSubmission inserts a new dictionary entry suggestion from the public
 // in the `pending` state for review.
 func handleNewSubmission(c echo.Context) error {
@@ -133,92 +141,23 @@ func handleNewSubmission(c echo.Context) error {
 	return nil
 }
 
-// handleNewSubmission inserts a new dictionary entry suggestion from the public
-// in the `pending` state for review.
-// func handleNewSubmission(c echo.Context) error {
-// 	app := c.Get("app").(*App)
-
-// 	var s newSubmission
-// 	if err := c.Bind(&s); err != nil {
-// 		return echo.NewHTTPError(http.StatusBadRequest,
-// 			fmt.Sprintf("error parsing request: %v", err))
-// 	}
-
-// 	if len(s.Relations) == 0 {
-// 		return echo.NewHTTPError(http.StatusBadRequest, "invalid `relations` in submission.")
-// 	}
-
-// 	// Main entry.
-// 	e := data.Entry{
-// 		Initial: strings.ToUpper(string(s.Content[0])),
-// 		Lang:    s.Lang,
-// 		Content: s.Content,
-// 		Phones:  s.Phones,
-// 		Notes:   s.Notes,
-// 		Status:  data.StatusPending,
-// 	}
-
-// 	// Validate the main entry.
-// 	if err := validateEntry(e, app); err != nil {
-// 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-// 	}
-
-// 	// Validate relations.
-// 	rels := make(data.Entries, 0, len(s.Relations))
-// 	for i, r := range s.Relations {
-// 		rels = append(rels, data.Entry{
-// 			Initial: strings.ToUpper(string(r.Content[0])),
-// 			Lang:    r.Lang,
-// 			Content: r.Content,
-// 			Phones:  r.Phones,
-// 			Status:  data.StatusPending,
-// 		})
-
-// 		if err := validateEntry(rels[i], app); err != nil {
-// 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-// 		}
-// 	}
-
-// 	// Save the main entry.
-// 	fromID, err := app.data.InsertEntry(e)
-// 	if err != nil {
-// 		app.logger.Printf("error inserting submission entry: %v", err)
-// 		return echo.NewHTTPError(http.StatusInternalServerError,
-// 			fmt.Sprintf("Error saving entry.", err))
-// 	}
-
-// 	// Insert relations.
-// 	for i, r := range rels {
-// 		toID, err := app.data.InsertEntry(r)
-// 		if err != nil {
-// 			app.logger.Printf("error inserting submission definition: %v", err)
-// 			return echo.NewHTTPError(http.StatusInternalServerError,
-// 				fmt.Sprintf("Error saving definition.", err))
-// 		}
-
-// 		if err := app.data.InsertRelation(fromID, toID, data.Relation{Types: s.Relations[i].Types}); err != nil {
-// 			app.logger.Printf("error inserting submission relation: %v", err)
-// 			return echo.NewHTTPError(http.StatusInternalServerError,
-// 				fmt.Sprintf("Error saving relation.", err))
-// 		}
-// 	}
-
-// 	return c.JSON(http.StatusOK, okResp{true})
-// }
-
 // handleChangeSubmission records a suggestion for change from the public in the changes table.
 // These suggestions are reviewed in the admin and any change involves manually incorporating
 // them to the linked entries.
 func handleChangeSubmission(c echo.Context) error {
 	app := c.Get("app").(*App)
 
-	var s data.ChangeSubmission
+	var s changeSubmission
 	if err := c.Bind(&s); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest,
 			fmt.Sprintf("error parsing request: %v", err))
 	}
 
-	if err := app.data.InsertChangeSubmission(s); err != nil {
+	if s.FromGUID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `from_guid`.")
+	}
+
+	if err := app.data.InsertChangeSubmission(s.FromGUID, s.ToGUID, s.Comments); err != nil {
 		app.logger.Printf("error inserting change submission: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("Error saving submission.", err))
