@@ -413,8 +413,8 @@ func (d *Data) insertRelation(fromID, toID int, r Relation, stmt *sqlx.Stmt) (in
 	return id, err
 }
 
-// SearchAndLoadRelations loads related entries into a slice of Entries.
-func (e Entries) SearchAndLoadRelations(q Query, stmt *sqlx.Stmt) error {
+// SearchAndLoadRelations loads related entries into the given Entries.
+func (d *Data) SearchAndLoadRelations(e Entries, q Query) error {
 	var (
 		IDs = make([]int64, len(e))
 
@@ -430,7 +430,7 @@ func (e Entries) SearchAndLoadRelations(q Query, stmt *sqlx.Stmt) error {
 	}
 
 	var relEntries Entries
-	if err := stmt.Select(&relEntries,
+	if err := d.queries.SearchRelations.Select(&relEntries,
 		q.ToLang,
 		pq.StringArray(q.Types),
 		pq.StringArray(q.Tags),
@@ -454,53 +454,6 @@ func (e Entries) SearchAndLoadRelations(q Query, stmt *sqlx.Stmt) error {
 			Status:    r.Status,
 			CreatedAt: r.RelationCreatedAt,
 			UpdatedAt: r.RelationUpdatedAt,
-		}
-
-		idx := idMap[r.FromID]
-		e[idx].Relations = append(e[idx].Relations, r)
-	}
-
-	return nil
-}
-
-// LoadPendingRelations loads pending relations to the entry.
-// Optionally, ig a list of IDs are given, they're also loaded. This
-// is used for loading entries with pending comments attached to them.
-func (e Entries) LoadPendingRelations(relIDs []int, stmt *sqlx.Stmt) error {
-	var (
-		IDs = make([]int64, len(e))
-
-		// Map that stores the slice indexes in e against Entry IDs
-		// to attach relations back into e.
-		idMap = make(map[int]int)
-	)
-
-	for i := 0; i < len(e); i++ {
-		IDs[i] = int64(e[i].ID)
-		e[i].Relations = make(Entries, 0)
-		idMap[e[i].ID] = i
-	}
-
-	var relEntries Entries
-	if err := stmt.Select(&relEntries, pq.Array(IDs)); err != nil {
-		if err == sql.ErrNoRows {
-			return nil
-		}
-
-		return err
-	}
-
-	for _, r := range relEntries {
-		// Copy top-level relation fields to the Relation sub-struct.
-		r.Relation = &Relation{
-			ID:        r.RelationID,
-			Types:     r.RelationTypes,
-			Tags:      r.RelationTags,
-			Notes:     r.RelationNotes,
-			Weight:    r.RelationWeight,
-			CreatedAt: r.RelationCreatedAt,
-			UpdatedAt: r.RelationUpdatedAt,
-			Status:    r.Status,
 		}
 
 		idx := idMap[r.FromID]

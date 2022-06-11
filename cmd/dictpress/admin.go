@@ -98,14 +98,14 @@ func handleGetPendingEntries(c echo.Context) error {
 	}
 
 	// Load relations into the matches.
-	if err := res.SearchAndLoadRelations(data.Query{},
-		app.queries.SearchRelations); err != nil {
+	if err := app.data.SearchAndLoadRelations(res, data.Query{}); err != nil {
 		app.logger.Printf("error querying db for defs: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-	out.Entries = res
 
 	pg.SetTotal(total)
+
+	out.Entries = res
 	out.Page = pg.Page
 	out.PerPage = pg.PerPage
 	out.TotalPages = pg.TotalPages
@@ -133,7 +133,7 @@ func handleGetEntry(c echo.Context) error {
 	e.Relations = make(data.Entries, 0)
 
 	entries := data.Entries{e}
-	if err := entries.SearchAndLoadRelations(data.Query{}, app.queries.SearchRelations); err != nil {
+	if err := app.data.SearchAndLoadRelations(entries, data.Query{}); err != nil {
 		app.logger.Printf("error loading relations: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error loading relations")
 	}

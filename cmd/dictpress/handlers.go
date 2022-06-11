@@ -127,12 +127,12 @@ func doSearch(c echo.Context) (data.Query, *results, error) {
 	}
 
 	// Load relations into the matches.
-	if err := res.SearchAndLoadRelations(data.Query{
+	if err := app.data.SearchAndLoadRelations(res, data.Query{
 		ToLang: toLang,
 		Offset: pg.Offset,
 		Limit:  pg.Limit,
 		Status: data.StatusEnabled,
-	}, app.queries.SearchRelations); err != nil {
+	}); err != nil {
 		app.logger.Printf("error querying db for defs: %v", err)
 		return query, nil, errors.New("error querying db for definitions")
 	}
