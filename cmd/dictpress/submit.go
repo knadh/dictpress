@@ -141,10 +141,10 @@ func handleNewSubmission(c echo.Context) error {
 	return nil
 }
 
-// handleCommentSubmission records a suggestion for change from the public in the changes table.
+// handleNewComments records a suggestion for change from the public in the changes table.
 // These suggestions are reviewed in the admin and any change involves manually incorporating
 // them to the linked entries.
-func handleCommentSubmission(c echo.Context) error {
+func handleNewComments(c echo.Context) error {
 	app := c.Get("app").(*App)
 
 	var s changeSubmission

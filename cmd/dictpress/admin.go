@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/subtle"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -67,6 +69,91 @@ func handleInsertEntry(c echo.Context) error {
 	c.SetParamNames("id")
 	c.SetParamValues(fmt.Sprintf("%d", id))
 	return handleGetEntry(c)
+}
+
+// handleGetPendingEntries returns the pending entries for moderation.
+func handleGetPendingEntries(c echo.Context) error {
+	var (
+		app = c.Get("app").(*App)
+
+		pg = app.resultsPg.NewFromURL(c.Request().URL.Query())
+	)
+
+	// Search and compose results.
+	out := &results{
+		Entries: data.Entries{},
+	}
+	res, total, err := app.data.GetPendingEntries("", nil, pg.Offset, pg.Limit)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.JSON(http.StatusOK, okResp{out})
+		}
+
+		app.logger.Printf("error querying db: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	if len(res) == 0 {
+		return c.JSON(http.StatusOK, okResp{out})
+	}
+
+	// Load relations into the matches.
+	if err := res.SearchAndLoadRelations(data.Query{},
+		app.queries.SearchRelations); err != nil {
+		app.logger.Printf("error querying db for defs: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	out.Entries = res
+
+	pg.SetTotal(total)
+	out.Page = pg.Page
+	out.PerPage = pg.PerPage
+	out.TotalPages = pg.TotalPages
+	out.Total = total
+
+	return c.JSON(http.StatusOK, okResp{out})
+}
+
+// handleGetEntry returns an entry by its guid.
+func handleGetEntry(c echo.Context) error {
+	var (
+		app   = c.Get("app").(*App)
+		id, _ = strconv.Atoi(c.Param("id"))
+	)
+
+	e, err := app.data.GetEntry(id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusBadRequest, "entry not found")
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	e.Relations = make(data.Entries, 0)
+
+	entries := data.Entries{e}
+	if err := entries.SearchAndLoadRelations(data.Query{}, app.queries.SearchRelations); err != nil {
+		app.logger.Printf("error loading relations: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "error loading relations")
+	}
+
+	return c.JSON(http.StatusOK, okResp{entries[0]})
+}
+
+// handleGetParentEntries returns the parent entries of an entry by its guid.
+func handleGetParentEntries(c echo.Context) error {
+	var (
+		app   = c.Get("app").(*App)
+		id, _ = strconv.Atoi(c.Param("id"))
+	)
+
+	out, err := app.data.GetParentEntries(id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, okResp{out})
 }
 
 // handleUpdateEntry updates a dictionary entry.
@@ -324,4 +411,21 @@ func adminPage(tpl string) func(c echo.Context) error {
 
 		return c.HTMLBlob(http.StatusOK, b.Bytes())
 	}
+}
+
+// basicAuth middleware does an HTTP BasicAuth authentication for admin handlers.
+func basicAuth(username, password string, c echo.Context) (bool, error) {
+	app := c.Get("app").(*App)
+
+	// Auth is disabled.
+	if len(app.constants.AdminUsername) == 0 &&
+		len(app.constants.AdminPassword) == 0 {
+		return true, nil
+	}
+
+	if subtle.ConstantTimeCompare([]byte(username), app.constants.AdminUsername) == 1 &&
+		subtle.ConstantTimeCompare([]byte(password), app.constants.AdminPassword) == 1 {
+		return true, nil
+	}
+	return false, nil
 }
