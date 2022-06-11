@@ -151,8 +151,16 @@ func (d *Data) Search(q Query) (Entries, int, error) {
 		pq.StringArray(q.Tags),
 		q.Status,
 		q.Offset, q.Limit,
-	); err != nil || len(out) == 0 {
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return Entries{}, 0, nil
+		}
+
 		return nil, 0, err
+	}
+
+	if len(out) == 0 {
+		return Entries{}, 0, nil
 	}
 
 	// Replace nulls with [].

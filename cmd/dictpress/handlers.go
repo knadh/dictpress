@@ -118,10 +118,6 @@ func doSearch(c echo.Context) (data.Query, *results, error) {
 	}
 	res, total, err := app.data.Search(query)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return query, out, nil
-		}
-
 		app.logger.Printf("error querying db: %v", err)
 		return query, nil, errors.New("error querying db")
 	}
@@ -141,9 +137,9 @@ func doSearch(c echo.Context) (data.Query, *results, error) {
 		return query, nil, errors.New("error querying db for definitions")
 	}
 
-	out.Entries = res
-
 	pg.SetTotal(total)
+
+	out.Entries = res
 	out.Page = pg.Page
 	out.PerPage = pg.PerPage
 	out.TotalPages = pg.TotalPages
