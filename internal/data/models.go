@@ -69,7 +69,7 @@ type Stats struct {
 	Languages map[string]int `json:"languages"`
 }
 
-type Change struct {
+type Comments struct {
 	ID       int      `json:"id" db:"id"`
 	FromID   int      `json:"from_id" db:"from_id"`
 	ToID     null.Int `json:"to_id" db:"to_id"`

@@ -241,12 +241,12 @@ func handleDeleteRelation(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-func handleGetChangeSubmissions(c echo.Context) error {
+func handleGetComments(c echo.Context) error {
 	var (
 		app = c.Get("app").(*App)
 	)
 
-	out, err := app.data.GetChangeSubmissions()
+	out, err := app.data.GetComments()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error deleting relation: %v", err))
@@ -255,19 +255,19 @@ func handleGetChangeSubmissions(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{out})
 }
 
-func handleDeleteChangeSubmission(c echo.Context) error {
+func handleDeletecomments(c echo.Context) error {
 	var (
 		app   = c.Get("app").(*App)
-		id, _ = strconv.Atoi(c.Param("changeID"))
+		id, _ = strconv.Atoi(c.Param("commentID"))
 	)
 
 	if id < 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
 	}
 
-	if err := app.data.DeleteChangeSubmission(id); err != nil {
+	if err := app.data.DeleteComments(id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
-			fmt.Sprintf("error deleting change: %v", err))
+			fmt.Sprintf("error deleting comments: %v", err))
 	}
 
 	return c.JSON(http.StatusOK, okResp{true})

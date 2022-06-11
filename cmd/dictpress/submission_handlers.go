@@ -141,10 +141,10 @@ func handleNewSubmission(c echo.Context) error {
 	return nil
 }
 
-// handleChangeSubmission records a suggestion for change from the public in the changes table.
+// handleCommentSubmission records a suggestion for change from the public in the changes table.
 // These suggestions are reviewed in the admin and any change involves manually incorporating
 // them to the linked entries.
-func handleChangeSubmission(c echo.Context) error {
+func handleCommentSubmission(c echo.Context) error {
 	app := c.Get("app").(*App)
 
 	var s changeSubmission
@@ -157,11 +157,11 @@ func handleChangeSubmission(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `from_guid`.")
 	}
 
-	if err := app.data.InsertChangeSubmission(s.FromGUID, s.ToGUID, s.Comments); err != nil {
+	if err := app.data.InsertComments(s.FromGUID, s.ToGUID, s.Comments); err != nil {
 		app.logger.Printf("error inserting change submission: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("Error saving submission.", err))
 	}
 
-	return nil
+	return c.JSON(http.StatusOK, okResp{true})
 }

@@ -66,9 +66,9 @@ type Queries struct {
 	GetPendingEntries        *sqlx.Stmt `query:"get-pending-entries"`
 	InsertSubmissionEntry    *sqlx.Stmt `query:"insert-submission-entry"`
 	InsertSubmissionRelation *sqlx.Stmt `query:"insert-submission-relation"`
-	InsertChangeSubmission   *sqlx.Stmt `query:"insert-change"`
-	GetChanges               *sqlx.Stmt `query:"get-changes"`
-	DeleteChangeSubmission   *sqlx.Stmt `query:"delete-change"`
+	InsertComments           *sqlx.Stmt `query:"insert-comments"`
+	GetComments              *sqlx.Stmt `query:"get-comments"`
+	DeleteComments           *sqlx.Stmt `query:"delete-comments"`
 	ApproveSubmission        *sqlx.Stmt `query:"approve-submission"`
 	RejectSubmission         *sqlx.Stmt `query:"reject-submission"`
 }
@@ -317,26 +317,26 @@ func (s *Data) DeleteRelation(fromID, toID int) error {
 	return err
 }
 
-// InsertChangeSubmission inserts a change suggestion from the public.
-func (d *Data) InsertChangeSubmission(fromGUID, toGUID, comments string) error {
-	_, err := d.queries.InsertChangeSubmission.Exec(fromGUID, toGUID, comments)
+// InsertComments inserts a change suggestion from the public.
+func (d *Data) InsertComments(fromGUID, toGUID, comments string) error {
+	_, err := d.queries.InsertComments.Exec(fromGUID, toGUID, comments)
 	return err
 }
 
-// GetChangeSubmissions retrieves change submissions.
-func (d *Data) GetChangeSubmissions() ([]Change, error) {
-	var out []Change
+// GetComments retrieves change submissions.
+func (d *Data) GetComments() ([]Comments, error) {
+	var out []Comments
 
-	if err := d.queries.GetChanges.Select(&out); err != nil {
+	if err := d.queries.GetComments.Select(&out); err != nil {
 		return nil, err
 	}
 
 	return out, nil
 }
 
-// DeleteChangeSubmission deletes a change suggestion from the public.
-func (d *Data) DeleteChangeSubmission(id int) error {
-	_, err := d.queries.DeleteChangeSubmission.Exec(id)
+// DeleteComments deletes a change suggestion from the public.
+func (d *Data) DeleteComments(id int) error {
+	_, err := d.queries.DeleteComments.Exec(id)
 	return err
 }
 

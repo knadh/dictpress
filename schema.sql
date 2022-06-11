@@ -63,11 +63,11 @@ CREATE TABLE relations (
 );
 DROP INDEX IF EXISTS idx_relations; CREATE UNIQUE INDEX idx_relations ON relations(from_id, to_id);
 
--- changes
+-- comments
 -- This table holds change suggestions submitted by the public. It can either be on an entry
 -- or on a relation.
-DROP TABLE IF EXISTS changes CASCADE;
-CREATE TABLE changes (
+DROP TABLE IF EXISTS comments CASCADE;
+CREATE TABLE comments (
     id             SERIAL PRIMARY KEY,
     from_id        INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE ON UPDATE CASCADE, 
     to_id          INTEGER NULL REFERENCES entries(id) ON DELETE CASCADE ON UPDATE CASCADE, 

@@ -159,8 +159,8 @@ function searchResultsComponent(typ) {
 		order: {},
 		hasRelReordered: {},
 
-		// from_id-to_id -> change{}
-		changes: {},
+		// from_id-to_id -> comments{}
+		comments: {},
 
 		onLoad() {
 			this.refresh();
@@ -173,7 +173,7 @@ function searchResultsComponent(typ) {
 			}
 
 			this.getPending();
-			this.getChanges();
+			this.getComments();
 		},
 
 		getPending() {
@@ -183,8 +183,8 @@ function searchResultsComponent(typ) {
 			})
 		},
 
-		getChanges() {
-			this.api('entries.search', '/entries/changes').then((data) => {
+		getComments() {
+			this.api('entries.search', '/entries/comments').then((data) => {
 				let out = {};
 
 				// Create a from_id-to_id lookup map that can be used in
@@ -197,7 +197,7 @@ function searchResultsComponent(typ) {
 					}
 				});
 
-				this.changes = out;
+				this.comments = out;
 			})
 		},
 
@@ -220,8 +220,8 @@ function searchResultsComponent(typ) {
 			}
 		},
 
-		onClearComment(id) {
-			this.api('entries.delete', `/entries/changes/${id}`, 'DELETE').then(() => this.refresh());
+		onClearComments(id) {
+			this.api('entries.delete', `/entries/comments/${id}`, 'DELETE').then(() => this.refresh());
 		},
 
 		onReorderRelation(entry, rel, n, d) {

@@ -68,7 +68,7 @@ ORDER BY relations.weight;
 WITH ids AS (
     SELECT DISTINCT from_id FROM relations WHERE status = 'pending'
     UNION
-    SELECT DISTINCT from_id FROM changes
+    SELECT DISTINCT from_id FROM comments
 )
 SELECT COUNT(*) OVER () AS total, e.* FROM entries e
     INNER JOIN ids ON (ids.from_id = e.id)
@@ -258,15 +258,15 @@ e2 AS (
 )
 DELETE FROM relations WHERE from_id = $1 AND status = 'pending';
 
--- name: insert-change
--- Insert change suggestions coming from the public.
+-- name: insert-comments
+-- Insert comments / suggestions coming from the public.
 WITH f AS (SELECT id FROM entries WHERE $1::TEXT != '' AND guid = $1::UUID),
      t AS (SELECT id FROM entries WHERE $2::TEXT != '' AND guid = $2::UUID)
-INSERT INTO changes (from_id, to_id, comments)
+INSERT INTO comments (from_id, to_id, comments)
     VALUES((SELECT id FROM f), (SELECT id FROM t), $3);
 
--- name: get-changes
-SELECT * FROM changes;
+-- name: get-comments
+SELECT * FROM comments;
 
--- name: delete-change
-DELETE FROM changes WHERE id = $1;
+-- name: delete-comments
+DELETE FROM comments WHERE id = $1;

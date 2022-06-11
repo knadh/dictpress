@@ -150,7 +150,7 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 	// Public user submission APIs.
 	if ko.Bool("app.enable_submissions") {
 		p.POST("/api/submissions/new", handleNewSubmission)
-		p.POST("/api/submissions/change", handleChangeSubmission)
+		p.POST("/api/submissions/comments", handleCommentSubmission)
 		p.GET("/submit", handleSubmissionPage)
 		p.POST("/submit", handleNewSubmission)
 	}
@@ -163,8 +163,8 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 
 	a.GET("/api/stats", handleGetStats)
 	a.GET("/api/entries/pending", handleGetPendingEntries)
-	a.GET("/api/entries/changes", handleGetChangeSubmissions)
-	a.DELETE("/api/entries/changes/:changeID", handleDeleteChangeSubmission)
+	a.GET("/api/entries/comments", handleGetComments)
+	a.DELETE("/api/entries/comments/:commentID", handleDeletecomments)
 	a.GET("/api/entries/:id", handleGetEntry)
 	a.GET("/api/entries/:id/parents", handleGetParentEntries)
 	a.POST("/api/entries", handleInsertEntry)
