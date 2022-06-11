@@ -53,7 +53,7 @@ func handleInsertEntry(c echo.Context) error {
 			fmt.Sprintf("error parsing request: %v", err))
 	}
 
-	if err := validateEntry(e); err != nil {
+	if err := validateEntry(e, app); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
@@ -93,6 +93,36 @@ func handleUpdateEntry(c echo.Context) error {
 	return handleGetEntry(c)
 }
 
+// handleApproveSubmission updates a dictionary entry.
+func handleApproveSubmission(c echo.Context) error {
+	var (
+		app   = c.Get("app").(*App)
+		id, _ = strconv.Atoi(c.Param("id"))
+	)
+
+	if err := app.data.ApproveSubmission(id); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error approving submission: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, okResp{true})
+}
+
+// handleRejectSubmission updates a dictionary entry.
+func handleRejectSubmission(c echo.Context) error {
+	var (
+		app   = c.Get("app").(*App)
+		id, _ = strconv.Atoi(c.Param("id"))
+	)
+
+	if err := app.data.RejectSubmission(id); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error rejecting submission: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, okResp{true})
+}
+
 // handleDeleteEntry deletes a dictionary entry.
 func handleDeleteEntry(c echo.Context) error {
 	var (
@@ -122,7 +152,7 @@ func handleAddRelation(c echo.Context) error {
 			fmt.Sprintf("error parsing request: %v", err))
 	}
 
-	if err := app.data.InsertRelation(fromID, toID, rel); err != nil {
+	if _, err := app.data.InsertRelation(fromID, toID, rel); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error inserting relation: %v", err))
 	}
@@ -187,15 +217,17 @@ func handleDeleteRelation(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-func validateEntry(e data.Entry) error {
+func validateEntry(e data.Entry, app *App) error {
 	if strings.TrimSpace(e.Content) == "" {
 		return errors.New("invalid `content`.")
 	}
+
 	if strings.TrimSpace(e.Initial) == "" {
 		return errors.New("invalid `initial`.")
 	}
-	if strings.TrimSpace(e.Lang) == "" {
-		return errors.New("invalid `lang`.")
+
+	if _, ok := app.data.Langs[e.Lang]; !ok {
+		return errors.New("unknown `lang`.")
 	}
 
 	return nil
@@ -209,7 +241,20 @@ func adminPage(tpl string) func(c echo.Context) error {
 		title := ""
 		switch tpl {
 		case "search":
-			title = fmt.Sprintf("Search '%s'", c.Request().URL.Query().Get("query"))
+			var (
+				q  = c.Request().URL.Query().Get("query")
+				id = c.Request().URL.Query().Get("id")
+			)
+
+			title = "Search"
+			if q != "" {
+				title = fmt.Sprintf("Search '%s'", q)
+			} else if id != "" {
+				title = fmt.Sprintf("Entry #%s", id)
+			}
+
+		case "pending":
+			title = "Pending submissions"
 		}
 
 		b := &bytes.Buffer{}

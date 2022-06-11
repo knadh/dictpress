@@ -60,8 +60,33 @@ WHERE
     AND (COALESCE(CARDINALITY($3::TEXT[]), 0) = 0 OR relations.tags && $3)
     -- AND tokens @@ (CASE WHEN $4 != '' THEN plainto_tsquery($4::regconfig, $5::TEXT) ELSE to_tsquery($5) END)
     AND from_id = ANY($4::INT[])
-    AND (CASE WHEN $5 != '' THEN status = $5::entry_status ELSE TRUE END)
+    AND (CASE WHEN $5 != '' THEN relations.status = $5::entry_status ELSE TRUE END)
 ORDER BY relations.weight;
+
+-- name: get-pending-entries
+WITH ids AS (
+    SELECT DISTINCT from_id FROM relations WHERE status = 'pending'
+)
+SELECT COUNT(*) OVER () AS total, e.* FROM entries e
+    INNER JOIN ids ON (ids.from_id = e.id)
+    WHERE ($1 = '' OR lang=$1)
+    AND (COALESCE(CARDINALITY($2::TEXT[]), 0) = 0 OR e.tags && $2)
+    OFFSET $3 LIMIT $4;
+
+-- name: approve-pending-entry
+WITH e AS (
+    UPDATE entries SET status='active' WHERE id = $1
+)
+UPDATE relations WHERE from_id = $1;
+
+-- name: reject-pending-entry
+WITH e AS (
+    DELETE FROM relations WHERE to_id = (SELECT DISTINCT to_id FROM )
+),
+r AS (
+    DELETE FROM entries WHERE id = $1
+)
+UPDATE relations WHERE from_id = $1;
 
 -- name: get-entry
 SELECT * FROM entries WHERE id=$1;
@@ -71,7 +96,6 @@ SELECT entries.*, relations.id as relation_id FROM entries
     LEFT JOIN relations ON (relations.from_id = entries.id)
     WHERE to_id = $1
     ORDER BY weight;
-
 
 -- name: get-initials
 -- Gets the list of unique "initial"s (first character) across all the words
@@ -94,16 +118,17 @@ WITH w AS (
     SELECT (weight+1) AS weight FROM entries WHERE initial=$2 AND $3=0 ORDER BY content DESC LIMIT 1
 )
 INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes, status)
-        VALUES(
+    VALUES(
         $1,
         $2,
         COALESCE((SELECT weight FROM w), $3),
-        (CASE WHEN $4::TEXT != '' THEN TO_TSVECTOR($5::regconfig, $4::TEXT) ELSE $4::TSVECTOR END),
+        (CASE WHEN $5 != '' AND $4::TEXT != '' THEN TO_TSVECTOR($5::regconfig, $4::TEXT) ELSE $4::TSVECTOR END),
         $6,
         $7,
         $8,
         $9,
-        $10)
+        $10
+    )
     RETURNING id;
 
 -- name: update-entry
@@ -126,17 +151,8 @@ WITH w AS (
     -- for the initial of the given word and add +1 to it.
     SELECT MAX(weight) + 1 AS weight FROM relations WHERE from_id=$1 AND $6=0
 )
-INSERT INTO relations (from_id, to_id, types, tags, notes, weight)
-    VALUES($1, $2, $3, $4, $5, COALESCE((SELECT weight FROM w), $6));
-
--- name: update-relation
-UPDATE relations SET
-    types = (CASE WHEN $2::TEXT[] IS NOT NULL THEN $2 ELSE types END),
-    tags = (CASE WHEN $3::TEXT[] IS NOT NULL THEN $3 ELSE tags END),
-    notes = $4,
-    weight = (CASE WHEN $5::DECIMAL != 0 THEN $5 ELSE weight END),
-    updated_at = NOW()
-WHERE id = $1;
+INSERT INTO relations (from_id, to_id, types, tags, notes, weight, status)
+    VALUES($1, $2, $3, $4, $5, COALESCE((SELECT weight FROM w), $6), $7);
 
 -- name: reorder-relations
 -- Updates the weights from 1 to N given ordered relation IDs in an array. 
@@ -158,3 +174,93 @@ SELECT JSON_BUILD_OBJECT('entries', (SELECT COUNT(*) FROM entries),
                                 (SELECT lang, COUNT(*) AS num FROM entries GROUP BY lang) r
                             )
                         );
+
+-- name: insert-submission-entry
+-- This differs from insert-entry which always inserts a new non-unique entry for content+lang.
+-- This query checks if content+lang exists and returns its ID. If it doesn't exist, the entry
+-- is inserted and the new ID is returned. This is used for public submissions which thus always
+-- get related to an existing entry in the database.
+WITH w AS (
+    SELECT (weight+1) AS weight FROM entries WHERE initial=$2 AND $3=0 ORDER BY content DESC LIMIT 1
+),
+old AS (
+    SELECT id FROM entries WHERE
+    LOWER(SUBSTRING(content, 0, 50)) = LOWER(SUBSTRING($1, 0, 50)) AND lang = $6 AND status != 'disabled'
+    LIMIT 1
+),
+e AS (
+    INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes, status)
+    SELECT
+        $1,
+        $2,
+        COALESCE((SELECT weight FROM w), $3),
+        (CASE WHEN $5::TEXT != '' THEN TO_TSVECTOR($5::regconfig, $4::TEXT) ELSE $4::TSVECTOR END),
+        $6,
+        $7,
+        $8,
+        $9,
+        $10
+    WHERE NOT EXISTS (SELECT * FROM old)
+    RETURNING id
+)
+SELECT id FROM e UNION ALL SELECT id FROM old;
+
+-- name: insert-submission-relation
+-- Only inserts if the same from_id + to_id + type[] doesn't already exist.
+WITH old AS (
+    SELECT id FROM relations WHERE from_id = $1 AND to_id = $2 AND types && $3 LIMIT 1
+),
+w AS (
+    -- If weight ($4) is 0, compute a new weight by looking up the last weight
+    -- for the initial of the given word and add +1 to it.
+    SELECT MAX(weight) + 1 AS weight FROM relations WHERE from_id=$1 AND $6=0
+),
+e AS (
+    INSERT INTO relations (from_id, to_id, types, tags, notes, weight, status)
+    SELECT $1, $2, $3, $4, $5, COALESCE((SELECT weight FROM w), $6), $7
+    WHERE NOT EXISTS (SELECT * FROM old)
+    RETURNING id
+)
+SELECT id FROM e UNION ALL SELECT id FROM old;
+
+-- name: update-relation
+UPDATE relations SET
+    types = (CASE WHEN $2::TEXT[] IS NOT NULL THEN $2 ELSE types END),
+    tags = (CASE WHEN $3::TEXT[] IS NOT NULL THEN $3 ELSE tags END),
+    notes = $4,
+    weight = (CASE WHEN $5::DECIMAL != 0 THEN $5 ELSE weight END),
+    updated_at = NOW()
+WHERE id = $1;
+
+-- name: approve-submission
+WITH e AS (
+    -- Approve the pending main entry.
+    UPDATE entries SET status = 'enabled', updated_at = NOW() WHERE id = $1 AND status = 'pending'
+),
+e2 AS (
+    -- Approve all the definition entries connected to the main entry.
+    UPDATE entries SET status = 'enabled', updated_at = NOW()
+    WHERE status = 'pending' AND id = ANY(SELECT to_id FROM relations WHERE from_id = $1)
+)
+UPDATE relations SET status = 'enabled', updated_at = NOW() WHERE from_id = $1 AND status = 'pending';
+
+-- name: reject-submission
+WITH e AS (
+    DELETE FROM entries WHERE id = $1 AND status = 'pending'
+),
+e2 AS (
+    -- Approve all the definition entries connected to the main entry.
+    DELETE FROM entries WHERE status = 'pending'
+    AND id = ANY(SELECT to_id FROM relations WHERE from_id = $1)
+)
+DELETE FROM relations WHERE from_id = $1 AND status = 'pending';
+
+-- name: insert-change
+-- Insert change suggestions coming from the public.
+WITH f AS (SELECT id FROM entries WHERE guid = $1),
+     t AS (SELECT id FROM entries WHERE guid = $2)
+INSERT INTO changes (from_id, to_id, notes)
+    VALUES((SELECT id FROM f), (SELECT id FROM t), $3);
+
+-- name: delete-change
+DELETE FROM changes WHERE id = $1;

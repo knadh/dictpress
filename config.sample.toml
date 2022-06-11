@@ -2,6 +2,10 @@
 # Network address for the server to listen on.
 address = ":9000"
 
+# Admin dashboard and API credentials.
+admin_username = "dictpress"
+admin_password = "dictpress_admin_password"
+
 # The website URL to be used on the frontend pages.
 # Example: yourdictionary.site.com
 root_url = "http://localhost:9000"
@@ -15,9 +19,10 @@ root_url = "http://localhost:9000"
 # This is relevant when starting the app with a site theme (--site param).
 enable_pages = false
 
-# Admin dashboard and API credentials.
-admin_username = "dictpress"
-admin_password = "dictpress_admin_password"
+# Enable API endpoints for accepting public user submissions and corrections.
+# All user submissions are queued for the admin to review and only get published
+# on approval.
+enable_submissions = false
 
 
 [results]

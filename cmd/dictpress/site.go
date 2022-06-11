@@ -27,9 +27,10 @@ type sitePage struct {
 	Description string
 	MetaTags    string
 
+	Langs    data.LangMap
 	Query    *data.Query
-	Results  *Results
-	Glossary *Glossary
+	Results  *results
+	Glossary *glossary
 	Initial  string
 	Initials []string
 	Pg       *paginator.Set
@@ -62,9 +63,12 @@ type tplData struct {
 
 // handleIndexPage renders the homepage.
 func handleIndexPage(c echo.Context) error {
+	app := c.Get("app").(*App)
+
 	return c.Render(http.StatusOK, "index", sitePage{
-		Path: c.Path(),
-		Page: pageIndex,
+		Langs: app.data.Langs,
+		Path:  c.Path(),
+		Page:  pageIndex,
 	})
 }
 
@@ -84,10 +88,23 @@ func handleSearchPage(c echo.Context) error {
 
 	// Render the results.
 	return c.Render(http.StatusOK, "search", sitePage{
+		Langs:   app.data.Langs,
 		Path:    c.Path(),
 		Page:    pageSearch,
 		Results: out,
 		Query:   &query,
+	})
+}
+
+// handleSubmissionPage renders the new entry submission page.
+func handleSubmissionPage(c echo.Context) error {
+	app := c.Get("app").(*App)
+
+	// Render the results.
+	return c.Render(http.StatusOK, "submit-entry", sitePage{
+		Title: "Suggest a new entry",
+		Langs: app.data.Langs,
+		Path:  c.Path(),
 	})
 }
 
@@ -115,6 +132,7 @@ func handleGlossaryPage(c echo.Context) error {
 	if len(initials) == 0 {
 		// No glossary initials found.
 		return c.Render(http.StatusOK, "glossary", sitePage{
+			Langs:   app.data.Langs,
 			Path:    c.Path(),
 			Page:    pageGlossary,
 			Initial: initial,
@@ -143,6 +161,7 @@ func handleGlossaryPage(c echo.Context) error {
 
 	// Render the results.
 	return c.Render(http.StatusOK, "glossary", sitePage{
+		Langs:    app.data.Langs,
 		Path:     c.Path(),
 		Page:     pageGlossary,
 		Initial:  initial,
@@ -168,8 +187,9 @@ func handleStaticPage(c echo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, id, sitePage{
-		Path: c.Path(),
-		Page: pageStatic,
+		Langs: app.data.Langs,
+		Path:  c.Path(),
+		Page:  pageStatic,
 	})
 }
 

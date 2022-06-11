@@ -145,7 +145,7 @@ function searchFormComponent() {
 	}
 }
 
-function searchResultsComponent() {
+function searchResultsComponent(typ) {
 	return {
 		id: null,
 		query: null,
@@ -160,7 +160,23 @@ function searchResultsComponent() {
 		hasRelReordered: {},
 
 		onLoad() {
-			this.onSearch();
+			this.refresh();
+		},
+
+		refresh() {
+			if (typ === 'search') {
+				this.onSearch();
+				return;
+			}
+
+			this.getPending();
+		},
+
+		getPending() {
+			this.api('entries.search', '/entries/pending').then((data) => {
+				this.total = data.total;
+				this.entries = data.entries;
+			})
 		},
 
 		onSearch() {
@@ -220,7 +236,7 @@ function searchResultsComponent() {
 				return;
 			}
 
-			this.api('relations.detatch', `/entries/${fromId}/relations/${toId}`, 'DELETE').then(() => this.onSearch());
+			this.api('relations.detatch', `/entries/${fromId}/relations/${toId}`, 'DELETE').then(() => this.refresh());
 		},
 
 		onEditEntry(entry, parent) {
@@ -247,14 +263,22 @@ function searchResultsComponent() {
 			if (!confirm("Delete this entry? The definitions are not deleted and may be attached to other entries.")) {
 				return;
 			}
-			this.api('entries.delete', `/entries/${id}`, 'DELETE').then(() => this.onSearch());
+			this.api('entries.delete', `/entries/${id}`, 'DELETE').then(() => this.refresh());
+		},
+
+		onApproveSubmission(id) {
+			this.api('entries.update', `/entries/${id}/submission`, 'PUT').then(() => this.refresh());
+		},
+
+		onRejectSubmission(id) {
+			this.api('entries.delete', `/entries/${id}/submission`, 'DELETE').then(() => this.refresh());
 		},
 
 		onDeleteRelationEntry(id) {
 			if (!confirm("Delete this entry? It will be deleted from all entries in the database it may be attached to.")) {
 				return;
 			}
-			this.api('relations.delete', `/entries/${id}`, 'DELETE').then(() => this.onSearch());
+			this.api('relations.delete', `/entries/${id}`, 'DELETE').then(() => this.refresh());
 		}
 	}
 }

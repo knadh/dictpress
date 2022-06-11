@@ -55,11 +55,24 @@ CREATE TABLE relations (
     types           TEXT[] NOT NULL DEFAULT '{}',
     tags            TEXT[] NOT NULL DEFAULT '{}',
     notes           TEXT NOT NULL DEFAULT '',
-
-    -- Optional weight for ordering definitions.
     weight          DECIMAL DEFAULT 0,
 
+    status          entry_status NOT NULL DEFAULT 'enabled',
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 DROP INDEX IF EXISTS idx_relations; CREATE UNIQUE INDEX idx_relations ON relations(from_id, to_id);
+
+-- changes
+-- This table holds change suggestions submitted by the public. It can either be on an entry
+-- or on a relation.
+DROP TABLE IF EXISTS changes CASCADE;
+CREATE TABLE changes (
+    id             SERIAL PRIMARY KEY,
+    from_id        INTEGER NULL REFERENCES entries(id) ON DELETE CASCADE ON UPDATE CASCADE, 
+    to_id          INTEGER NULL REFERENCES entries(id) ON DELETE CASCADE ON UPDATE CASCADE, 
+    notes          TEXT NOT NULL DEFAULT '',
+
+    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+DROP INDEX IF EXISTS idx_changes; CREATE UNIQUE INDEX idx_changes ON changes(from_id, to_id);

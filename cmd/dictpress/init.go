@@ -101,8 +101,9 @@ func initTokenizers() map[string]data.Tokenizer {
 	}
 }
 
-func initHTTPServer(app *App) *echo.Echo {
+func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 	srv := echo.New()
+	srv.Debug = true
 	srv.HideBanner = true
 
 	// Register app (*App) to be injected into all HTTP handlers.
@@ -146,22 +147,33 @@ func initHTTPServer(app *App) *echo.Echo {
 	p.GET("/api/config", handleGetConfig)
 	p.GET("/api/dictionary/:fromLang/:toLang/:q", handleSearch)
 
+	// Public user submission APIs.
+	if ko.Bool("app.enable_submissions") {
+		p.POST("/api/submissions/new", handleNewSubmission)
+		p.POST("/api/submissions/changes", handleNewSubmission)
+		p.GET("/submit", handleSubmissionPage)
+		p.POST("/submit", handleNewSubmission)
+	}
+
 	// Admin handlers and APIs.
 	a.GET("/admin/static/*", echo.WrapHandler(app.fs.FileServer()))
 	a.GET("/admin", adminPage("index"))
 	a.GET("/admin/search", adminPage("search"))
-	a.GET("/admin/entries/:id", adminPage("entry"))
+	a.GET("/admin/pending", adminPage("pending"))
 
 	a.GET("/api/stats", handleGetStats)
-	a.POST("/api/entries", handleInsertEntry)
+	a.GET("/api/entries/pending", handleGetPendingEntries)
 	a.GET("/api/entries/:id", handleGetEntry)
 	a.GET("/api/entries/:id/parents", handleGetParentEntries)
+	a.POST("/api/entries", handleInsertEntry)
+	a.PUT("/api/entries/:id", handleUpdateEntry)
 	a.DELETE("/api/entries/:id", handleDeleteEntry)
 	a.DELETE("/api/entries/:fromID/relations/:toID", handleDeleteRelation)
 	a.POST("/api/entries/:fromID/relations/:toID", handleAddRelation)
 	a.PUT("/api/entries/:id/relations/weights", handleReorderRelations)
 	a.PUT("/api/entries/:id/relations/:relID", handleUpdateRelation)
-	a.PUT("/api/entries/:id", handleUpdateEntry)
+	a.PUT("/api/entries/:id/submission", handleApproveSubmission)
+	a.DELETE("/api/entries/:id/submission", handleRejectSubmission)
 
 	return srv
 }

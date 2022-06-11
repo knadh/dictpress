@@ -46,6 +46,10 @@ func (ip *IndicPhone) ToTokens(s string, lang string) ([]string, error) {
 			key0, key1, key2 = ip.ml.Encode(c)
 		}
 
+		if key0 == "" {
+			return nil, nil
+		}
+
 		tokens = append(tokens,
 			data.Token{Token: key0, Weight: 3},
 			data.Token{Token: key1, Weight: 2},

@@ -15,8 +15,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Results represents a set of results.
-type Results struct {
+// results represents a set of results.
+type results struct {
 	FromLang string       `json:"-"`
 	ToLang   string       `json:"-"`
 	Entries  []data.Entry `json:"entries"`
@@ -25,8 +25,8 @@ type Results struct {
 	paginator.Set
 }
 
-// Glossary represents a set of glossary words.
-type Glossary struct {
+// glossary represents a set of glossary words.
+type glossary struct {
 	FromLang string              `json:"-"`
 	ToLang   string              `json:"-"`
 	Words    []data.GlossaryWord `json:"entries"`
@@ -61,6 +61,49 @@ func handleSearch(c echo.Context) error {
 
 		return echo.NewHTTPError(s, err.Error())
 	}
+
+	return c.JSON(http.StatusOK, okResp{out})
+}
+
+// handleGetPendingEntries returns the pending entries for moderation.
+func handleGetPendingEntries(c echo.Context) error {
+	var (
+		app = c.Get("app").(*App)
+
+		pg = app.resultsPg.NewFromURL(c.Request().URL.Query())
+	)
+
+	// Search and compose results.
+	out := &results{
+		Entries: data.Entries{},
+	}
+	res, total, err := app.data.GetPendingEntries("", nil, pg.Offset, pg.Limit)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.JSON(http.StatusOK, okResp{out})
+		}
+
+		app.logger.Printf("error querying db: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	if len(res) == 0 {
+		return c.JSON(http.StatusOK, okResp{out})
+	}
+
+	// Load relations into the matches.
+	if err := res.SearchAndLoadRelations(data.Query{Status: data.StatusPending},
+		app.queries.SearchRelations); err != nil {
+		app.logger.Printf("error querying db for defs: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	out.Entries = res
+
+	pg.SetTotal(total)
+	out.Page = pg.Page
+	out.PerPage = pg.PerPage
+	out.TotalPages = pg.TotalPages
+	out.Total = total
 
 	return c.JSON(http.StatusOK, okResp{out})
 }
@@ -109,7 +152,7 @@ func handleGetParentEntries(c echo.Context) error {
 
 // doSearch is a helper function that takes an HTTP query context,
 // gets search params from it, performs a search and returns results.
-func doSearch(c echo.Context) (data.Query, *Results, error) {
+func doSearch(c echo.Context) (data.Query, *results, error) {
 	var (
 		app = c.Get("app").(*App)
 
@@ -119,7 +162,7 @@ func doSearch(c echo.Context) (data.Query, *Results, error) {
 
 		qp  = c.Request().URL.Query()
 		pg  = app.resultsPg.NewFromURL(qp)
-		out = &Results{}
+		out = &results{}
 	)
 
 	q, err := url.QueryUnescape(q)
@@ -157,7 +200,7 @@ func doSearch(c echo.Context) (data.Query, *Results, error) {
 	}
 
 	// Search and compose results.
-	out = &Results{
+	out = &results{
 		Entries: data.Entries{},
 	}
 	res, total, err := app.data.Search(query)
@@ -185,13 +228,6 @@ func doSearch(c echo.Context) (data.Query, *Results, error) {
 		return query, nil, errors.New("error querying db for definitions")
 	}
 
-	// Replace nulls with [].
-	for i := range res {
-		if res[i].Relations == nil {
-			res[i].Relations = data.Entries{}
-		}
-	}
-
 	out.Entries = res
 
 	pg.SetTotal(total)
@@ -205,9 +241,9 @@ func doSearch(c echo.Context) (data.Query, *Results, error) {
 
 // getGlossaryWords is a helper function that takes an HTTP query context,
 // gets params from it and returns a glossary of words for a language.
-func getGlossaryWords(lang, initial string, pg paginator.Set, app *App) (*Glossary, error) {
+func getGlossaryWords(lang, initial string, pg paginator.Set, app *App) (*glossary, error) {
 	// HTTP response.
-	out := &Glossary{
+	out := &glossary{
 		Words: []data.GlossaryWord{},
 	}
 

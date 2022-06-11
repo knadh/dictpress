@@ -180,7 +180,7 @@ func main() {
 	app.adminTpl = initAdminTemplates(app)
 
 	// Initialize the echo HTTP server.
-	srv := initHTTPServer(app)
+	srv := initHTTPServer(app, ko)
 
 	// Load optional HTML website.
 	if app.constants.Site != "" {

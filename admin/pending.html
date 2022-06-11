@@ -1,9 +1,9 @@
-{{ define "search" }}
+{{ define "pending" }}
 {{ template "header" . }}
 
-<section x-data="searchResultsComponent('search')" x-init="onLoad" @search.window="onSearch">
+<section x-data="searchResultsComponent('pending')" x-init="onLoad" @search.window="onSearch">
 	<template x-if="!id && loading['entries.search'] !== true">
-		<h3><span x-text="total"></span> results for &ldquo;<span x-text="query"></span>&rdquo;</h3>
+		<h3><span x-text="total"></span> pending entries</h3>
 	</template>
 	<template x-if="loading['entries.search'] === true">
 		<span class="loading"></span>
@@ -51,6 +51,8 @@
 					</div>
 				</template>
 				<div class="clearfix"></div>
+				<button @click.prevent="onApproveSubmission(e.id)">Approve</button>
+				<button @click.prevent="onRejectSubmission(e.id)" class="button-outline">Reject</button>
 			</li>
 		</template>
 	</ol>
