@@ -114,7 +114,7 @@ func doSearch(c echo.Context) (data.Query, *results, error) {
 
 	// Search and compose results.
 	out = &results{
-		Entries: data.Entries{},
+		Entries: []data.Entry{},
 	}
 	res, total, err := app.data.Search(query)
 	if err != nil {

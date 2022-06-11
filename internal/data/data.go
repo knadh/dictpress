@@ -102,12 +102,12 @@ func New(q *Queries, langs LangMap) *Data {
 // Search returns the entries filtered and paginated by a
 // given Query along with the total number of matches in the
 // database.
-func (d *Data) Search(q Query) (Entries, int, error) {
+func (d *Data) Search(q Query) ([]Entry, int, error) {
 	// Is there a Tokenizer?
 	var (
 		tsVectorLang  = ""
 		tsVectorQuery string
-		out           Entries
+		out           []Entry
 	)
 
 	lang, ok := d.Langs[q.FromLang]
@@ -153,20 +153,20 @@ func (d *Data) Search(q Query) (Entries, int, error) {
 		q.Offset, q.Limit,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			return Entries{}, 0, nil
+			return []Entry{}, 0, nil
 		}
 
 		return nil, 0, err
 	}
 
 	if len(out) == 0 {
-		return Entries{}, 0, nil
+		return []Entry{}, 0, nil
 	}
 
 	// Replace nulls with [].
 	for i := range out {
 		if out[i].Relations == nil {
-			out[i].Relations = Entries{}
+			out[i].Relations = []Entry{}
 		}
 	}
 
@@ -174,8 +174,8 @@ func (d *Data) Search(q Query) (Entries, int, error) {
 }
 
 // GetPendingEntries fetches entries based on the given condition.
-func (d *Data) GetPendingEntries(lang string, tags pq.StringArray, offset, limit int) (Entries, int, error) {
-	var out Entries
+func (d *Data) GetPendingEntries(lang string, tags pq.StringArray, offset, limit int) ([]Entry, int, error) {
+	var out []Entry
 
 	if err := d.queries.GetPendingEntries.Select(&out, lang, tags, offset, limit); err != nil || len(out) == 0 {
 		return nil, 0, err
@@ -184,7 +184,7 @@ func (d *Data) GetPendingEntries(lang string, tags pq.StringArray, offset, limit
 	// Replace nulls with [].
 	for i := range out {
 		if out[i].Relations == nil {
-			out[i].Relations = Entries{}
+			out[i].Relations = []Entry{}
 		}
 	}
 
@@ -246,8 +246,8 @@ func (d *Data) GetEntry(id int) (Entry, error) {
 }
 
 // GetParentEntries returns the parent entries of an entry by its id.
-func (d *Data) GetParentEntries(id int) (Entries, error) {
-	var out Entries
+func (d *Data) GetParentEntries(id int) ([]Entry, error) {
+	var out []Entry
 	if err := d.queries.GetParentRelations.Select(&out, id); err != nil {
 		return out, err
 	}
@@ -414,7 +414,7 @@ func (d *Data) insertRelation(fromID, toID int, r Relation, stmt *sqlx.Stmt) (in
 }
 
 // SearchAndLoadRelations loads related entries into the given Entries.
-func (d *Data) SearchAndLoadRelations(e Entries, q Query) error {
+func (d *Data) SearchAndLoadRelations(e []Entry, q Query) error {
 	var (
 		IDs = make([]int64, len(e))
 
@@ -425,11 +425,11 @@ func (d *Data) SearchAndLoadRelations(e Entries, q Query) error {
 
 	for i := 0; i < len(e); i++ {
 		IDs[i] = int64(e[i].ID)
-		e[i].Relations = make(Entries, 0)
+		e[i].Relations = make([]Entry, 0)
 		idMap[e[i].ID] = i
 	}
 
-	var relEntries Entries
+	var relEntries []Entry
 	if err := d.queries.SearchRelations.Select(&relEntries,
 		q.ToLang,
 		pq.StringArray(q.Types),

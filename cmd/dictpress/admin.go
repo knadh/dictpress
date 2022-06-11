@@ -81,7 +81,7 @@ func handleGetPendingEntries(c echo.Context) error {
 
 	// Search and compose results.
 	out := &results{
-		Entries: data.Entries{},
+		Entries: []data.Entry{},
 	}
 	res, total, err := app.data.GetPendingEntries("", nil, pg.Offset, pg.Limit)
 	if err != nil {
@@ -130,9 +130,9 @@ func handleGetEntry(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	e.Relations = make(data.Entries, 0)
+	e.Relations = make([]data.Entry, 0)
 
-	entries := data.Entries{e}
+	entries := []data.Entry{e}
 	if err := app.data.SearchAndLoadRelations(entries, data.Query{}); err != nil {
 		app.logger.Printf("error loading relations: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error loading relations")

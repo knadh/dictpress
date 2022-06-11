@@ -18,7 +18,7 @@ type Entry struct {
 	Phones    pq.StringArray `json:"phones" db:"phones"`
 	Notes     string         `json:"notes" db:"notes"`
 	Status    string         `json:"status" db:"status"`
-	Relations Entries        `json:"relations,omitempty" db:"relations"`
+	Relations []Entry        `json:"relations,omitempty" db:"relations"`
 	Total     int            `json:"-" db:"total"`
 	CreatedAt null.Time      `json:"created_at" db:"created_at"`
 	UpdatedAt null.Time      `json:"updated_at" db:"updated_at"`
@@ -35,8 +35,8 @@ type Entry struct {
 	RelationUpdatedAt null.Time      `json:"-" db:"relation_updated_at"`
 
 	// RelationEntry encompasses an Entry with added fields that
-	// describes its relationship to other Entries. This is only populated in
-	// Entries in the Relations list.
+	// describes its relationship to other []Entry. This is only populated in
+	// []Entry in the Relations list.
 	Relation *Relation `json:"relation,omitempty"`
 }
 
@@ -51,9 +51,6 @@ type Relation struct {
 	CreatedAt null.Time      `json:"created_at"`
 	UpdatedAt null.Time      `json:"updated_at"`
 }
-
-// Entries represents a slice of Entry.
-type Entries []Entry
 
 // GlossaryWord to read glosary content from db.
 type GlossaryWord struct {
