@@ -17,7 +17,7 @@ root_url = "http://localhost:9000"
 # should be "page-*".
 #
 # This is relevant when starting the app with a site theme (--site param).
-enable_pages = false
+enable_pages = true
 
 # Enable API endpoints for accepting public user submissions and corrections.
 # All user submissions are queued for the admin to review and only get published
