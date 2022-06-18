@@ -68,7 +68,7 @@ func init() {
 		os.Exit(0)
 	}
 
-	f.Bool("new", false, "generate a new sample config.toml file.")
+	f.Bool("new-config", false, "generate a new sample config.toml file.")
 	f.StringSlice("config", []string{"config.toml"},
 		"path to one or more config files (will be merged in order)")
 	f.String("site", "", "path to a site theme. If left empty, only HTTP APIs will be available.")
@@ -86,7 +86,7 @@ func init() {
 	}
 
 	// Generate new config file.
-	if ok, _ := f.GetBool("new"); ok {
+	if ok, _ := f.GetBool("new-config"); ok {
 		if err := generateNewFiles(); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
