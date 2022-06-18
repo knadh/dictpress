@@ -1,6 +1,7 @@
 :root {
-	--primary: #00aa44;
-	--secondary: #222;
+	--primary: #b78900;
+	--bright: #ffcc00;
+	--secondary: #333;
 	--light: #999;
 }
 
@@ -9,21 +10,35 @@
 }
 
 html, body {
-	font-size: 16px;
-	line-height: 26px;
 	margin: 0;
 	padding: 0;
 }
 
 body {
-	background: #f6f5f4;
+	background: #fff;
 	font-family: "Inter", sans-serif;
+	font-size: 17px;
+	line-height: 29px;
 	color: var(--secondary);
 }
 
+h1, h2, h3, h4, h5 {
+	font-weight: 400;
+	margin: 0 0 20px 0;
+}
+
 h1 {
-	font-size: 1.8rem;
+	font-size: 2.6rem;
+	line-height: 3.3rem;
+}
+
+h2 {
+	font-size: 2.1rem;
 	line-height: 2.4rem;
+}
+
+h3 {
+	font-size: 1.6rem;
 }
 
 a {
@@ -36,7 +51,7 @@ a {
 	}
 
 section {
-	margin-bottom: 45px;
+	margin-bottom: 60px;
 }
 	section:last-child {
 		margin-bottom: 0;
@@ -47,10 +62,13 @@ img {
 }
 
 figcaption {
-	font-size: 0.75rem;
 	text-align: center;
 	color: var(--light);
-	font-style: italic;
+}
+figure {
+	text-align: center;
+	display: block;
+	margin: 0 0 60px 0;
 }
 
 code {
@@ -59,25 +77,48 @@ code {
 	border-radius: 2px;
 }
 
-.box {
-	box-shadow: 2px 2px 2px #eee;
-	border: 1px solid #eee;
+p {
+	margin: 0 0 15px 0;
 }
 
-.container {
-	background: #fff;
-	max-width: 800px;
-	padding: 60px 70px;
-	margin: 60px auto 0 auto;
-	border-radius: 8px;
+.button {
+	background: var(--bright);
+	color: var(--secondary);
+	padding: 15px 40px;
+	border-radius: 5px;
+	border: 1px solid var(--secondary);
+	box-shadow: 2px 2px 0 #ecbd00;
+	display: inline-block;
+	font-size: 1.2rem;
+}
+	.button:hover {
+		opacity: 0.7;
+	}
+	.button:active {
+		transform: translate(2px, 2px);
+	}
 
-	box-shadow: 5px 6px 2px #eee;
-	border: 1px solid #eee;
+.box {
+	box-shadow: 2px 2px 2px #eee;
+	border: 1px solid #ddd;
+	padding: 30px;
+}
+
+
+.container {
+	max-width: 900px;
+	margin: 0 auto 30px auto;
+	padding: 30px;
 }
 
 .header {
-	text-align: center;
+	background: #eee;
+	padding: 60px 0;
 	margin-bottom: 60px;
+}
+
+.intro .desc {
+	max-width: 600px;
 }
 
 .logo {
@@ -85,8 +126,11 @@ code {
 }
 .nav a {
 	display: inline-block;
-	margin: 0 10px;
+	margin: 0 20px 0 0;
 }
+	.hero {
+		margin-top: 90px;
+	}
 
 
 footer {
@@ -99,18 +143,16 @@ footer {
 	}
 
 @media(max-width: 750px) {
-	html, body {
-		font-size: 15px;
-		line-height: 24px;
-	}
-	.container {
-		padding: 20px;
-		margin: 0;
+	body {
+		font-size: 16px;
+		line-height: 1.7rem;
 	}
 	.header {
-		margin-bottom: 30px;
+		padding: 0;
+		margin: 0;
+		overflow: hidden;
 	}
-	.intro {
-		text-align: center;
+	.container {
+		padding: 25px;
 	}
 }

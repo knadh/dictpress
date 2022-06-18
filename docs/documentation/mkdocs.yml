@@ -1,0 +1,41 @@
+site_name: dictpress / Documentation
+theme:
+  name: material
+  # custom_dir: "mkdocs-material/material"
+  logo: "images/favicon.png"
+  favicon: "images/favicon.png"
+  language: "en"
+  font:
+    text: 'Inter'
+    weights: 400
+  direction: 'ltr'
+  extra:
+  search:
+    language: 'en'
+  feature:
+    tabs: true
+
+  palette:
+    primary: "white"
+    accent: "red"
+
+site_dir: _out
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+
+extra_css:
+  - "static/style.css"
+
+copyright: "Copyright &copy; 2022, Kailash Nadh."
+
+pages:
+  - "Introduction": index.md
+  - "Installation": installation.md
+  - "Data structure": data-structure.md
+  - "Templates": templates.md
+  - "API": api/intro.md
