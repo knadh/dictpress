@@ -1,0 +1,21 @@
+{{ define "search" }}
+{{ template "header" . }}
+
+<section class="content results">
+    {{ if not .Results.Entries }}
+        <h2>ದೊರೆತಿಲ್ಲ</h2>
+        <p>
+            &ldquo;{{ .Query.Query }}&rdquo; ಪದಕ್ಕೆ ವಿವರಣೆ ದೊರಕುತ್ತಿಲ್ಲ.
+            ಹುಡುಕಿದ ಪದ ಕನ್ನಡದಲ್ಲಿದೆ ಎಂದು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.
+        </p>
+        <p>
+            No results found for &ldquo;{{ .Query.Query }}&rdquo;.
+            Make sure the search query is in Kannada.
+        </p>
+    {{ else }}
+        {{ template "results" . }}
+    {{ end }}
+</section>
+
+{{ template "footer" . }}
+{{ end }}

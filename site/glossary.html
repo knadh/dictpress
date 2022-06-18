@@ -1,0 +1,22 @@
+{{ define "glossary" }}
+{{ template "header" . }}
+
+<section class="content glossary">
+    {{ if not .Initials }}
+        <h2>Glossary not found</h2>
+        <p>No glossary was found for that language.</p>
+    {{ else }}
+        <nav class="index">
+            {{ range $k, $a := .Initials }}
+            <a href="{{ UnicodeURL $a }}"{{ if eq $a $.Initial }} class="sel"{{ end }}>{{ $a }}</a>
+            {{ end }}
+        </nav>
+
+        <nav class="pagination top">{{ .PgBar }}</nav>
+        {{ template "glossary-words" .Glossary }}
+        <nav class="pagination bottom">{{ .PgBar }}</nav>
+    {{ end}}
+</section>
+
+{{ template "footer" . }}
+{{ end }}

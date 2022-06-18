@@ -1,0 +1,388 @@
+body {
+  background: #f9f9f9;
+  font-family: "Helvetica Neue", "Segoe UI", Helvetica, sans-serif;
+  font-size: 17px;
+  line-height: 26px;
+  letter-spacing: 0;
+  margin: 0;
+  color: #000;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+}
+hr {
+  height: 2px;
+  border: 0;
+  background: #ddd;
+  display: block;
+  margin: 30px 0;
+}
+h1, h2, h3, h4, h5 {
+  margin: 30px 0 10px 0;
+}
+a {
+  color: #000;
+}
+a:hover {
+  color: #666;
+}
+input,
+select,
+button,
+textarea,
+.button {
+  padding: 15px;
+  font-family: "Helvetica Neue", "Segoe UI", Helvetica, sans-serif;
+  font-size: 1em;
+  color: #000;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+input:focus,
+select:focus {
+  border-color: #888;
+}
+
+button,
+button {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+  width: auto;
+  cursor: pointer;
+}
+button:hover,
+.button:hover {
+  border-color: #444;
+  background: #444;
+}
+
+.noul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.box {
+  border-radius: 3px;
+  box-shadow: 2px 2px 1px #eee;
+  border: 1px solid #ddd;
+  padding: 30px;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* Custom */
+.wrap {
+  background-color: #fff;
+  padding: 30px 30px 60px 30px;
+  max-width: 800px;
+  min-width: 325px;
+  margin: 45px auto 30px auto;
+  position: relative;
+}
+
+.logo img {
+  width: auto;
+  max-height: 32px;
+}
+
+.taglines {
+  display: none;
+  color: #444;
+  margin-top: 45px;
+}
+
+.search {
+  text-align: right;
+}
+.search-form {
+  position: relative;
+}
+.search-form input {
+  width: 100%;
+}
+.search-form button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+  .search-form button {
+    padding: 15px 15px 8px 15px;
+  }
+  .search-form button img {
+    max-height: 32px;
+  }
+
+.content {
+  margin-top: 45px;
+}
+
+.entries {
+  padding: 0;
+  margin: 0 0 0 15px;
+}
+.entries .entry {
+  margin-bottom: 30px;
+}
+.entries .head {
+  margin-bottom: 10px;
+}
+  .entries .title {
+    margin: 0;
+  }
+  .entries .pronun {
+    color: #888;
+  }
+  .entries .defs li {
+    margin: 0 0 10px 0;
+    display: flex;
+    counter-increment: list;
+    list-style-type: none;
+    position: relative;
+  }
+  .entries .defs li:before {
+    color: #888;
+    content: counter(list) ".";
+    left: -32px;
+    position: absolute;
+    text-align: right;
+    width: 26px;
+  }
+  .entries .defs .types {
+    margin-left: -40px;
+    margin-bottom: 10px;
+  }
+    .entries .defs .types span {
+      color: #888;
+      font-style: italic;
+      border-bottom: 1px dashed #888;
+    }
+
+.submit-new-form {
+}
+  .submit-new-form select {
+    padding: 10px;
+  }
+  .submit-new-form fieldset {
+    padding: 0;
+    margin: 0 0 20px 0;
+    border: 0;
+  }
+  .submit-new-form label {
+    display: block;
+    color: #888;
+  }
+  .submit-new-form select, .submit-new-form textarea {
+    width: 100%;
+  }
+  .submit-new-form li {
+    margin-bottom: 20px;
+  }
+  .submit-new-form li:first-child .btn-remove-relation {
+    display: none;
+  }
+  .submit-new-form input,
+  .submit-new-form textarea {
+    width: 100%;
+  }
+
+.glossary .index {
+  background: #f7f7f7;
+  margin-bottom: 15px;
+}
+  .glossary .index a {
+    text-decoration: none;
+    display: inline-block;
+    padding: 5px;
+  }
+  .glossary .index .sel,
+  .glossary .index a:hover {
+    background: #000;
+    color: #fff;
+  }
+
+  .glossary .words {
+    /* column-count: auto;
+    column-gap: 0; */
+    column-count: 3;
+    column-gap: 40px;
+  }
+    .glossary .words li {
+      border-bottom: 1px solid #eee;
+      page-break-inside: avoid;
+      padding: 3px 0;
+    }
+    .glossary .words a {
+      text-decoration: none;
+    }
+
+.pagination {
+  margin-top: 30px;
+}
+  .pagination a {
+    display: inline-block;
+    text-decoration: none;
+  }
+  .pagination .pg-page {
+    padding: 0 6px;
+  }
+  .pagination .pg-selected {
+    font-weight: bold;
+    border-bottom: 2px solid #000;
+  }
+  .pagination.top {
+    margin-bottom: 30px;
+  }
+  .pagination.bottom {
+    margin-top: 30px;
+  }
+
+.nav {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  border-top: 1px dashed #ccc;
+  padding: 10px 15px;
+  font-size: .85em;
+  text-align: center;
+}
+  .nav a {
+    text-decoration: none;
+    color: #888;
+    margin: 0 15px;
+  }
+  .nav a:hover {
+    color: #000;
+  }
+
+.header {
+  margin-bottom: 45px;
+} 
+.footer {
+  margin-bottom: 30px;
+  text-align: center;
+  font-size: 0.75em;
+  color: #888;
+}
+.footer .slash {
+  margin: 0 10px;
+}
+.footer .credit img {
+  height: 11px;
+  width: auto;
+}
+.footer .credit:hover img {
+  opacity: 0.6;
+}
+.footer a {
+  color: #888;
+  text-decoration: none;
+}
+  .footer a:hover {
+    color: #000;
+  }
+
+.center {
+  text-align: center;
+}
+
+/* Homepage */
+.home .wrap {
+  max-height: 475px;
+  padding-top: 60px;
+  padding-bottom: 90px;
+}
+.home .container {
+  margin-top: calc(50vh - (475px / 2));
+}
+.home .header {
+  text-align: center;
+}
+.home .taglines {
+  display: block;
+}
+.home .logo {
+  width: 100%;
+  flex: none;
+  margin-bottom: 15px;
+}
+.home .logo img {
+  max-height: 100%;
+}
+.home .search {
+  width: 100%;
+  flex: none;
+}
+
+/* About */
+.about .photo {
+  display: inline-block;
+  margin: 0 15px;
+  float: right;
+  width: 200px;
+  height: auto;;
+}
+
+/* Autocomplete */
+.autocomplete {
+    background: white;
+    z-index: 1000;
+    overflow: auto;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+}
+
+.autocomplete > div {
+    padding: 2px 10px;
+}
+
+.autocomplete .group {
+    background: #eee;
+}
+
+.autocomplete > div:hover:not(.group),
+.autocomplete > div.selected {
+    background: #eee;
+    cursor: pointer;
+}
+
+@media screen and (max-width: 775px) {
+  .wrap {
+    margin: 0 0 15px 0;
+    padding: 30px 30px 60px 30px;
+    width: 100%;
+    max-width: 100%;
+  }
+  .home .wrap {
+    margin: 0 0 15px 0;
+    padding: 30px 30px 90px 30px;
+  }
+  .footer {
+    margin-bottom: 15px;
+  }
+  .about .photo {
+    float: none;
+    display: block;
+    margin: 15px auto;
+  }
+}
+@media screen and (max-width: 550px) {
+  .logo {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  .logo img {
+    max-height: 32px;
+  }
+}

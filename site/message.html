@@ -1,0 +1,10 @@
+{{ define "message" }}
+{{ template "header" . }}
+
+<section class="content">
+<h1>{{ .Title }}</h1>
+<p>{{ .Description }}</p>
+</section>
+
+{{ template "footer" . }}
+{{ end }}

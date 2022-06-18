@@ -1,0 +1,13 @@
+{{ define "title" }}About this site{{ end }}
+{{ define "description" }}About this site{{ end }}
+{{ define "page-about" }}
+{{ template "header" . }}
+<section class="content about">
+    <h1>About</h1>
+    <p>
+        This dictionary site is built with <a href="https://dict.press">DictPress</a>.
+        This page can be customized by editing <code>site/pages/about.html</code>.
+    </p>
+</section>
+{{ template "footer" . }}
+{{ end }}

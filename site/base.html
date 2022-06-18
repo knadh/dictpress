@@ -1,0 +1,67 @@
+{{- define "header" -}}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>
+    {{- if eq .Page "/" }}Welcome to the dictionary.
+    {{- else if eq .Page "glossary" }}Glossary of words
+    {{- else if eq .Page "search" }}"{{ .Query.Query }}" meaning.
+    {{- else if ne .Title "" }}{{ .Title }}
+    {{- else }}{{ block "title" . }}{{end}}
+    {{- end -}}
+  </title>
+  <meta name="description" value="
+    {{- if eq .Page "/" }}Dictionary website
+    {{- else if eq .Page "glossary" }}Glossary of words.
+    {{- else if eq .Page "search" }}{{ .Query.Query }} meaning.
+    {{- else if ne .Description "" }}{{ .Description }}
+    {{- else }}{{ block "description" . }}{{end}}
+    {{- end -}}" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+	
+	<link rel="shortcut icon" href="static/favicon.png" type="image/x-icon" />
+
+  <link href="/static/flexit.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style.css" rel="stylesheet" type="text/css" />
+</head>
+<body class="{{ if eq .Page "/"}}home{{ end }}">
+  <div class="container wrap box">
+    <header class="header">
+      <div class="row">
+        <div class="logo four columns">
+          <a href="/"><img src="/static/logo.svg" alt="Dictionary logo" /></a>
+          <div class="taglines">
+            <p>Welcome to the dictionary website</p>
+          </div>
+        </div><!-- logo col -->
+
+        <div class="search eight columns">
+          <form class="search-form" method="get" action="/dictionary/english/italian">
+            <div>
+              <input autofocus autocomplete="off" required placeholder=""
+                type="text" id="q" name="q" value="{{ if .Query }}{{ .Query.Query }}{{ end }}" />
+              <button type="submit"><img src="/static/search.svg" alt="Search" /></button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </header>
+{{ end}}
+
+{{ define "footer" }}
+    <div id="fakelog"></div>
+    <nav class="nav">
+      <a href="/glossary/english/italian/a">Glossary</a>
+      <a href="/pages/about">About</a>
+    </nav>
+  </div>
+  <footer class="footer">
+    <a href="https://dict.press">Powered by DictPress</a>
+  </footer>
+  <script src="/static/global.js"></script>
+</body>
+
+</html>
+{{ end }}

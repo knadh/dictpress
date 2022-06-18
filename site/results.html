@@ -1,0 +1,28 @@
+{{ define "results" }}
+<ol class="entries">
+    {{ range $k, $r := .Results.Entries }}
+        <li class="entry" data-guid="{{ $r.GUID }}">
+            <header class="head">
+                <h3 class="title">{{ $r.Content }}</h3>
+                <span class="pronun">♪ {{ JoinStrings $r.Phones "," }}</span>
+            </header>
+
+            <ol class="defs">
+                {{ $prevTypes := "" }}
+                {{ range $k, $d := $r.Relations }}
+                    {{ $types := (JoinStrings $d.RelationTypes ", ") }}
+                    {{ if ne $prevTypes $types }}
+                    <div class="types">
+                        <span>{{ $types }}</span>
+                    </div>
+                    {{ end }}
+                    <li>
+                        <div data-guid="{{ $d.GUID }}" class="d">{{ $d.Content }}</div>
+                    </li>
+                    {{ $prevTypes = $types }}
+                {{ end }}
+            </ol>
+        </li>
+    {{ end }}
+</ol>
+{{ end }}

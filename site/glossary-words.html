@@ -1,0 +1,12 @@
+{{ define "glossary-words" }}
+{{ if not .Words }}
+    <h2>No words</h2>
+    <p>No words were found in this glossary.</p>
+{{ else }}
+    <ul class="noul words">
+        {{ range $i, $w := .Words }}
+            <li><a href="/dictionary/{{ UnicodeURL $.FromLang }}/{{ UnicodeURL $.ToLang }}/{{ UnicodeURL $w.Content }}">{{ $w.Content }}</a></li>
+        {{ end }}
+    </ul>
+{{ end }}
+{{ end }}
