@@ -1,5 +1,6 @@
 :root {
-	--primary: #00aa44;
+	--primary: #b78900;
+	--bright: #ffcc00;
 	--secondary: #333;
 	--light: #999;
 }
@@ -56,24 +57,27 @@ select {
 	background: #fff;
 }
 input[type="submit"], input[type="button"], button {
-	background: var(--primary);
-	border-color: var(--primary);
-	color: #fff;
+	background: var(--bright);
+	color: var(--secondary);
 	font-weight: bold;
 	cursor: pointer;
 	width: auto;
 	min-width: 100px;
 	padding: 12px 20px;
+
+	border-radius: 5px;
+	border: 1px solid var(--secondary);
+	box-shadow: 2px 2px 0 #ecbd00;
+
 }
 	input[type="submit"]:hover, button:hover {
-		background: var(--secondary);
-		border-color: var(--secondary);
+		opacity: 0.7;
 	}
 	input[type="submit"].button-outline,
 	input[type="button"].button-outline,
 	button.button-outline {
 		background: #fff;
-		color: var(--primary);
+		color: var(--secondary);
 	}
 	input[type="submit"].button-outline:hover,
 	input[type="button"].button-outline:hover,
