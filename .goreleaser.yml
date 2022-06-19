@@ -6,6 +6,7 @@ builds:
   - binary: dictpress
     main: ./cmd/dictpress
     goos:
+      - windows
       - darwin
       - linux
       - freebsd
@@ -14,7 +15,7 @@ builds:
     goarch:
       - amd64
     ldflags:
-      - -s -w -X "main.buildString={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
+      - -s -w -X "main.buildString={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})" -X "main.versionString={{ .Tag }}"
 
     hooks:
       # stuff executables with static assets.
@@ -25,3 +26,4 @@ archives:
     files:
       - README.md
       - LICENSE
+      - site

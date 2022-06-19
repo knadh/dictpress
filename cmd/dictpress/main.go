@@ -82,7 +82,7 @@ func init() {
 	}
 
 	if ok, _ := f.GetBool("version"); ok {
-		fmt.Printf("%s (%s)\n", versionString, buildString)
+		fmt.Println(buildString)
 		os.Exit(0)
 	}
 

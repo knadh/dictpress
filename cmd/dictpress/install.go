@@ -10,7 +10,7 @@ func installSchema(app *App, prompt bool) {
 	if prompt {
 		fmt.Println("")
 		fmt.Println("** first time installation **")
-		fmt.Printf("** IMPORTANT: This will wipe existing dictmaker tables and types in the DB '%s' **",
+		fmt.Printf("** IMPORTANT: This will wipe existing tables and types in the DB '%s' **",
 			ko.String("db.db"))
 		fmt.Println("")
 
