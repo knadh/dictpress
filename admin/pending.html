@@ -50,7 +50,7 @@
 							</p>
 							<template x-if="`${e.id}-${r.id}` in comments" x-data="{ c: comments[`${e.id}-${r.id}`]}">
 								<div class="comments">
-									<div x-text="c.comments"></div>
+									<pre x-text="c.comments"></pre>
 									<button class="button-outline button-small" @click.prevent="onClearComments(c.id)">Clear</button>
 								</div>
 							</template>

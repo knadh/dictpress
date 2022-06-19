@@ -248,6 +248,9 @@ form .help {
 		padding: 15px;
 		margin: 10px 0 10px 30px;
 	}
+	.entries .comments pre {
+		margin: 0 0 15px 0;
+	}
 	.entries .meta {
 		font-weight: normal;
 		color: var(--light);

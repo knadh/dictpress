@@ -187,9 +187,12 @@ function searchResultsComponent(typ) {
 			this.api('entries.search', '/entries/comments').then((data) => {
 				let out = {};
 
+				const r = new RegExp("\n+", "gm");
+
 				// Create a from_id-to_id lookup map that can be used in
 				// the UI to show comments.
 				data.forEach((d) => {
+					d.comments = d.comments.replace(r, "\n");
 					if (d.to_id) {
 						out[`${d.from_id}-${d.to_id}`] = d;
 					} else {

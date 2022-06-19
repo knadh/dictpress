@@ -157,6 +157,10 @@ func handleNewComments(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `from_guid`.")
 	}
 
+	if len(s.Comments) > 1000 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Comments are too big.")
+	}
+
 	if err := app.data.InsertComments(s.FromGUID, s.ToGUID, s.Comments); err != nil {
 		app.logger.Printf("error inserting change submission: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError,
