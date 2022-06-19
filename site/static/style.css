@@ -1,8 +1,13 @@
 :root {
   --primary: #111;
   --secondary: #666;
+  --light: #666;
+  --white: #fff;
 }
 
+* {
+  box-sizing: border-box;
+}
 
 body {
   background: #f9f9f9;
@@ -12,10 +17,6 @@ body {
   letter-spacing: 0;
   margin: 0;
   color: var(--primary);
-}
-
-* {
-  box-sizing: border-box;
 }
 
 img {
@@ -31,12 +32,14 @@ hr {
 h1, h2, h3, h4, h5 {
   margin: 30px 0 10px 0;
 }
+
 a {
   color: var(--primary);
 }
 a:hover {
   color: var(--secondary);
 }
+
 input,
 select,
 button,
@@ -58,12 +61,20 @@ select:focus {
 button, .button {
   background: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--white);
   width: auto;
   cursor: pointer;
   padding: 15px 30px;
   font-size: 1.2rem;
-  line-height: 1.2rem;
+  line-height: 1rem;
+}
+.button-outline {
+  background: var(--white);
+  color: var(--primary);
+}
+.button-outline:hover {
+  background: var(--white);
+  color: var(--primary);
 }
 button:hover, .button:hover {
   border-color: #444;
@@ -89,7 +100,7 @@ button:hover, .button:hover {
 
 /* Custom */
 .wrap {
-  background-color: #fff;
+  background-color: var(--white);
   padding: 30px 30px 60px 30px;
   max-width: 800px;
   min-width: 325px;
@@ -99,10 +110,10 @@ button:hover, .button:hover {
 
 .logo img {
   width: auto;
-  max-height: 48px;
+  max-height: 32px;
 }
 
-.taglines {
+.intro {
   display: none;
   color: #444;
   margin-top: 45px;
@@ -169,6 +180,9 @@ button:hover, .button:hover {
     text-align: right;
     width: 26px;
   }
+  .entries .defs .def {
+    width: 100%;
+  }
   .entries .defs .types {
     margin-left: -40px;
     margin-bottom: 10px;
@@ -180,7 +194,7 @@ button:hover, .button:hover {
     }
     .entry .edit {
       background: rgba(255,255,255,.6);
-      color: #fff;
+      color: var(--white);
       border-radius: 3px;
       padding: 12px 10px;
       position: absolute;
@@ -231,6 +245,7 @@ button:hover, .button:hover {
   margin: 10px 0 45px 0;
   display: none;
   padding: 20px;
+  clear: both;
 }
   .form-comments textarea {
     width: 100%;
@@ -253,7 +268,7 @@ button:hover, .button:hover {
   .glossary .index .sel,
   .glossary .index a:hover {
     background: var(--primary);
-    color: #fff;
+    color: var(--white);
   }
 
   .glossary .words {
@@ -354,7 +369,7 @@ button:hover, .button:hover {
 .home .header {
   text-align: center;
 }
-.home .taglines {
+.home .intro {
   display: block;
 }
 .home .logo {

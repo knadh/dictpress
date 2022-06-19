@@ -6,7 +6,7 @@
   <title>
     {{- if eq .Page "/" }}Welcome to the dictionary.
     {{- else if eq .Page "glossary" }}Glossary of words
-    {{- else if eq .Page "search" }}"{{ .Query.Query }}" meaning.
+    {{- else if eq .Page "search" }}"{{ .Query.Query }}" meaning
     {{- else if ne .Title "" }}{{ .Title }}
     {{- else }}{{ block "title" . }}{{end}}
     {{- end -}}
@@ -22,7 +22,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 	
 	<link rel="shortcut icon" href="static/favicon.png" type="image/x-icon" />
-
   <link href="/static/flexit.css" rel="stylesheet" type="text/css" />
   <link href="/static/style.css" rel="stylesheet" type="text/css" />
 </head>
@@ -31,8 +30,8 @@
     <header class="header">
       <div class="row">
         <div class="logo four columns">
-          <a href="/"><img src="/static/favicon.png" alt="Dictionary logo" /></a>
-          <div class="taglines">
+          <a href="/"><img src="/static/logo.svg" alt="Dictionary logo" /></a>
+          <div class="intro">
             <p>Welcome to the dictionary website</p>
           </div>
         </div><!-- logo col -->
@@ -51,18 +50,6 @@
 {{ end}}
 
 {{ define "footer" }}
-<form class="box form-comments">
-<div>
-  <h3>Comments and suggestions</h3>
-  <textarea name="comments" autofocus maxlength="500"></textarea>
-  <p>
-    <button type="submit">Submit for review</button>
-    <button type="submit" class="button-outline close">Close</button>
-  </p>
-</div>
-</form>
-
-
     <nav class="nav">
       <a href="/glossary/english/italian/a">Glossary</a>
       <a href="/submit">Submit new</a>
@@ -72,7 +59,18 @@
   <footer class="footer">
     <a href="https://dict.press">Powered by dictpress</a>
   </footer>
-  <script src="/static/global.js"></script>
+  <script src="/static/main.js"></script>
+
+  <form class="box form-comments">
+  <div>
+    <h3>Comments and suggestions</h3>
+    <textarea name="comments" autofocus maxlength="500"></textarea>
+    <p>
+      <button type="submit">Submit for review</button>
+      <button type="submit" class="button-outline close">Close</button>
+    </p>
+  </div>
+  </form>
 </body>
 
 </html>

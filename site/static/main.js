@@ -119,8 +119,12 @@
             to_guid: btn.dataset.to,
             comments: txt.value
           })
+        }).catch((err) => {
+          alert(`Error submitting: ${err}`);
         });
+
         close();
+        alert("Submitted for review");
       };
 
       form.querySelector("button.close").onclick = close;
