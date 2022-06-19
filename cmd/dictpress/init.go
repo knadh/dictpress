@@ -153,7 +153,7 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 		p.POST("/api/submissions/new", handleNewSubmission)
 		p.POST("/api/submissions/comments", handleNewComments)
 		p.GET("/submit", handleSubmissionPage)
-		p.POST("/submit", handleNewSubmission)
+		p.POST("/submit", handleSubmissionPage)
 	}
 
 	// Admin handlers and APIs.

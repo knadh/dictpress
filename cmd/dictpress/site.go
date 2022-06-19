@@ -79,6 +79,23 @@ func handleSearchPage(c echo.Context) error {
 
 // handleSubmissionPage renders the new entry submission page.
 func handleSubmissionPage(c echo.Context) error {
+	if c.Request().Method == http.MethodPost {
+		if err := handleNewSubmission(c); err != nil {
+			e := err.(*echo.HTTPError)
+			return c.Render(e.Code, "message", pageTpl{
+				Title:       "Error",
+				Heading:     "Error",
+				Description: fmt.Sprintf("%s", e.Message),
+			})
+		}
+
+		return c.Render(http.StatusOK, "message", pageTpl{
+			Title:       "Submitted",
+			Heading:     "Submitted",
+			Description: "Your entry has been submitted for review.",
+		})
+	}
+
 	return c.Render(http.StatusOK, "submit-entry", pageTpl{
 		Title: "Submit a new entry",
 	})
