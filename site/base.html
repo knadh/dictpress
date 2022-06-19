@@ -52,7 +52,9 @@
 {{ define "footer" }}
     <nav class="nav">
       <a href="/glossary/english/italian/a">Glossary</a>
-      <a href="/submit">Submit new</a>
+      {{ if .EnableSubmissions }}
+        <a href="/submit">Submit new</a>
+      {{ end }}
       <a href="/pages/about">About</a>
     </nav>
   </div>

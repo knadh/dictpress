@@ -40,8 +40,9 @@ type pageTpl struct {
 // into public templates for accessing data.
 type tplData struct {
 	// These are available in the template as .Page, .Data etc.
-	RootURL string
-	Langs   data.LangMap
+	RootURL           string
+	EnableSubmissions bool
+	Langs             data.LangMap
 
 	Path string
 	Data interface{}
@@ -221,9 +222,10 @@ func (t *tplRenderer) Render(w io.Writer, name string, data interface{}, c echo.
 	app := c.Get("app").(*App)
 
 	return t.tpls.ExecuteTemplate(w, name, tplData{
-		Path:    c.Path(),
-		RootURL: app.constants.RootURL,
-		Langs:   app.data.Langs,
-		Data:    data,
+		Path:              c.Path(),
+		RootURL:           app.constants.RootURL,
+		EnableSubmissions: app.constants.EnableSubmissions,
+		Langs:             app.data.Langs,
+		Data:              data,
 	})
 }
