@@ -78,7 +78,6 @@ func handleSearchPage(c echo.Context) error {
 
 	query, out, err := doSearch(c)
 	if err != nil {
-		app.logger.Printf("error searching: %v", err)
 		return c.Render(http.StatusInternalServerError, "message", siteMsg{
 			Title:       "Error",
 			Heading:     "Error",
