@@ -26,11 +26,13 @@
 					</h3>
 					<sup class="lang meta" x-text="config.languages[e.lang].name"></sup>
 
-					<template x-if="e.id in comments" x-data="{ c: comments[e.id]}">
-						<div class="comments">
-							<div x-text="c.comments"></div>
-							<button class="button-outline button-small" @click.prevent="onClearComments(c.id)">Clear</button>
-						</div>
+					<template x-if="e.id in comments">
+						<template x-for="(c, n) in comments[e.id]" :key="c.id">
+							<div class="comments">
+								<div x-text="c.comments"></div>
+								<button class="button-outline button-small" @click.prevent="onClearComments(c.id)">Clear</button>
+							</div>
+						</template>
 					</template>
 				</div>
 				<div class="phones">♪ <span class="pronun" x-text="e.phones.join(', ')"></span></div>
@@ -48,11 +50,13 @@
 								<span class="meta lang" x-text="config.languages[r.lang].name"></span>
 								<span class="meta types" x-text="r.relation.types"></span> <span x-text="r.content" class="content"></span>
 							</p>
-							<template x-if="`${e.id}-${r.id}` in comments" x-data="{ c: comments[`${e.id}-${r.id}`]}">
-								<div class="comments">
-									<pre x-text="c.comments"></pre>
-									<button class="button-outline button-small" @click.prevent="onClearComments(c.id)">Clear</button>
-								</div>
+							<template x-if="`${e.id}-${r.id}` in comments">
+								<template x-for="(c, n) in comments[`${e.id}-${r.id}`]" :key="c.id">
+									<div class="comments">
+										<pre x-text="c.comments"></pre>
+										<button class="button-outline button-small" @click.prevent="onClearComments(c.id)">Clear</button>
+									</div>
+								</template>
 							</template>
 							<div class="actions">
 								<a href="#" @click.prevent="onDetatchRelation(e.id, r.id)">Detatch</a>

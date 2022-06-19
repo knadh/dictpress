@@ -159,7 +159,7 @@ function searchResultsComponent(typ) {
 		order: {},
 		hasRelReordered: {},
 
-		// from_id-to_id -> comments{}
+		// from_id-to_id -> []comments
 		comments: {},
 
 		onLoad() {
@@ -193,11 +193,17 @@ function searchResultsComponent(typ) {
 				// the UI to show comments.
 				data.forEach((d) => {
 					d.comments = d.comments.replace(r, "\n");
+					let id = d.from_id;
+
 					if (d.to_id) {
-						out[`${d.from_id}-${d.to_id}`] = d;
-					} else {
-						out[d.from_id] = d;
+						id = `${d.from_id}-${d.to_id}`;
 					}
+
+					if (!out.hasOwnProperty(id)) {
+						out[id] = [];
+					}
+
+					out[id].push(d);
 				});
 
 				this.comments = out;
