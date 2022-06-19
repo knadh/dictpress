@@ -31,7 +31,7 @@
     <header class="header">
       <div class="row">
         <div class="logo four columns">
-          <a href="/"><img src="/static/logo.svg" alt="Dictionary logo" /></a>
+          <a href="/"><img src="/static/favicon.png" alt="Dictionary logo" /></a>
           <div class="taglines">
             <p>Welcome to the dictionary website</p>
           </div>
@@ -51,7 +51,18 @@
 {{ end}}
 
 {{ define "footer" }}
-    <div id="fakelog"></div>
+<form class="box form-comments">
+<div>
+  <h3>Comments and suggestions</h3>
+  <textarea name="comments" autofocus maxlength="500"></textarea>
+  <p>
+    <button type="submit">Submit for review</button>
+    <button type="submit" class="button-outline close">Close</button>
+  </p>
+</div>
+</form>
+
+
     <nav class="nav">
       <a href="/glossary/english/italian/a">Glossary</a>
       <a href="/submit">Submit new</a>
@@ -59,7 +70,7 @@
     </nav>
   </div>
   <footer class="footer">
-    <a href="https://dict.press">Powered by DictPress</a>
+    <a href="https://dict.press">Powered by dictpress</a>
   </footer>
   <script src="/static/global.js"></script>
 </body>

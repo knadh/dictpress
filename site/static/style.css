@@ -1,3 +1,9 @@
+:root {
+  --primary: #111;
+  --secondary: #666;
+}
+
+
 body {
   background: #f9f9f9;
   font-family: "Helvetica Neue", "Segoe UI", Helvetica, sans-serif;
@@ -5,7 +11,7 @@ body {
   line-height: 26px;
   letter-spacing: 0;
   margin: 0;
-  color: #000;
+  color: var(--primary);
 }
 
 * {
@@ -26,10 +32,10 @@ h1, h2, h3, h4, h5 {
   margin: 30px 0 10px 0;
 }
 a {
-  color: #000;
+  color: var(--primary);
 }
 a:hover {
-  color: #666;
+  color: var(--secondary);
 }
 input,
 select,
@@ -38,26 +44,28 @@ textarea,
 .button {
   padding: 15px;
   font-family: "Helvetica Neue", "Segoe UI", Helvetica, sans-serif;
-  font-size: 1em;
-  color: #000;
+  font-size: 1rem;
+  line-height: 1.2rem;
+  color: var(--primary);
   border-radius: 5px;
   border: 1px solid #ccc;
 }
 input:focus,
 select:focus {
-  border-color: #888;
+  border-color: var(--secondary);
 }
 
-button,
-button {
-  background: #000;
-  border-color: #000;
+button, .button {
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
   width: auto;
   cursor: pointer;
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  line-height: 1.2rem;
 }
-button:hover,
-.button:hover {
+button:hover, .button:hover {
   border-color: #444;
   background: #444;
 }
@@ -91,7 +99,7 @@ button:hover,
 
 .logo img {
   width: auto;
-  max-height: 32px;
+  max-height: 48px;
 }
 
 .taglines {
@@ -113,8 +121,10 @@ button:hover,
   position: absolute;
   right: 0;
   top: 0;
+  bottom: 0;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
+  line-height: 1rem;
 }
   .search-form button {
     padding: 15px 15px 8px 15px;
@@ -136,12 +146,13 @@ button:hover,
 }
 .entries .head {
   margin-bottom: 10px;
+  position: relative;
 }
   .entries .title {
     margin: 0;
   }
   .entries .pronun {
-    color: #888;
+    color: var(--secondary);
   }
   .entries .defs li {
     margin: 0 0 10px 0;
@@ -151,7 +162,7 @@ button:hover,
     position: relative;
   }
   .entries .defs li:before {
-    color: #888;
+    color: var(--secondary);
     content: counter(list) ".";
     left: -32px;
     position: absolute;
@@ -163,38 +174,72 @@ button:hover,
     margin-bottom: 10px;
   }
     .entries .defs .types span {
-      color: #888;
+      color: var(--secondary);
       font-style: italic;
-      border-bottom: 1px dashed #888;
+      border-bottom: 1px dashed var(--secondary);
+    }
+    .entry .edit {
+      background: rgba(255,255,255,.6);
+      color: #fff;
+      border-radius: 3px;
+      padding: 12px 10px;
+      position: absolute;
+      right: 0;
+      top: 0;
+      display: none;
+      text-decoration: none;
+      z-index: 1000;
+      line-height: 0;
+    }
+    .entries .defs li:hover .edit {
+      display: block;
+    }
+    .entry .head:hover .edit {
+      display: block;
     }
 
-.submit-new-form {
+
+.form-submit {
 }
-  .submit-new-form select {
+  .form-submit select {
     padding: 10px;
   }
-  .submit-new-form fieldset {
+  .form-submit fieldset {
     padding: 0;
     margin: 0 0 20px 0;
     border: 0;
   }
-  .submit-new-form label {
+  .form-submit label {
     display: block;
-    color: #888;
+    color: var(--secondary);
   }
-  .submit-new-form select, .submit-new-form textarea {
+  .form-submit select, .form-submit textarea {
     width: 100%;
   }
-  .submit-new-form li {
+  .form-submit li {
     margin-bottom: 20px;
   }
-  .submit-new-form li:first-child .btn-remove-relation {
+  .form-submit li:first-child .btn-remove-relation {
     display: none;
   }
-  .submit-new-form input,
-  .submit-new-form textarea {
+  .form-submit input,
+  .form-submit textarea {
     width: 100%;
   }
+
+.form-comments {
+  margin: 10px 0 45px 0;
+  display: none;
+  padding: 20px;
+}
+  .form-comments textarea {
+    width: 100%;
+    min-height: 200px;
+  }
+  .form-comments h3 {
+    margin: 0 0 15px 0;
+  }
+
 
 .glossary .index {
   background: #f7f7f7;
@@ -207,7 +252,7 @@ button:hover,
   }
   .glossary .index .sel,
   .glossary .index a:hover {
-    background: #000;
+    background: var(--primary);
     color: #fff;
   }
 
@@ -238,7 +283,7 @@ button:hover,
   }
   .pagination .pg-selected {
     font-weight: bold;
-    border-bottom: 2px solid #000;
+    border-bottom: 2px solid var(--primary);
   }
   .pagination.top {
     margin-bottom: 30px;
@@ -254,16 +299,16 @@ button:hover,
   right: 0;
   border-top: 1px dashed #ccc;
   padding: 10px 15px;
-  font-size: .85em;
+  font-size: .85rem;
   text-align: center;
 }
   .nav a {
     text-decoration: none;
-    color: #888;
+    color: var(--secondary);
     margin: 0 15px;
   }
   .nav a:hover {
-    color: #000;
+    color: var(--primary);
   }
 
 .header {
@@ -272,8 +317,8 @@ button:hover,
 .footer {
   margin-bottom: 30px;
   text-align: center;
-  font-size: 0.75em;
-  color: #888;
+  font-size: 0.75rem;
+  color: var(--secondary);
 }
 .footer .slash {
   margin: 0 10px;
@@ -286,11 +331,11 @@ button:hover,
   opacity: 0.6;
 }
 .footer a {
-  color: #888;
+  color: var(--secondary);
   text-decoration: none;
 }
   .footer a:hover {
-    color: #000;
+    color: var(--primary);
   }
 
 .center {
@@ -350,10 +395,10 @@ button:hover,
     margin-bottom: 15px;
   }
 
-  .submit-new-form .columns {
+  .form-submit .columns {
     width: 100%;
   }
-  .submit-new-form button[type="submit"] {
+  .form-submit button[type="submit"] {
     width: 100%;
   }
 }

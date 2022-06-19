@@ -3,6 +3,7 @@
     {{ range $k, $r := .Results.Entries }}
         <li class="entry" data-guid="{{ $r.GUID }}">
             <header class="head">
+                <a href="" data-from="{{ $r.GUID }}" class="edit" title="Suggest edit">✏️</a>
                 <h3 class="title">{{ $r.Content }}</h3>
                 <span class="pronun">♪ {{ JoinStrings $r.Phones "," }}</span>
             </header>
@@ -17,7 +18,10 @@
                     </div>
                     {{ end }}
                     <li>
-                        <div data-guid="{{ $d.GUID }}" class="d">{{ $d.Content }}</div>
+                        <div data-guid="{{ $d.GUID }}" class="d">
+                            {{ $d.Content }}
+                            <a href="" data-from="{{ $r.GUID }}" data-to="{{ $d.GUID }}" class="edit" title="Suggest edit">✏️</a>
+                        </div>
                     </li>
                     {{ $prevTypes = $types }}
                 {{ end }}

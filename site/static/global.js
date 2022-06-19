@@ -1,58 +1,5 @@
-// Submission form.
-(() => {
-  function filterTypes(e) {
-    // Filter the types select field with elements that are supported by the language.
-    const types = e.target.closest("fieldset").querySelector("select[name=relation_type]");
-    types.querySelectorAll("option").forEach((o) => o.style.display = "none");
-    types.querySelectorAll(`option[data-lang=${e.target.value}]`).forEach((o) => o.style.display = "block");
-    types.selectedIndex = 1;
-  }
-
-
-  if (document.querySelector(".submit-new-form")) {
-    document.querySelectorAll("select[name=relation_lang]").forEach((e) => {
-      e.onchange = filterTypes;
-    });
-
-    // +definition button.
-    document.querySelector(".btn-add-relation").onclick = (e) => {
-      e.preventDefault();
-
-      if (document.querySelectorAll(".add-relations li").length >= 20) {
-        return false;
-      }
-
-      // Clone and add a relation fieldset.
-      const d = document.querySelector(".add-relations li").cloneNode(true);
-      d.dataset.added = true
-      d.querySelector("select[name=relation_lang]").onchange = filterTypes;
-      document.querySelector(".add-relations").appendChild(d);
-
-      // Remove definition link.
-      d.querySelector(".btn-remove-relation").onclick = (e) => {
-        e.preventDefault();
-        d.remove();
-      };
-    };
-  }
-})();
-
-
+// Search form.
 (function() {
-  var isAndroid = /android/ig.test(window.navigator.userAgent);
-  // isAndroid = true;
-
-  // Attach the transliterator to the search box.
-  // document.querySelector("#q").onkeydown = function(e) {
-  //   // Android doesn't send input events properly. Collate words by space
-  //   // and transliterate them.
-  //   if (isAndroid) {
-  //     return;
-  //   }
-
-  //   transliterate(e.target.value);
-  // };
-
   var form = document.querySelector(".search-form");
   if (!form) {
     return false;
@@ -88,4 +35,95 @@
     e.preventDefault();
     search();
   });
+})();
+
+
+// Submission form.
+(() => {
+  function filterTypes(e) {
+    // Filter the types select field with elements that are supported by the language.
+    const types = e.target.closest("fieldset").querySelector("select[name=relation_type]");
+    types.querySelectorAll("option").forEach((o) => o.style.display = "none");
+    types.querySelectorAll(`option[data-lang=${e.target.value}]`).forEach((o) => o.style.display = "block");
+    types.selectedIndex = 1;
+  }
+
+
+  if (document.querySelector(".form-submit")) {
+    document.querySelectorAll("select[name=relation_lang]").forEach((e) => {
+      e.onchange = filterTypes;
+    });
+
+    // +definition button.
+    document.querySelector(".btn-add-relation").onclick = (e) => {
+      e.preventDefault();
+
+      if (document.querySelectorAll(".add-relations li").length >= 20) {
+        return false;
+      }
+
+      // Clone and add a relation fieldset.
+      const d = document.querySelector(".add-relations li").cloneNode(true);
+      d.dataset.added = true
+      d.querySelector("select[name=relation_lang]").onchange = filterTypes;
+      document.querySelector(".add-relations").appendChild(d);
+
+      // Remove definition link.
+      d.querySelector(".btn-remove-relation").onclick = (e) => {
+        e.preventDefault();
+        d.remove();
+      };
+    };
+  }
+})();
+
+// Edit form.
+(() => {
+  document.querySelectorAll(".edit").forEach((o) => {
+    o.onclick = ((e) => {
+      e.preventDefault();
+      const btn = e.target;
+
+      // Form is already open.
+      if (btn.dataset.open) {
+        return;
+      }
+      btn.dataset.open = true;
+
+      const form = document.querySelector(".form-comments").cloneNode(true);
+      o.parentNode.appendChild(form);
+      form.style.display = "block";
+
+      const txt = form.querySelector("textarea");
+      txt.focus();
+      txt.onkeydown = (e) => {
+        if (e.key === "Escape") {
+          close();
+        }
+      };
+
+      const close = () => {
+        btn.dataset.open = "";
+        form.remove();
+      };
+
+      // Handle form submission.
+      form.onsubmit = () => {
+        fetch("/api/submissions/comments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            from_guid: btn.dataset.from,
+            to_guid: btn.dataset.to,
+            comments: txt.value
+          })
+        });
+        close();
+      };
+
+      form.querySelector("button.close").onclick = close;
+    });
+  })
 })();
