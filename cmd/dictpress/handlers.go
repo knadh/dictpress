@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -159,12 +158,7 @@ func getGlossaryWords(lang, initial string, pg paginator.Set, app *App) (*glossa
 	// Get glossary words.
 	res, total, err := app.data.GetGlossaryWords(lang, initial, pg.Offset, pg.Limit)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return out, nil
-		}
-
 		app.logger.Printf("error querying db: %v", err)
-
 		return nil, errors.New("error querying db")
 	}
 

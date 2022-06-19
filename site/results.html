@@ -1,6 +1,6 @@
 {{ define "results" }}
 <ol class="entries">
-    {{ range $k, $r := .Results.Entries }}
+    {{ range $k, $r := .Data.Results.Entries }}
         <li class="entry" data-guid="{{ $r.GUID }}">
             <header class="head">
                 <a href="" data-from="{{ $r.GUID }}" class="edit" title="Suggest edit">✏️</a>

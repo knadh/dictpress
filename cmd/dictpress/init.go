@@ -24,10 +24,11 @@ import (
 
 func initConstants(ko *koanf.Koanf) constants {
 	c := constants{
-		Site:          ko.String("site"),
-		RootURL:       ko.MustString("app.root_url"),
-		AdminUsername: ko.MustBytes("app.admin_username"),
-		AdminPassword: ko.MustBytes("app.admin_password"),
+		Site:              ko.String("site"),
+		RootURL:           ko.MustString("app.root_url"),
+		AdminUsername:     ko.MustBytes("app.admin_username"),
+		AdminPassword:     ko.MustBytes("app.admin_password"),
+		EnableSubmissions: ko.Bool("app.enable_submissions"),
 	}
 
 	if len(c.AdminUsername) < 6 {

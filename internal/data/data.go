@@ -226,7 +226,7 @@ func (d *Data) GetGlossaryWords(lang, initial string, offset, limit int) ([]Glos
 	var out []GlossaryWord
 	if err := d.queries.GetGlossaryWords.Select(&out, lang, initial, offset, limit); err != nil || len(out) == 0 {
 		if len(out) == 0 {
-			err = fmt.Errorf("glossary is empty")
+			return nil, 0, nil
 		}
 
 		return nil, 0, err

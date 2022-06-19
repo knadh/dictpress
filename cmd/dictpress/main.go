@@ -36,6 +36,7 @@ type Lang struct {
 type constants struct {
 	Site                         string
 	RootURL                      string
+	EnableSubmissions            bool
 	AdminUsername, AdminPassword []byte
 }
 
@@ -192,9 +193,7 @@ func main() {
 
 		// Attach HTML template renderer.
 		app.siteTpl = t
-		srv.Renderer = &tplRenderer{
-			tpls:    t,
-			RootURL: app.constants.RootURL}
+		srv.Renderer = &tplRenderer{tpls: t}
 	}
 
 	logger.Printf("starting server on %s", ko.MustString("app.address"))

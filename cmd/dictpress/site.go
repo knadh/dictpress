@@ -20,14 +20,13 @@ const (
 	pageStatic   = "static"
 )
 
-type sitePage struct {
-	Path        string
-	Page        string
+type pageTpl struct {
+	PageName    string
 	Title       string
+	Heading     string
 	Description string
 	MetaTags    string
 
-	Langs    data.LangMap
 	Query    *data.Query
 	Results  *results
 	Glossary *glossary
@@ -37,73 +36,51 @@ type sitePage struct {
 	PgBar    template.HTML
 }
 
-// siteMsg contains the context for the "message" template.
-// This is used for rendering adhoc messages including errors.
-type siteMsg struct {
-	Path        string
-	Page        string
-	Title       string
-	Heading     string
-	Description string
-	Query       *data.Query
+// tplData is the data container that is injected
+// into public templates for accessing data.
+type tplData struct {
+	// These are available in the template as .Page, .Data etc.
+	RootURL string
+	Langs   data.LangMap
+
+	Path string
+	Data interface{}
 }
 
 // tplRenderer wraps a template.tplRenderer for echo.
 type tplRenderer struct {
-	tpls    *template.Template
-	RootURL string
-}
-
-// tplData is the data container that is injected
-// into public templates for accessing data.
-type tplData struct {
-	RootURL string
-	Data    interface{}
+	tpls *template.Template
 }
 
 // handleIndexPage renders the homepage.
 func handleIndexPage(c echo.Context) error {
-	app := c.Get("app").(*App)
-
-	return c.Render(http.StatusOK, "index", sitePage{
-		Langs: app.data.Langs,
-		Path:  c.Path(),
-		Page:  pageIndex,
+	return c.Render(http.StatusOK, "index", pageTpl{
+		PageName: pageIndex,
 	})
 }
 
 // handleSearchPage renders the search results page.
 func handleSearchPage(c echo.Context) error {
-	app := c.Get("app").(*App)
-
-	query, out, err := doSearch(c)
+	query, res, err := doSearch(c)
 	if err != nil {
-		return c.Render(http.StatusInternalServerError, "message", siteMsg{
+		return c.Render(http.StatusInternalServerError, "message", pageTpl{
 			Title:       "Error",
 			Heading:     "Error",
 			Description: err.Error(),
 		})
 	}
 
-	// Render the results.
-	return c.Render(http.StatusOK, "search", sitePage{
-		Langs:   app.data.Langs,
-		Path:    c.Path(),
-		Page:    pageSearch,
-		Results: out,
-		Query:   &query,
+	return c.Render(http.StatusOK, "search", pageTpl{
+		PageName: pageSearch,
+		Results:  res,
+		Query:    &query,
 	})
 }
 
 // handleSubmissionPage renders the new entry submission page.
 func handleSubmissionPage(c echo.Context) error {
-	app := c.Get("app").(*App)
-
-	// Render the results.
-	return c.Render(http.StatusOK, "submit-entry", sitePage{
-		Title: "Suggest a new entry",
-		Langs: app.data.Langs,
-		Path:  c.Path(),
+	return c.Render(http.StatusOK, "submit-entry", pageTpl{
+		Title: "Submit a new entry",
 	})
 }
 
@@ -121,7 +98,7 @@ func handleGlossaryPage(c echo.Context) error {
 	initials, err := app.data.GetInitials(fromLang)
 	if err != nil {
 		app.logger.Printf("error getting initials: %v", err)
-		return c.Render(http.StatusInternalServerError, "message", siteMsg{
+		return c.Render(http.StatusInternalServerError, "message", pageTpl{
 			Title:       "Error",
 			Heading:     "Error",
 			Description: "Error fetching glossary initials.",
@@ -130,11 +107,9 @@ func handleGlossaryPage(c echo.Context) error {
 
 	if len(initials) == 0 {
 		// No glossary initials found.
-		return c.Render(http.StatusOK, "glossary", sitePage{
-			Langs:   app.data.Langs,
-			Path:    c.Path(),
-			Page:    pageGlossary,
-			Initial: initial,
+		return c.Render(http.StatusOK, "glossary", pageTpl{
+			PageName: pageGlossary,
+			Initial:  initial,
 		})
 	}
 
@@ -147,7 +122,7 @@ func handleGlossaryPage(c echo.Context) error {
 	gloss, err := getGlossaryWords(fromLang, initial, pg, app)
 	if err != nil {
 		app.logger.Printf("error getting glossary words: %v", err)
-		return c.Render(http.StatusInternalServerError, "message", siteMsg{
+		return c.Render(http.StatusInternalServerError, "message", pageTpl{
 			Title:       "Error",
 			Heading:     "Error",
 			Description: "Error fetching glossary words.",
@@ -159,10 +134,7 @@ func handleGlossaryPage(c echo.Context) error {
 	pg.SetTotal(gloss.Total)
 
 	// Render the results.
-	return c.Render(http.StatusOK, "glossary", sitePage{
-		Langs:    app.data.Langs,
-		Path:     c.Path(),
-		Page:     pageGlossary,
+	return c.Render(http.StatusOK, "glossary", pageTpl{
 		Initial:  initial,
 		Initials: initials,
 		Glossary: gloss,
@@ -179,16 +151,14 @@ func handleStaticPage(c echo.Context) error {
 	)
 
 	if app.siteTpl.Lookup(id) == nil {
-		return c.Render(http.StatusNotFound, "message", siteMsg{
+		return c.Render(http.StatusNotFound, "message", pageTpl{
 			Title:   "404",
 			Heading: "Page not found",
 		})
 	}
 
-	return c.Render(http.StatusOK, id, sitePage{
-		Langs: app.data.Langs,
-		Path:  c.Path(),
-		Page:  pageStatic,
+	return c.Render(http.StatusOK, id, pageTpl{
+		PageName: pageStatic,
 	})
 }
 
@@ -231,5 +201,12 @@ func loadSite(path string, loadPages bool) (*template.Template, error) {
 
 // Render executes and renders a template for echo.
 func (t *tplRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.tpls.ExecuteTemplate(w, name, data)
+	app := c.Get("app").(*App)
+
+	return t.tpls.ExecuteTemplate(w, name, tplData{
+		Path:    c.Path(),
+		RootURL: app.constants.RootURL,
+		Langs:   app.data.Langs,
+		Data:    data,
+	})
 }

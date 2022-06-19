@@ -4,18 +4,18 @@
 <head>
   <meta charset="utf-8" />
   <title>
-    {{- if eq .Page "/" }}Welcome to the dictionary.
-    {{- else if eq .Page "glossary" }}Glossary of words
-    {{- else if eq .Page "search" }}"{{ .Query.Query }}" meaning
-    {{- else if ne .Title "" }}{{ .Title }}
+    {{- if eq .Data.PageName "/" }}Welcome to the dictionary.
+    {{- else if eq .Data.PageName "glossary" }}Glossary of words
+    {{- else if eq .Data.PageName "search" }}"{{ .Data.Query.Query }}" meaning
+    {{- else if ne .Data.Title "" }}{{ .Data.Title }}
     {{- else }}{{ block "title" . }}{{end}}
     {{- end -}}
   </title>
   <meta name="description" value="
-    {{- if eq .Page "/" }}Dictionary website
-    {{- else if eq .Page "glossary" }}Glossary of words.
-    {{- else if eq .Page "search" }}{{ .Query.Query }} meaning.
-    {{- else if ne .Description "" }}{{ .Description }}
+    {{- if eq .Data.PageName "/" }}Dictionary website
+    {{- else if eq .Data.PageName "glossary" }}Glossary of words.
+    {{- else if eq .Data.PageName "search" }}{{ .Data.Query.Query }} meaning.
+    {{- else if ne .Data.Description "" }}{{ .Data.Description }}
     {{- else }}{{ block "description" . }}{{end}}
     {{- end -}}" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -25,7 +25,7 @@
   <link href="/static/flexit.css" rel="stylesheet" type="text/css" />
   <link href="/static/style.css" rel="stylesheet" type="text/css" />
 </head>
-<body class="{{ if eq .Page "/"}}home{{ end }}">
+<body class="{{ if eq .Data.PageName "/"}}home{{ end }}">
   <div class="container wrap box">
     <header class="header">
       <div class="row">
@@ -40,7 +40,7 @@
           <form class="search-form" method="get" action="/dictionary/english/italian">
             <div>
               <input autofocus autocomplete="off" required placeholder=""
-                type="text" id="q" name="q" value="{{ if .Query }}{{ .Query.Query }}{{ end }}" />
+                type="text" id="q" name="q" value="{{ if .Data.Query }}{{ .Data.Query.Query }}{{ end }}" />
               <button type="submit"><img src="/static/search.svg" alt="Search" /></button>
             </div>
           </form>
