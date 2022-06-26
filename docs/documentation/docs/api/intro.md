@@ -1,1 +1,1 @@
-API docs are to-do.
+Public APIs do not require authentication.

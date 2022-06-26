@@ -24,14 +24,11 @@ body[data-md-color-primary="white"]
   padding: 10px 0;
 }
 
-body[data-md-color-primary="white"] .md-nav__item--active {
-  font-weight: 600;
-  color: inherit;
-}
-body[data-md-color-primary="white"] .md-nav__item--active a {
+body[data-md-color-primary="white"] .md-nav__item .md-nav__link--active {
   color: #b78900;
+  font-weight: 600;
 }
-body[data-md-color-primary="white"] .md-nav__item a:hover {
+body[data-md-color-primary="white"] .md-nav__item .md-nav__link:hover {
   color: #b78900;
 }
 

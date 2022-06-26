@@ -12,12 +12,12 @@ theme:
   extra:
   search:
     language: 'en'
-  feature:
-    tabs: true
+  features:
+    - navigation.expand
 
   palette:
     primary: "white"
-    accent: "red"
+    accent: "#b78900"
 
 site_dir: _out
 
@@ -33,9 +33,17 @@ extra_css:
 
 copyright: "Copyright &copy; 2022, Kailash Nadh."
 
-pages:
+nav:
   - "Introduction": index.md
   - "Installation": installation.md
   - "Data structure": data-structure.md
   - "Templates": templates.md
-  - "API": api/intro.md
+  - "Importing data": import.md
+  - "Public APIs":
+    - "Config": api/config.md
+    - "Search": api/search.md
+    - "Submissions": api/submissions.md
+  - "Private APIs":
+    - "Introduction": api/intro-private.md
+    - "Entries": api/entries.md
+    - "Relations": api/relations.md
