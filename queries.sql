@@ -118,7 +118,7 @@ SELECT COUNT(*) OVER () AS total, id, content FROM entries
 WITH w AS (
     -- If weight ($4) is 0, compute a new weight by looking up the last weight
     -- for the initial of the given word and add +1 to it.
-    SELECT (weight+1) AS weight FROM entries WHERE initial=$2 AND $3=0 ORDER BY content DESC LIMIT 1
+    SELECT MAX(weight) + 1 AS weight FROM entries WHERE $3=0 AND (initial=$2 AND lang=$6)
 )
 INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes, status)
     VALUES(
@@ -152,7 +152,7 @@ UPDATE entries SET
 WITH w AS (
     -- If weight ($4) is 0, compute a new weight by looking up the last weight
     -- for the initial of the given word and add +1 to it.
-    SELECT MAX(weight) + 1 AS weight FROM relations WHERE from_id=$1 AND $6=0
+    SELECT MAX(weight) + 1 AS weight FROM relations WHERE $6=0 AND from_id=$1
 )
 INSERT INTO relations (from_id, to_id, types, tags, notes, weight, status)
     VALUES($1, $2, $3, $4, $5, COALESCE((SELECT weight FROM w), $6), $7);
@@ -184,7 +184,7 @@ SELECT JSON_BUILD_OBJECT('entries', (SELECT COUNT(*) FROM entries),
 -- is inserted and the new ID is returned. This is used for public submissions which thus always
 -- get related to an existing entry in the database.
 WITH w AS (
-    SELECT (weight+1) AS weight FROM entries WHERE initial=$2 AND $3=0 ORDER BY content DESC LIMIT 1
+    SELECT MAX(weight) + 1 AS weight FROM entries WHERE $3=0 AND (initial=$2 AND lang=$6)
 ),
 old AS (
     SELECT id FROM entries WHERE
