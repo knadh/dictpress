@@ -37,6 +37,9 @@ jobs:
       # Rename the generated mkdocs dcumentation in the ./_site directory to ./docs.
       - run: mv -fT "${GITHUB_WORKSPACE}/_out" docs
 
+      # Add custom GH pages domain file.
+      - run: echo "dict.press" > CNAME
+
       # Commit everything and push gj-pages/
       - run: git add -A && git commit -am "Publish site"
       - run: git push --force origin gh-pages
