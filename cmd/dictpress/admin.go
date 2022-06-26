@@ -298,13 +298,16 @@ func handleReorderRelations(c echo.Context) error {
 		app = c.Get("app").(*App)
 	)
 
-	var ids []int
-	if err := json.NewDecoder(c.Request().Body).Decode(&ids); err != nil {
+	req := struct {
+		IDs []int `json:"ids"`
+	}{}
+
+	if err := json.NewDecoder(c.Request().Body).Decode(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest,
 			fmt.Sprintf("error parsing request: %v", err))
 	}
 
-	if err := app.data.ReorderRelations(ids); err != nil {
+	if err := app.data.ReorderRelations(req.IDs); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error updating relation: %v", err))
 	}

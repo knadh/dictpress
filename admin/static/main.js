@@ -261,7 +261,7 @@ function searchResultsComponent(typ) {
 
         onSaveRelationOrder(entry) {
             const ids = entry.relations.map((r) => r.relation.id);
-            this.api('entries.reorder', `/entries/${entry.id}/relations/weights`, 'PUT', ids).then(() => {
+            this.api('entries.reorder', `/entries/${entry.id}/relations/weights`, 'PUT', { ids: ids }).then(() => {
                 delete (this.order[entry.id]);
             });
         },
