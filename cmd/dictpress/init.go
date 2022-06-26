@@ -150,7 +150,7 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 
 	// Public user submission APIs.
 	if ko.Bool("app.enable_submissions") {
-		p.POST("/api/submissions/new", handleNewSubmission)
+		p.POST("/api/submissions", handleNewSubmission)
 		p.POST("/api/submissions/comments", handleNewComments)
 		p.GET("/submit", handleSubmissionPage)
 		p.POST("/submit", handleSubmissionPage)
