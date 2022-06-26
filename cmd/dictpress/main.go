@@ -8,6 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictpress/internal/data"
+	"github.com/knadh/dictpress/internal/importer"
 	"github.com/knadh/goyesql"
 	goyesqlx "github.com/knadh/goyesql/sqlx"
 	"github.com/knadh/koanf"
@@ -57,7 +58,7 @@ type App struct {
 
 var (
 	logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
-	ko     = koanf.New(".")
+	ko = koanf.New(".")
 )
 
 func init() {
@@ -74,6 +75,7 @@ func init() {
 		"path to one or more config files (will be merged in order)")
 	f.String("site", "", "path to a site theme. If left empty, only HTTP APIs will be available.")
 	f.Bool("install", false, "run first time DB installation")
+	f.String("import", "", "import a CSV file into the database. eg: --import=data.csv")
 	f.Bool("yes", false, "assume 'yes' to prompts, eg: during --install")
 	f.Bool("version", false, "current version of the build")
 
@@ -149,7 +151,6 @@ func main() {
 
 	// Map queries to the query container.
 	var q data.Queries
-
 	if err := goyesqlx.ScanToStruct(&q, qMap, db.Unsafe()); err != nil {
 		logger.Fatalf("no SQL queries loaded: %v", err)
 	}
@@ -158,6 +159,16 @@ func main() {
 	langs := initLangs(ko)
 	if len(langs) == 0 {
 		logger.Fatal("0 languages in config")
+	}
+
+	// Run the CSV importer.
+	if fPath := ko.String("import"); fPath != "" {
+		imp := importer.New(langs, q.InsertSubmissionEntry, q.InsertSubmissionRelation, db, logger)
+		logger.Printf("importing data from %s ...", fPath)
+		if err := imp.Import(fPath); err != nil {
+			logger.Fatal(err)
+		}
+		os.Exit(0)
 	}
 
 	app.data = data.New(&q, langs)
