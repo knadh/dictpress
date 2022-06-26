@@ -155,7 +155,7 @@ WITH w AS (
     SELECT MAX(weight) + 1 AS weight FROM relations WHERE $6=0 AND from_id=$1
 )
 INSERT INTO relations (from_id, to_id, types, tags, notes, weight, status)
-    VALUES($1, $2, $3, $4, $5, COALESCE((SELECT weight FROM w), $6), $7);
+    VALUES($1, $2, $3, $4, $5, COALESCE((SELECT weight FROM w), $6), $7) RETURNING id;
 
 -- name: reorder-relations
 -- Updates the weights from 1 to N given ordered relation IDs in an array. 
