@@ -12,10 +12,10 @@ CREATE TABLE entries (
     guid            UUID NOT NULL UNIQUE DEFAULT GEN_RANDOM_UUID(),
 
     -- Actual language content. Dictionary word or definition entries
-    content         TEXT NOT NULL,
+    content         TEXT NOT NULL CHECK (content <> ''),
 
     -- The first “alphabet” of the content. For English, for the word Apple, the initial is A
-    initial         TEXT NOT NULL,
+    initial         TEXT NOT NULL DEFAULT '',
 
     -- An optional numeric value to order search results
     weight          DECIMAL NOT NULL DEFAULT 0,
@@ -24,7 +24,7 @@ CREATE TABLE entries (
     tokens          TSVECTOR NOT NULL DEFAULT '',
 
     -- String representing the language of content. Eg: en, english
-    lang            TEXT NOT NULL,
+    lang            TEXT NOT NULL CHECK (lang <> ''),
 
     -- Optional tags
     tags            TEXT[] NOT NULL DEFAULT '{}'::TEXT[],
