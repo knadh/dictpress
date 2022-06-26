@@ -472,6 +472,9 @@ function definitionComponent() {
 
 			this.def = { ...e.detail, tags: e.detail.tags.join('\n') };
 			this.isVisible = true;
+			this.$nextTick(() => {
+				this.$refs.content.focus();
+			});
 		},
 
 		onSave() {

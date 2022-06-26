@@ -11,7 +11,7 @@
 				<div>&darr;</div>
 				<div>
 					<label>Definition</label>
-					<textarea autofocus name="content" x-model="def.content"></textarea>
+					<textarea required autofocus name="content" x-ref="content" x-model="def.content"></textarea>
 				</div>
 				<br />
 				<template x-if="Object.keys(config.languages[parent.lang].types).length > 0">
@@ -27,7 +27,7 @@
 
 						<div class="column four">
 							<label>Relation types</label>
-			    			<select name="lang" x-model="def.types" multiple>
+			    			<select name="lang" x-model="def.types" multiple required>
 							    <template x-for="[id, typ] in Object.entries(config.languages[def.lang].types)" :key="id">
 							      <option :value="id" x-text="typ"></option>
 							    </template>
