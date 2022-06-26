@@ -271,6 +271,10 @@ func (d *Data) InsertSubmissionEntry(e Entry) (int, error) {
 
 // UpdateEntry updates a dictionary entry.
 func (d *Data) UpdateEntry(id int, e Entry) error {
+	if e.Status == "" {
+		e.Status = StatusEnabled
+	}
+
 	_, err := d.queries.UpdateEntry.Exec(id,
 		e.Content,
 		e.Initial,
@@ -401,13 +405,20 @@ func (d *Data) insertEntry(e Entry, stmt *sqlx.Stmt) (int, error) {
 		}
 	}
 
+	if e.Status == "" {
+		e.Status = StatusEnabled
+	}
+
 	var id int
-	err := stmt.Get(&id, e.Content, e.Initial, e.Weight, tokens,
-		tsVectorLang, e.Lang, e.Tags, e.Phones, e.Notes, e.Status)
+	err := stmt.Get(&id, e.Content, e.Initial, e.Weight, tokens, tsVectorLang, e.Lang, e.Tags, e.Phones, e.Notes, e.Status)
 	return id, err
 }
 
 func (d *Data) insertRelation(fromID, toID int, r Relation, stmt *sqlx.Stmt) (int, error) {
+	if r.Status == "" {
+		r.Status = StatusEnabled
+	}
+
 	var id int
 	err := stmt.Get(&id, fromID, toID, r.Types, r.Tags, r.Notes, r.Weight, r.Status)
 	return id, err
