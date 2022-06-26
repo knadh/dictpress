@@ -1,0 +1,42 @@
+name: Publish website on GitHub Pages
+
+on:
+  push:
+    paths:
+    - 'docs/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+      - run: pip install mkdocs-material
+
+      # Set git identity.
+      - run: git config user.name "GitHub Actions Bot" && git config user.email "<>"
+
+      # Create an empty gh-pages branch.
+      - run: git checkout --orphan gh-pages && git rm -rf . && git commit --allow-empty -m "Init"
+
+      # Checkout the main brancin and build the mkdocs site which is in ./docs/documentation to ./_out
+      - run: git checkout ${GITHUB_REF_NAME}
+      - run: mkdocs build --config-file "docs/documentation/mkdocs.yml" --clean --site-dir="${GITHUB_WORKSPACE}/_out"
+
+      # Switch back to the empty gh-pages directory. 
+      - run: git checkout gh-pages 
+ 
+      # Copy the static landing page files from the main branch's ./docs directory and move them to the root / directory in gh-pages.
+      - run: git checkout ${GITHUB_REF_NAME} -- docs/index.html
+      - run: git checkout ${GITHUB_REF_NAME} -- docs/static
+      - run: mv -f docs/* .
+
+      # Rename the generated mkdocs dcumentation in the ./_site directory to ./docs.
+      - run: mv -fT "${GITHUB_WORKSPACE}/_out" docs
+
+      # Commit everything and push gj-pages/
+      - run: git add -A && git commit -am "Publish site"
+      - run: git push --force origin gh-pages
