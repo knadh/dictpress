@@ -1,4 +1,4 @@
-body[data-md-color-primary="white"] .md-header[data-md-state="shadow"] {
+body[data-md-color-primary="white"] .md-header--shadow {
   background: #fff;
   box-shadow: none;
   color: #333;
