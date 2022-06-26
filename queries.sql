@@ -167,7 +167,7 @@ UPDATE relations AS r SET weight = c.weight
 DELETE FROM entries WHERE id=$1;
 
 -- name: delete-relation
-DELETE FROM relations WHERE from_id=$1 AND to_id=$2;
+DELETE FROM relations WHERE id=$1;
 
 -- name: get-stats
 SELECT JSON_BUILD_OBJECT('entries', (SELECT COUNT(*) FROM entries),

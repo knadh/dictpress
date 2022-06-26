@@ -33,7 +33,7 @@
                                 <span class="meta types" x-text="r.relation.types"></span> <span x-text="r.content" class="content"></span>
                             </p>
                             <div class="actions">
-                                <a href="#" @click.prevent="onDetatchRelation(e.id, r.id)">Detatch</a>
+                                <a href="#" @click.prevent="onDetatchRelation(e.id, r.relation.id)">Detatch</a>
                                 <a x-bind:href="`${_urls.admin}/entries/${r.id}?parent=${e.id}`" @click.prevent="onEditRelation(r, e)">Edit relation</a>
                                 <a x-bind:href="`${_urls.admin}/entries/${r.id}?parent=${e.id}`" @click.prevent="onEditEntry(r, e)">Edit entry</a>
                                 <a x-bind:href="`${_urls.admin}/entries/${r.id}?parent=${e.id}`" @click.prevent="onDeleteRelationEntry(r.id)">Delete entry</a>

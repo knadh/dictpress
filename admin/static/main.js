@@ -266,12 +266,12 @@ function searchResultsComponent(typ) {
             });
         },
 
-        onDetatchRelation(fromId, toId) {
+        onDetatchRelation(entryID, relID) {
             if (!confirm("Detatch this definition from the above entry? It will not be deleted from the database and may still be attached to other entries.")) {
                 return;
             }
 
-            this.api('relations.detatch', `/entries/${fromId}/relations/${toId}`, 'DELETE').then(() => this.refresh());
+            this.api('relations.detatch', `/entries/${entryID}/relations/${relID}`, 'DELETE').then(() => this.refresh());
         },
 
         onEditEntry(entry, parent) {

@@ -320,14 +320,14 @@ func handleDeleteRelation(c echo.Context) error {
 	var (
 		app       = c.Get("app").(*App)
 		fromID, _ = strconv.Atoi(c.Param("fromID"))
-		toID, _   = strconv.Atoi(c.Param("toID"))
+		relID, _  = strconv.Atoi(c.Param("relID"))
 	)
 
-	if fromID < 1 || toID < 1 {
+	if fromID < 1 || relID < 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid IDs.")
 	}
 
-	if err := app.data.DeleteRelation(fromID, toID); err != nil {
+	if err := app.data.DeleteRelation(fromID, relID); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error deleting relation: %v", err))
 	}

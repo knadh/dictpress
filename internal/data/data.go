@@ -324,8 +324,8 @@ func (d *Data) DeleteEntry(id int) error {
 }
 
 // DeleteRelation deletes a dictionary entry by its id.
-func (s *Data) DeleteRelation(fromID, toID int) error {
-	_, err := s.queries.DeleteRelation.Exec(fromID, toID)
+func (s *Data) DeleteRelation(fromID, relID int) error {
+	_, err := s.queries.DeleteRelation.Exec(relID)
 	return err
 }
 
