@@ -231,7 +231,7 @@ EOF
 | `initial`      | `string`   | The uppercase first character of the entry. Eg: `A` for Apple. If left empty, it is automatically picked up. |
 | `lang`      | `string`   | Language of the entry as defined in the config. |
 | `phones`      | `[]string`   | Optional phonetic notations representing the pronunciations of the entry. |
-| `tokens`      | `string`   | Postgres fulltext search tokens for the entry (content). If this is left empty and the language config has `tokenizer_type` set as `Postgres`, the tokens are automatically created in the database using `TO_TSVECTOR($TSVectorLanguage, $content)`. For languages without Postgres tokenizers, the TSVectorToken strings should be computed externally and added here. |
+| `tokens`      | `string`   | Postgres fulltext search tokens for the entry (content). If this is left empty and the language config has `tokenizer_type` set as `Postgres`, the tokens are automatically created in the database using `TO_TSVECTOR($tsvector_language, $content)`. For languages without Postgres tokenizers, the [tsvector](https://www.postgresql.org/docs/10/datatype-textsearch.html#DATATYPE-TSVECTOR) token string should be computed externally and provided here. |
 | `tags`      | `[]string`   | Optional tags describing the entry. |
 | `notes`      | `string`   | Optional notes describing the entry. |
 | `weight`      | `int`   | Optional numerical weight to order the entry in the glossary and search results. If left empty, it is automatically computed as the last entry by the initial in ascending order. |
