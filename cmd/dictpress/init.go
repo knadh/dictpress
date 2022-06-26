@@ -32,11 +32,11 @@ func initConstants(ko *koanf.Koanf) constants {
 	}
 
 	if len(c.AdminUsername) < 6 {
-		logger.Fatal("admin_username should be min 6 characters")
+		lo.Fatal("admin_username should be min 6 characters")
 	}
 
 	if len(c.AdminPassword) < 8 {
-		logger.Fatal("admin_password should be min 8 characters")
+		lo.Fatal("admin_password should be min 8 characters")
 	}
 
 	return c
@@ -47,7 +47,7 @@ func initDB(host string, port int, user, pwd, dbName string) *sqlx.DB {
 	db, err := sqlx.Connect("postgres",
 		fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, pwd, dbName))
 	if err != nil {
-		logger.Fatalf("error intiializing DB: %v", err)
+		lo.Fatalf("error intiializing DB: %v", err)
 	}
 
 	return db
@@ -58,7 +58,7 @@ func initDB(host string, port int, user, pwd, dbName string) *sqlx.DB {
 func initFS() stuffbin.FileSystem {
 	path, err := os.Executable()
 	if err != nil {
-		logger.Fatalf("error getting executable path: %v", err)
+		lo.Fatalf("error getting executable path: %v", err)
 	}
 
 	fs, err := stuffbin.UnStuff(path)
@@ -68,8 +68,8 @@ func initFS() stuffbin.FileSystem {
 
 	// Running in local mode. Load the required static assets into
 	// the in-memory stuffbin.FileSystem.
-	logger.Printf("unable to initialize embedded filesystem: %v", err)
-	logger.Printf("using local filesystem for static assets")
+	lo.Printf("unable to initialize embedded filesystem: %v", err)
+	lo.Printf("using local filesystem for static assets")
 
 	files := []string{
 		"config.sample.toml",
@@ -80,7 +80,7 @@ func initFS() stuffbin.FileSystem {
 
 	fs, err = stuffbin.NewLocalFS("/", files...)
 	if err != nil {
-		logger.Fatalf("failed to load local static files: %v", err)
+		lo.Fatalf("failed to load local static files: %v", err)
 	}
 
 	return fs
@@ -90,7 +90,7 @@ func initAdminTemplates(app *App) *template.Template {
 	// Init admin templates.
 	tpls, err := stuffbin.ParseTemplatesGlob(nil, app.fs, "/admin/*.html")
 	if err != nil {
-		logger.Fatalf("error parsing e-mail notif templates: %v", err)
+		lo.Fatalf("error parsing e-mail notif templates: %v", err)
 	}
 	return tpls
 }
@@ -192,20 +192,20 @@ func initLangs(ko *koanf.Koanf) data.LangMap {
 	for _, l := range ko.MapKeys("lang") {
 		lang := data.Lang{Types: make(map[string]string)}
 		if err := ko.UnmarshalWithConf("lang."+l, &lang, koanf.UnmarshalConf{Tag: "json"}); err != nil {
-			logger.Fatalf("error loading languages: %v", err)
+			lo.Fatalf("error loading languages: %v", err)
 		}
 
 		// Does the language use a bundled tokenizer?
 		if lang.TokenizerType == "custom" {
 			t, ok := tks[lang.TokenizerName]
 			if !ok {
-				logger.Fatalf("unknown custom tokenizer '%s'", lang.TokenizerName)
+				lo.Fatalf("unknown custom tokenizer '%s'", lang.TokenizerName)
 			}
 			lang.Tokenizer = t
 		}
 
 		// Load external plugin.
-		logger.Printf("language: %s", l)
+		lo.Printf("language: %s", l)
 		out[l] = lang
 	}
 

@@ -53,11 +53,11 @@ type App struct {
 	fs         stuffbin.FileSystem
 	resultsPg  *paginator.Paginator
 	glossaryPg *paginator.Paginator
-	logger     *log.Logger
+	lo     *log.Logger
 }
 
 var (
-	logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
+	lo = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
 	ko = koanf.New(".")
 )
 
@@ -80,7 +80,7 @@ func init() {
 	f.Bool("version", false, "current version of the build")
 
 	if err := f.Parse(os.Args[1:]); err != nil {
-		logger.Fatalf("error parsing flags: %v", err)
+		lo.Fatalf("error parsing flags: %v", err)
 	}
 
 	if ok, _ := f.GetBool("version"); ok {
@@ -101,7 +101,7 @@ func init() {
 	// Load config files.
 	cFiles, _ := f.GetStringSlice("config")
 	for _, f := range cFiles {
-		logger.Printf("reading config: %s", f)
+		lo.Printf("reading config: %s", f)
 
 		if err := ko.Load(file.Provider(f), toml.Parser()); err != nil {
 			fmt.Printf("error reading config: %v", err)
@@ -110,7 +110,7 @@ func init() {
 	}
 
 	if err := ko.Load(posflag.Provider(f, ".", ko), nil); err != nil {
-		logger.Fatalf("error loading config: %v", err)
+		lo.Fatalf("error loading config: %v", err)
 	}
 }
 
@@ -129,7 +129,7 @@ func main() {
 		constants: initConstants(ko),
 		db:        db,
 		fs:        initFS(),
-		logger:    logger,
+		lo:    lo,
 	}
 
 	// Install schema.
@@ -141,32 +141,32 @@ func main() {
 	// Load SQL queries.
 	qB, err := app.fs.Read("/queries.sql")
 	if err != nil {
-		logger.Fatalf("error reading queries.sql: %v", err)
+		lo.Fatalf("error reading queries.sql: %v", err)
 	}
 
 	qMap, err := goyesql.ParseBytes(qB)
 	if err != nil {
-		logger.Fatalf("error loading SQL queries: %v", err)
+		lo.Fatalf("error loading SQL queries: %v", err)
 	}
 
 	// Map queries to the query container.
 	var q data.Queries
 	if err := goyesqlx.ScanToStruct(&q, qMap, db.Unsafe()); err != nil {
-		logger.Fatalf("no SQL queries loaded: %v", err)
+		lo.Fatalf("no SQL queries loaded: %v", err)
 	}
 
 	// Load language config.
 	langs := initLangs(ko)
 	if len(langs) == 0 {
-		logger.Fatal("0 languages in config")
+		lo.Fatal("0 languages in config")
 	}
 
 	// Run the CSV importer.
 	if fPath := ko.String("import"); fPath != "" {
-		imp := importer.New(langs, q.InsertSubmissionEntry, q.InsertSubmissionRelation, db, logger)
-		logger.Printf("importing data from %s ...", fPath)
+		imp := importer.New(langs, q.InsertSubmissionEntry, q.InsertSubmissionRelation, db, lo)
+		lo.Printf("importing data from %s ...", fPath)
 		if err := imp.Import(fPath); err != nil {
-			logger.Fatal(err)
+			lo.Fatal(err)
 		}
 		os.Exit(0)
 	}
@@ -196,10 +196,10 @@ func main() {
 
 	// Load optional HTML website.
 	if app.constants.Site != "" {
-		logger.Printf("loading site theme: %s", app.constants.Site)
+		lo.Printf("loading site theme: %s", app.constants.Site)
 		t, err := loadSite(app.constants.Site, ko.Bool("app.enable_pages"))
 		if err != nil {
-			logger.Fatalf("error loading site theme: %v", err)
+			lo.Fatalf("error loading site theme: %v", err)
 		}
 
 		// Attach HTML template renderer.
@@ -207,8 +207,8 @@ func main() {
 		srv.Renderer = &tplRenderer{tpls: t}
 	}
 
-	logger.Printf("starting server on %s", ko.MustString("app.address"))
+	lo.Printf("starting server on %s", ko.MustString("app.address"))
 	if err := srv.Start(ko.MustString("app.address")); err != nil {
-		logger.Fatalf("error starting HTTP server: %v", err)
+		lo.Fatalf("error starting HTTP server: %v", err)
 	}
 }

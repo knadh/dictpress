@@ -115,7 +115,7 @@ func handleGlossaryPage(c echo.Context) error {
 	// Get the alphabets.
 	initials, err := app.data.GetInitials(fromLang)
 	if err != nil {
-		app.logger.Printf("error getting initials: %v", err)
+		app.lo.Printf("error getting initials: %v", err)
 		return c.Render(http.StatusInternalServerError, "message", pageTpl{
 			Title:       "Error",
 			Heading:     "Error",
@@ -139,7 +139,7 @@ func handleGlossaryPage(c echo.Context) error {
 	// Get words.
 	gloss, err := getGlossaryWords(fromLang, initial, pg, app)
 	if err != nil {
-		app.logger.Printf("error getting glossary words: %v", err)
+		app.lo.Printf("error getting glossary words: %v", err)
 		return c.Render(http.StatusInternalServerError, "message", pageTpl{
 			Title:       "Error",
 			Heading:     "Error",

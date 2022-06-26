@@ -30,14 +30,14 @@ func installSchema(app *App, prompt bool) {
 
 	q, err := app.fs.Read("/schema.sql")
 	if err != nil {
-		app.logger.Fatal(err.Error())
+		app.lo.Fatal(err.Error())
 		return
 	}
 
 	if _, err := app.db.Exec(string(q)); err != nil {
-		app.logger.Fatal(err.Error())
+		app.lo.Fatal(err.Error())
 		return
 	}
 
-	app.logger.Println("successfully installed schema")
+	app.lo.Println("successfully installed schema")
 }

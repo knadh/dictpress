@@ -89,7 +89,7 @@ func handleGetPendingEntries(c echo.Context) error {
 			return c.JSON(http.StatusOK, okResp{out})
 		}
 
-		app.logger.Printf("error querying db: %v", err)
+		app.lo.Printf("error querying db: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -99,7 +99,7 @@ func handleGetPendingEntries(c echo.Context) error {
 
 	// Load relations into the matches.
 	if err := app.data.SearchAndLoadRelations(res, data.Query{}); err != nil {
-		app.logger.Printf("error querying db for defs: %v", err)
+		app.lo.Printf("error querying db for defs: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -134,7 +134,7 @@ func handleGetEntry(c echo.Context) error {
 
 	entries := []data.Entry{e}
 	if err := app.data.SearchAndLoadRelations(entries, data.Query{}); err != nil {
-		app.logger.Printf("error loading relations: %v", err)
+		app.lo.Printf("error loading relations: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error loading relations")
 	}
 

@@ -117,7 +117,7 @@ func doSearch(c echo.Context) (data.Query, *results, error) {
 	}
 	res, total, err := app.data.Search(query)
 	if err != nil {
-		app.logger.Printf("error querying db: %v", err)
+		app.lo.Printf("error querying db: %v", err)
 		return query, nil, errors.New("error querying db")
 	}
 
@@ -132,7 +132,7 @@ func doSearch(c echo.Context) (data.Query, *results, error) {
 		Limit:  pg.Limit,
 		Status: data.StatusEnabled,
 	}); err != nil {
-		app.logger.Printf("error querying db for defs: %v", err)
+		app.lo.Printf("error querying db for defs: %v", err)
 		return query, nil, errors.New("error querying db for definitions")
 	}
 
@@ -158,7 +158,7 @@ func getGlossaryWords(lang, initial string, pg paginator.Set, app *App) (*glossa
 	// Get glossary words.
 	res, total, err := app.data.GetGlossaryWords(lang, initial, pg.Offset, pg.Limit)
 	if err != nil {
-		app.logger.Printf("error querying db: %v", err)
+		app.lo.Printf("error querying db: %v", err)
 		return nil, errors.New("error querying db")
 	}
 
