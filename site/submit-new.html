@@ -4,65 +4,65 @@
 <h2>Suggest a new entry</h2>
 <br />
 <form method="post" action="" class="form-submit">
-	<div>
-		<div class="row">
-			<fieldset class="columns three">
-				<label for="entry-lang">Entry language</label>
-				<select name="entry_lang" for="entry-lang">
-				{{ range $id, $l := .Langs }}
-					<option value="{{ $id }}">{{ $l.Name }}</option>
-				{{ end }}
-				</select>
-			</fieldset>
-			<fieldset class="columns one"></fieldset>
-			<fieldset class="columns eight">
-				<label for="entry-content">Content</label>
-				<textarea name="entry_content" id="entry-content" required minlength="3"></textarea>
-			</fieldset>
-		</div>
-		<fieldset>
-			<label>Phonetic notations (pronunciation)</label>
-			<input type="text" name="phones" placeholder="eg: pɛts, pɛt (commma separated)" />
-		</fieldset>
+    <div>
+        <div class="row">
+            <fieldset class="columns three">
+                <label for="entry-lang">Entry language</label>
+                <select name="entry_lang" for="entry-lang">
+                {{ range $id, $l := .Langs }}
+                    <option value="{{ $id }}">{{ $l.Name }}</option>
+                {{ end }}
+                </select>
+            </fieldset>
+            <fieldset class="columns one"></fieldset>
+            <fieldset class="columns eight">
+                <label for="entry-content">Content</label>
+                <textarea name="entry_content" id="entry-content" required minlength="3"></textarea>
+            </fieldset>
+        </div>
+        <fieldset>
+            <label>Phonetic notations (pronunciation)</label>
+            <input type="text" name="phones" placeholder="eg: pɛts, pɛt (commma separated)" />
+        </fieldset>
 
-		<h4>Definitions</h4>
-		<ol class="add-relations">
-			<li class="row">
-				<fieldset class="columns three">
-					<label>Definition language</label>
-					<select name="relation_lang">
-					{{ range $id, $l := .Langs }}
-						<option value="{{ $id }}">{{ $l.Name }}</option>
-					{{ end }}
-					</select>
+        <h4>Definitions</h4>
+        <ol class="add-relations">
+            <li class="row">
+                <fieldset class="columns three">
+                    <label>Definition language</label>
+                    <select name="relation_lang">
+                    {{ range $id, $l := .Langs }}
+                        <option value="{{ $id }}">{{ $l.Name }}</option>
+                    {{ end }}
+                    </select>
 
-					<select name="relation_type">
-					{{ range $lid, $l := .Langs }}
-						{{ range $tid, $t := $l.Types }}
-							<option data-lang="{{ $lid }}" value="{{ $tid }}">{{ $t }}</option>
-						{{ end }}
-					{{ end }}
-					</select>
+                    <select name="relation_type">
+                    {{ range $lid, $l := .Langs }}
+                        {{ range $tid, $t := $l.Types }}
+                            <option data-lang="{{ $lid }}" value="{{ $tid }}">{{ $t }}</option>
+                        {{ end }}
+                    {{ end }}
+                    </select>
 
-					<br />
-					<a href="#" class="btn-remove-relation">Delete</a>
-				</fieldset>
-				<fieldset class="columns one"></fieldset>
-				<fieldset class="columns eight">
-					<label for="definition-content">Content</label>
-					<textarea name="relation_content" required minlength="3"></textarea>
-				</fieldset>
-			</li>
-		</ol>
-		<p class="text-right">
-			<a href="#" class="btn-add-relation">+ Add one more definition</a>
-		</p>
+                    <br />
+                    <a href="#" class="btn-remove-relation">Delete</a>
+                </fieldset>
+                <fieldset class="columns one"></fieldset>
+                <fieldset class="columns eight">
+                    <label for="definition-content">Content</label>
+                    <textarea name="relation_content" required minlength="3"></textarea>
+                </fieldset>
+            </li>
+        </ol>
+        <p class="text-right">
+            <a href="#" class="btn-add-relation">+ Add one more definition</a>
+        </p>
 
-		<br />
-		<p>
-			<button type="submit">Submit for review</button>
-		</p>
-	</div>
+        <br />
+        <p>
+            <button type="submit">Submit for review</button>
+        </p>
+    </div>
 </form>
 
 {{ template "footer" . }}

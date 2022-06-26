@@ -2,29 +2,29 @@
 {{ template "header" . }}
 
 <section class="home" x-data="homeComponent()" x-init="onLoad">
-	<template x-if="stats">
-		<div class="box stats row">
-			<div class="column">
-				<h2 x-text="formatNumber(stats.entries)"></h2>
-				<p>Entries</p>
-			</div>
-			<div class="column">
-				<h2 x-text="formatNumber(stats.relations)"></h2>
-				<p>Relations</p>
-			</div>
-			<div class="column">
-				<h2>Languages</h2>
-				<ul class="no">
-					<template x-for="[l, num] in Object.entries(stats.languages)" :key="l">
-						<li>
-							<label class="label" x-text="config.languages[l].name"></label>
-							<span x-text="formatNumber(num)"></span>
-						</li>
-					</template>
-				</ul>
-			</div>
-		</div>
-	</template>
+    <template x-if="stats">
+        <div class="box stats row">
+            <div class="column">
+                <h2 x-text="formatNumber(stats.entries)"></h2>
+                <p>Entries</p>
+            </div>
+            <div class="column">
+                <h2 x-text="formatNumber(stats.relations)"></h2>
+                <p>Relations</p>
+            </div>
+            <div class="column">
+                <h2>Languages</h2>
+                <ul class="no">
+                    <template x-for="[l, num] in Object.entries(stats.languages)" :key="l">
+                        <li>
+                            <label class="label" x-text="config.languages[l].name"></label>
+                            <span x-text="formatNumber(num)"></span>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        </div>
+    </template>
 </section>
 
 {{ template "footer" . }}
