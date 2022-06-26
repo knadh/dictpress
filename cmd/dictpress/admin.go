@@ -153,6 +153,10 @@ func handleGetParentEntries(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
+	if out == nil {
+		out = []data.Entry{}
+	}
+
 	return c.JSON(http.StatusOK, okResp{out})
 }
 
