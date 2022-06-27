@@ -53,7 +53,7 @@ type App struct {
 	fs         stuffbin.FileSystem
 	resultsPg  *paginator.Paginator
 	glossaryPg *paginator.Paginator
-	lo     *log.Logger
+	lo         *log.Logger
 }
 
 var (
@@ -67,6 +67,7 @@ func init() {
 
 	f.Usage = func() {
 		fmt.Println(f.FlagUsages())
+		fmt.Printf("dictpress (%s). Build dictionary websites. https://dict.press", versionString)
 		os.Exit(0)
 	}
 
@@ -129,7 +130,7 @@ func main() {
 		constants: initConstants(ko),
 		db:        db,
 		fs:        initFS(),
-		lo:    lo,
+		lo:        lo,
 	}
 
 	// Install schema.
