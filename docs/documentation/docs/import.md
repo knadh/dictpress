@@ -38,3 +38,62 @@ English and Italian definitions below them.
 | 7      | tags             | Optional tags describing the entry. Separate multiple tags by `\|`.                                                                                                                                                                                                                                                                                   |
 | 8      | phones           | Optional phonetic notations representing the pronunciations of the entry. Separate multiple phones by `\|`.                                                                                                                                                                                                                                           |
 | 9      | definition-types | This should only be set for definition entries that ar marked with `Type = ^`. One or more parts-of-speech types separated by `\|`. Example `noun\|verb`.                                                                                                                                                                                             |
+
+
+# Importing with SQL
+Generating SQL for dictionary data and loading that directly into the database can give fine grained control
+The following is the SQL equivalent of the above CSV. The Postgres database tables schemas are [described here](data-structure.md).
+
+
+```sql
+-- If the DB is not empty, to wipe everything and get a clean slate, run:
+-- TRUNCATE TABLE entries RESTART IDENTITY CASCADE; TRUNCATE TABLE relations RESTART IDENTITY CASCADE;
+
+-- Insert head words apple, application (id=1, 2)
+INSERT INTO entries (lang, content, initial, tokens, phones) VALUES
+    ('english', 'Apple', 'A', TO_TSVECTOR('apple'), '{/ˈæp.əl/, aapl}'),
+    ('english', 'Application', 'A', TO_TSVECTOR('application'), '{/aplɪˈkeɪʃ(ə)n/}');
+
+
+-- Insert English definitions for apple. (id=3, 4, 5)
+INSERT INTO entries (lang, content) VALUES
+    ('english', 'round, red or yellow, edible fruit of a small tree'),
+    ('english', 'the tree, cultivated in most temperate regions.'),
+    ('english', 'anything resembling an apple in size and shape, as a ball, especially a baseball.');
+-- Insert English apple-definition relationships.
+INSERT INTO relations (from_id, to_id, types, weight) VALUES
+    (1, 3, '{noun}', 0),
+    (1, 4, '{noun}', 1),
+    (1, 5, '{noun}', 2);
+
+-- Insert Italian definitions for apple. (id=6, 7)
+INSERT INTO entries (lang, content) VALUES
+    ('italian', 'mela'),
+    ('italian', 'il pomo.');
+-- Insert Italian apple-definition relationships.
+INSERT INTO relations (from_id, to_id, types, weight) VALUES
+    (1, 6, '{noun}', 0),
+    (1, 7, '{noun}', 1);
+
+
+--
+-- Insert English definitions for application. (id=8, 9)
+INSERT INTO entries (lang, content) VALUES
+    ('english', 'the act of putting to a special use or purpose'),
+    ('english', 'the act of requesting.');
+-- Insert English application-definition relationships.
+INSERT INTO relations (from_id, to_id, types, weight) VALUES
+    (2, 3, '{noun}', 8),
+    (2, 4, '{noun}', 9);
+
+-- Insert Italian definitions for application. (id=10, 11, 12)
+INSERT INTO entries (lang, content) VALUES
+    ('italian', 'le applicazione'),
+    ('italian', 'la domanda'),
+    ('italian', 'la richiesta');
+-- Insert Italian application-definition relationships.
+INSERT INTO relations (from_id, to_id, types, weight) VALUES
+    (2, 10, '{noun}', 0),
+    (2, 11, '{noun}', 1),
+    (2, 12, '{noun}', 1);
+```
