@@ -1,7 +1,7 @@
 # Search
 
 ### GET /api/dictionary/:fromLang/:toLang/:searchWords
-Search the dictionary and retrieve paginated results.
+Search the dictionary and retrieve paginated results. `:searchQuery` should be URL encoded.
 
 
 #### Request
@@ -16,7 +16,6 @@ curl http://localhost:9000/api/dictionary/english/english/apple
   "data": {
     "entries": [
       {
-        "id": 1,
         "guid": "17e7a544-5b55-4c6c-8cfc-8fbe2f5ea747",
         "weight": 0,
         "initial": "A",
@@ -35,7 +34,6 @@ curl http://localhost:9000/api/dictionary/english/english/apple
         "status": "enabled",
         "relations": [
           {
-            "id": 3,
             "guid": "61f76f4d-ee87-4efc-b2b2-845125585bcf",
             "weight": 0,
             "initial": "R",
@@ -51,7 +49,6 @@ curl http://localhost:9000/api/dictionary/english/english/apple
             "created_at": "2022-06-26T08:33:34.842429Z",
             "updated_at": "2022-06-26T08:33:34.842429Z",
             "relation": {
-              "id": 1,
               "types": [
                 "noun"
               ],
@@ -66,7 +63,6 @@ curl http://localhost:9000/api/dictionary/english/english/apple
             }
           },
           {
-            "id": 4,
             "guid": "72ee1c06-d3fc-4b5e-8fa7-ad868c12475d",
             "weight": 1,
             "initial": "T",
@@ -82,7 +78,6 @@ curl http://localhost:9000/api/dictionary/english/english/apple
             "created_at": "2022-06-26T08:33:34.842429Z",
             "updated_at": "2022-06-26T08:33:34.842429Z",
             "relation": {
-              "id": 2,
               "types": [
                 "noun"
               ],
@@ -97,7 +92,6 @@ curl http://localhost:9000/api/dictionary/english/english/apple
             }
           },
           {
-            "id": 5,
             "guid": "653fc521-f917-4049-99fc-5281b3e2e300",
             "weight": 2,
             "initial": "I",
@@ -113,7 +107,6 @@ curl http://localhost:9000/api/dictionary/english/english/apple
             "created_at": "2022-06-26T08:33:34.842429Z",
             "updated_at": "2022-06-26T08:33:34.842429Z",
             "relation": {
-              "id": 3,
               "types": [
                 "noun"
               ],
