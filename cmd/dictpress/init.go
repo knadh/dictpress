@@ -47,7 +47,7 @@ func initDB(host string, port int, user, pwd, dbName string) *sqlx.DB {
 	db, err := sqlx.Connect("postgres",
 		fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, pwd, dbName))
 	if err != nil {
-		lo.Fatalf("error intiializing DB: %v", err)
+		lo.Fatalf("error initializing DB: %v", err)
 	}
 
 	return db

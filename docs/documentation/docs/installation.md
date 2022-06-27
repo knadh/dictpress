@@ -8,6 +8,8 @@ dictpress requires Postgres ⩾ v10.
 - `./dictpress --install` to install the tables in the Postgres DB.
 - Run `./dictpress` and visit `http://localhost:9000/admin`.
 
+See [Importing data](../import) to populate the dictionary database from CSVs.
+
 
 ## Compiling from source
 
