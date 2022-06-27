@@ -298,7 +298,15 @@ function searchResultsComponent(typ) {
             if (!confirm("Delete this entry? The definitions are not deleted and may be attached to other entries.")) {
                 return;
             }
-            this.api('entries.delete', `/entries/${id}`, 'DELETE').then(() => this.refresh());
+            this.api('entries.delete', `/entries/${id}`, 'DELETE').then(() => {
+                if (this.id) {
+                    // Individual entry view and it's now deleted. Redirect to the homepage.
+                    document.location.href = _urls.admin;
+                    return;
+                }
+
+                this.refresh()
+            });
         },
 
         onApproveSubmission(id) {
