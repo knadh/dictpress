@@ -48,9 +48,9 @@ num_page_nums = 10
 [db]
 host = "localhost"
 port = 5432
-db = "mydict"
-user = ""
-password = ""
+db = "dbname"
+user = "username"
+password = "password"
 
 
 [lang.english]
