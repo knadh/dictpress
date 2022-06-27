@@ -45,7 +45,9 @@ type httpResp struct {
 
 // handleSearch performs a search and responds with JSON results.
 func handleSearch(c echo.Context) error {
-	_, out, err := doSearch(c)
+	isAuthed := c.Get(isAuthed) != nil
+
+	_, out, err := doSearch(c, isAuthed)
 	if err != nil {
 		var s int
 
@@ -64,7 +66,7 @@ func handleSearch(c echo.Context) error {
 
 // doSearch is a helper function that takes an HTTP query context,
 // gets search params from it, performs a search and returns results.
-func doSearch(c echo.Context) (data.Query, *results, error) {
+func doSearch(c echo.Context, isAuthed bool) (data.Query, *results, error) {
 	var (
 		app = c.Get("app").(*App)
 
@@ -134,6 +136,18 @@ func doSearch(c echo.Context) (data.Query, *results, error) {
 	}); err != nil {
 		app.lo.Printf("error querying db for defs: %v", err)
 		return query, nil, errors.New("error querying db for definitions")
+	}
+
+	// If this is an un-authenticated query, hide the numerical IDs.
+	if !isAuthed {
+		for i := range res {
+			res[i].ID = 0
+
+			for j := range res[i].Relations {
+				res[i].Relations[j].ID = 0
+				res[i].Relations[j].Relation.ID = 0
+			}
+		}
 	}
 
 	pg.SetTotal(total)

@@ -62,7 +62,7 @@ func handleIndexPage(c echo.Context) error {
 
 // handleSearchPage renders the search results page.
 func handleSearchPage(c echo.Context) error {
-	query, res, err := doSearch(c)
+	query, res, err := doSearch(c, false)
 	if err != nil {
 		return c.Render(http.StatusInternalServerError, "message", pageTpl{
 			Title:       "Error",

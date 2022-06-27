@@ -15,6 +15,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const isAuthed = "is_authed"
+
 // handleGetConfig returns the language configuration.
 func handleGetConfig(c echo.Context) error {
 	var (
@@ -432,7 +434,9 @@ func basicAuth(username, password string, c echo.Context) (bool, error) {
 
 	if subtle.ConstantTimeCompare([]byte(username), app.constants.AdminUsername) == 1 &&
 		subtle.ConstantTimeCompare([]byte(password), app.constants.AdminPassword) == 1 {
+		c.Set(isAuthed, true)
 		return true, nil
 	}
+
 	return false, nil
 }

@@ -222,7 +222,7 @@ function searchResultsComponent(typ) {
                 })
             } else if (this.fromLang && this.query) {
                 // Search.
-                this.api('entries.search', `/dictionary/${this.fromLang}/*/${encodeURIComponent(this.query)}`).then((data) => {
+                this.api('entries.search', `/entries/${this.fromLang}/*/${encodeURIComponent(this.query)}`).then((data) => {
                     this.total = data.total;
                     this.entries = data.entries;
                 })

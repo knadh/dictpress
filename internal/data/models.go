@@ -7,7 +7,7 @@ import (
 
 // Entry represents a dictionary entry.
 type Entry struct {
-	ID        int            `json:"id" db:"id"`
+	ID        int            `json:"id,omitempty" db:"id"`
 	GUID      string         `json:"guid" db:"guid"`
 	Weight    float64        `json:"weight" db:"weight"`
 	Initial   string         `json:"initial" db:"initial"`
@@ -42,7 +42,7 @@ type Entry struct {
 
 // Relation represents the relationship between two IDs.
 type Relation struct {
-	ID        int            `json:"id"`
+	ID        int            `json:"id,omitempty"`
 	Types     pq.StringArray `json:"types"`
 	Tags      pq.StringArray `json:"tags"`
 	Notes     string         `json:"notes"`
@@ -54,7 +54,7 @@ type Relation struct {
 
 // GlossaryWord to read glosary content from db.
 type GlossaryWord struct {
-	ID      int    `json:"id" db:"id"`
+	ID      int    `json:"id,omitempty" db:"id"`
 	Content string `json:"content" db:"content"`
 	Total   int    `json:"-" db:"total"`
 }
