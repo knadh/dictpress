@@ -9,10 +9,10 @@ For instance, if there are multiple `Apple (English)` entries, it is inserted on
 -,A,Apple,english,Optional note,english,"",optional-tag1|tag2,"ˈæp.əl|aapl",""
 ^,"","round, red or yellow, edible fruit of a small tree",english,"","","","","",noun
 ^,"","the tree, cultivated in most temperate regions.",english,"","","","","",noun
-^,"","il pomo.",italian,"","","","","",noun
+^,"","il pomo.",italian,"","","","","",sost
 -,A,Application,english,Optional note,italian,"","","aplɪˈkeɪʃ(ə)n",""
 ^,"","the act of putting to a special use or purpose",english,"","","","","",noun
-^,"","le applicazione",italian,"","","","","",noun
+^,"","le applicazione",italian,"","","","","",sost
 
 ```
 
@@ -29,8 +29,8 @@ English and Italian definitions below them.
 | Column | Field            |                                                                                                                                                                                                                                                                                                                                                       |
 |--------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 0      | type             | `-` represents a main entry. `^` under it represents a definition entry.                                                                                                                                                                                                                                                                              |
-| 1      | content          | The entry content (word or phrase).                                                                                                                                                                                                                                                                                                                    |
-| 2      | initial          | The uppercase first character of the entry. Eg: `A` for Apple. If left empty, it is automatically picked up.                                                                                                                                                                                                                                                                                        |
+| 1      | initial          | The uppercase first character of the entry. Eg: `A` for Apple. If left empty, it is automatically picked up.                                                                                                                                                                                                                                                                                                                    |
+| 2      | content          | The entry content (word or phrase).                                                                                                                                                                                                                                                                                        |
 | 3      | language         | Language of the entry (as defined in the config).                                                                                                                                                                                                                                                                                                      |
 | 4      | notes            | Optional notes describing the entry.                                                                                                                                                                                                                                                                                                                          |
 | 5      | tsvector_language | If the language has a built in Postgres fulltext tokenizer, the name of the tokenizer language. For languages that do not have Postgres tokenizers, this should be empty.                                                                                                                                                                             |
