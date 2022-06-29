@@ -36,8 +36,8 @@ const (
 type entry struct {
 	// Comments show CSV column positions.
 	Type           string   // 0
-	Content        string   // 1
-	Initial        string   // 2
+	Initial        string   // 1
+	Content        string   // 2
 	Lang           string   // 3
 	Notes          string   // 4
 	TSVectorLang   string   // 4
