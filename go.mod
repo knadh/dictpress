@@ -9,7 +9,7 @@ require (
 	github.com/knadh/koanf v0.15.0
 	github.com/knadh/paginator v0.0.0-20210310070812-ae09d514e148
 	github.com/knadh/stuffbin v1.1.0
-	github.com/labstack/echo/v4 v4.8.0
+	github.com/labstack/echo/v4 v4.9.0
 	github.com/lib/pq v1.10.0
 	github.com/spf13/pflag v1.0.5
 	gitlab.com/joice/mlphone-go v0.0.0-20201001084309-2bb02984eed8

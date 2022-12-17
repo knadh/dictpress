@@ -59,8 +59,8 @@ github.com/knadh/paginator v0.0.0-20210310070812-ae09d514e148 h1:5KojMX5qCcq89QL
 github.com/knadh/paginator v0.0.0-20210310070812-ae09d514e148/go.mod h1:80FK5OPRRQQKEK75ahG+92/MdX/lu4dE8loTzJRVcCQ=
 github.com/knadh/stuffbin v1.1.0 h1:f5S5BHzZALjuJEgTIOMC9NidEnBJM7Ze6Lu1GHR/lwU=
 github.com/knadh/stuffbin v1.1.0/go.mod h1:yVCFaWaKPubSNibBsTAJ939q2ABHudJQxRWZWV5yh+4=
-github.com/labstack/echo/v4 v4.8.0 h1:wdc6yKVaHxkNOEdz4cRZs1pQkwSXPiRjq69yWP4QQS8=
-github.com/labstack/echo/v4 v4.8.0/go.mod h1:xkCDAdFCIf8jsFQ5NnbK7oqaF/yU1A1X20Ltm0OvSks=
+github.com/labstack/echo/v4 v4.9.0 h1:wPOF1CE6gvt/kmbMR4dGzWvHMPT+sAEUJOwOTtvITVY=
+github.com/labstack/echo/v4 v4.9.0/go.mod h1:xkCDAdFCIf8jsFQ5NnbK7oqaF/yU1A1X20Ltm0OvSks=
 github.com/labstack/gommon v0.3.1 h1:OomWaJXm7xR6L1HmEtGyQf26TEn7V6X88mktX9kee9o=
 github.com/labstack/gommon v0.3.1/go.mod h1:uW6kP17uPlLJsD3ijUYn3/M5bAxtlZhMI6m3MFxTMTM=
 github.com/lib/pq v1.2.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
