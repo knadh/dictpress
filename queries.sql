@@ -110,9 +110,10 @@ SELECT DISTINCT(initial) as initial FROM entries
 
 -- name: get-glossary-words
 -- Gets words for a language to build a glossary.
-SELECT COUNT(*) OVER () AS total, id, content FROM entries
-    WHERE lang=$1 AND initial=$2 AND status='enabled'
-    ORDER BY weight OFFSET $3 LIMIT $4;
+SELECT COUNT(*) OVER () AS total, e.id, e.content FROM entries e
+    LEFT JOIN relations ON (relations.to_id = e.id)
+    WHERE relations.to_id IS NULL AND e.lang=$1 AND e.initial=$2 AND e.status='enabled'
+    ORDER BY e.weight OFFSET $3 LIMIT $4;
 
 -- name: insert-entry
 WITH w AS (
