@@ -7,13 +7,13 @@
                     <a href="" data-from="{{ $r.GUID }}" class="edit" title="Suggest edit">✏️</a>
                 {{ end }}
                 <h3 class="title">{{ $r.Content }}</h3>
-                <span class="pronun">♪ {{ JoinStrings $r.Phones "," }}</span>
+                <span class="pronun">♪ {{ join $r.Phones "," }}</span>
             </header>
 
             <ol class="defs">
                 {{ $prevTypes := "" }}
                 {{ range $k, $d := $r.Relations }}
-                    {{ $types := (JoinStrings $d.RelationTypes ", ") }}
+                    {{ $types := (join $d.RelationTypes ", ") }}
                     {{ if ne $prevTypes $types }}
                     <div class="types">
                         <span>{{ $types }}</span>

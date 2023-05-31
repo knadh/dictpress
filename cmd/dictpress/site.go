@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/paginator"
 	"github.com/labstack/echo/v4"
@@ -182,15 +182,7 @@ func handleStaticPage(c echo.Context) error {
 
 // loadSite loads HTML site theme templates.
 func loadSite(path string, loadPages bool) (*template.Template, error) {
-	t := template.New("site")
-
-	// Helper functions.
-	t.Funcs(template.FuncMap{
-		"JoinStrings": strings.Join,
-		"ToUpper":     strings.ToUpper,
-		"ToLower":     strings.ToLower,
-		"Title":       strings.Title,
-	})
+	t := template.New("site").Funcs(sprig.FuncMap())
 
 	// Go percentage encodes unicode characters printed in <a href>,
 	// but the encoded values are in lowercase hex (for some reason)
