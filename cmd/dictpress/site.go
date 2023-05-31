@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/knadh/dictpress/internal/data"
@@ -188,6 +189,7 @@ func loadSite(path string, loadPages bool) (*template.Template, error) {
 	// but the encoded values are in lowercase hex (for some reason)
 	// See: https://github.com/golang/go/issues/33596
 	t.Funcs(template.FuncMap{"UnicodeURL": func(s string) template.URL {
+		s = strings.ReplaceAll(s, " ", "+")
 		return template.URL(url.PathEscape(s))
 	}})
 
