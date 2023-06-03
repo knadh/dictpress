@@ -157,11 +157,10 @@ func main() {
 	}
 
 	// Load language config.
-	langs := initLangs(ko)
-	if len(langs) == 0 {
-		lo.Fatal("0 languages in config")
-	}
-
+	var (
+		langs = initLangs(ko)
+		dicts = initDicts(langs, ko)
+	)
 	// Run the CSV importer.
 	if fPath := ko.String("import"); fPath != "" {
 		imp := importer.New(langs, q.InsertSubmissionEntry, q.InsertSubmissionRelation, db, lo)
@@ -172,7 +171,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	app.data = data.New(&q, langs)
+	app.data = data.New(&q, langs, dicts)
 	app.queries = &q
 
 	// Result paginators.

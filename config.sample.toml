@@ -24,6 +24,9 @@ enable_pages = true
 # on approval.
 enable_submissions = false
 
+# Available dictionary pairs. [$FromLangName, $ToLangName] pairs from the languages defined below in [lang.*] keys.
+dicts = [["english", "italian"], ["italian", "english"]]
+
 
 [results]
 # Default number of entries to return per page when paginated.

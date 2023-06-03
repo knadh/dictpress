@@ -44,6 +44,7 @@ type tplData struct {
 	RootURL           string
 	EnableSubmissions bool
 	Langs             data.LangMap
+	Dicts             data.Dicts
 
 	Path string
 	Data interface{}
@@ -220,6 +221,7 @@ func (t *tplRenderer) Render(w io.Writer, name string, data interface{}, c echo.
 		RootURL:           app.constants.RootURL,
 		EnableSubmissions: app.constants.EnableSubmissions,
 		Langs:             app.data.Langs,
+		Dicts:             app.data.Dicts,
 		Data:              data,
 	})
 }

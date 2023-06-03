@@ -18,6 +18,7 @@ const (
 
 // Lang represents a language's configuration.
 type Lang struct {
+	ID            string            `json:"id"`
 	Name          string            `json:"name"`
 	Types         map[string]string `json:"types"`
 	TokenizerName string            `json:"tokenizer"`
@@ -27,6 +28,9 @@ type Lang struct {
 
 // LangMap represents a map of language controllers indexed by the language key.
 type LangMap map[string]Lang
+
+// Dicts represents dictionaries, where each dictionary is a pair of languages.
+type Dicts [][2]Lang
 
 // Tokenizer represents a function that takes a string
 // and returns a list of Postgres tsvector tokens.
@@ -77,6 +81,7 @@ type Queries struct {
 type Data struct {
 	queries *Queries
 	Langs   LangMap
+	Dicts   Dicts
 }
 
 // Query represents the parameters of a single search query.
@@ -92,10 +97,11 @@ type Query struct {
 }
 
 // New returns an instance of the search interface.
-func New(q *Queries, langs LangMap) *Data {
+func New(q *Queries, langs LangMap, dicts Dicts) *Data {
 	return &Data{
 		queries: q,
 		Langs:   langs,
+		Dicts:   dicts,
 	}
 }
 

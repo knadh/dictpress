@@ -194,7 +194,7 @@ func initLangs(ko *koanf.Koanf) data.LangMap {
 
 	// Language configuration.
 	for _, l := range ko.MapKeys("lang") {
-		lang := data.Lang{Types: make(map[string]string)}
+		lang := data.Lang{ID: l, Types: make(map[string]string)}
 		if err := ko.UnmarshalWithConf("lang."+l, &lang, koanf.UnmarshalConf{Tag: "json"}); err != nil {
 			lo.Fatalf("error loading languages: %v", err)
 		}
@@ -211,6 +211,51 @@ func initLangs(ko *koanf.Koanf) data.LangMap {
 		// Load external plugin.
 		lo.Printf("language: %s", l)
 		out[l] = lang
+	}
+
+	if len(out) == 0 {
+		lo.Fatal("0 languages defined in config")
+	}
+
+	return out
+}
+
+// initDicts loads language->language dictionary map.
+func initDicts(langs data.LangMap, ko *koanf.Koanf) data.Dicts {
+	var (
+		out   = make(data.Dicts, 0)
+		dicts [][]string
+	)
+
+	if err := ko.Unmarshal("app.dicts", &dicts); err != nil {
+		lo.Fatalf("error unmarshalling app.dict in config: %v", err)
+	}
+
+	// Language configuration.
+	for _, pair := range dicts {
+		if len(pair) != 2 {
+			lo.Fatalf("app.dicts should have language pairs: %v", pair)
+		}
+
+		var (
+			fromID = pair[0]
+			toID   = pair[1]
+		)
+		from, ok := langs[fromID]
+		if !ok {
+			lo.Fatalf("unknown language '%s' defined in app.dicts config", fromID)
+		}
+
+		to, ok := langs[toID]
+		if !ok {
+			lo.Fatalf("unknown language '%s' defined in app.dicts config", toID)
+		}
+
+		out = append(out, [2]data.Lang{from, to})
+	}
+
+	if len(out) == 0 {
+		lo.Fatal("0 dicts defined in config")
 	}
 
 	return out
