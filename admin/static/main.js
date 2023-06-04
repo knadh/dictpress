@@ -193,17 +193,16 @@ function searchResultsComponent(typ) {
                 // the UI to show comments.
                 data.forEach((d) => {
                     d.comments = d.comments.replace(r, "\n");
-                    let id = d.from_id;
 
-                    if (d.to_id) {
-                        id = `${d.from_id}-${d.to_id}`;
+                    if (!out.hasOwnProperty(d.from_id)) {
+                        out[d.from_id] = {};
                     }
 
-                    if (!out.hasOwnProperty(id)) {
-                        out[id] = [];
+                    if (!out.hasOwnProperty(d.from_id[d.to_id])) {
+                        out[d.from_id][d.to_id] = [];
                     }
 
-                    out[id].push(d);
+                    out[d.from_id][d.to_id].push(d);
                 });
 
                 this.comments = out;
