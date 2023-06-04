@@ -16,7 +16,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/dictpress/tokenizers/indicphone"
-	"github.com/knadh/koanf"
+	"github.com/knadh/koanf/v2"
 	"github.com/knadh/stuffbin"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
