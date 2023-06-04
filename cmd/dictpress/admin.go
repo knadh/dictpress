@@ -28,7 +28,7 @@ func handleGetConfig(c echo.Context) error {
 		Languages data.LangMap `json:"languages"`
 		Version   string       `json:"version"`
 		BuildStr  string       `json:"build"`
-	}{app.constants.RootURL, app.data.Langs, versionString, buildString}
+	}{app.consts.RootURL, app.data.Langs, versionString, buildString}
 
 	return c.JSON(http.StatusOK, okResp{out})
 }
@@ -426,8 +426,8 @@ func adminPage(tpl string) func(c echo.Context) error {
 func basicAuth(username, password string, c echo.Context) (bool, error) {
 	app := c.Get("app").(*App)
 
-	if subtle.ConstantTimeCompare([]byte(username), app.constants.AdminUsername) == 1 &&
-		subtle.ConstantTimeCompare([]byte(password), app.constants.AdminPassword) == 1 {
+	if subtle.ConstantTimeCompare([]byte(username), app.consts.AdminUsername) == 1 &&
+		subtle.ConstantTimeCompare([]byte(password), app.consts.AdminPassword) == 1 {
 		c.Set(isAuthed, true)
 		return true, nil
 	}

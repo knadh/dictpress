@@ -7,7 +7,7 @@
     "global.siteName": "Dictionary",
     "public.errorMessage": "An error occurred. Please try later.",
     "public.errorTitle": "Error",
-    "public.glossary": "{name} glossary",
+    "public.glossary": "{lang} glossary",
     "public.glossaryTitle": "Glossary of words",
     "public.mainTitle": "Dictionary website",
     "public.noResults": "No results where found for the query.",

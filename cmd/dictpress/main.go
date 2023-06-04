@@ -37,17 +37,18 @@ type Lang struct {
 	Tokenizer     data.Tokenizer    `koanf:"-" json:"-"`
 }
 
-type constants struct {
+type Consts struct {
 	Site                         string
 	RootURL                      string
 	EnableSubmissions            bool
+	EnableGlossary               bool
 	AdminUsername, AdminPassword []byte
 }
 
 // App contains the "global" components that are
 // passed around, especially through HTTP handlers.
 type App struct {
-	constants  constants
+	consts  Consts
 	adminTpl   *template.Template
 	siteTpl    *template.Template
 	db         *sqlx.DB
@@ -131,7 +132,7 @@ func main() {
 
 	// Initialize the app context that's passed around.
 	app := &App{
-		constants: initConstants(ko),
+		consts: initConstants(ko),
 		db:        db,
 		fs:        initFS(),
 		lo:        lo,
@@ -185,12 +186,15 @@ func main() {
 		NumPageNums:    ko.MustInt("results.num_page_nums"),
 		PageParam:      "page", PerPageParam: "PerPageParam",
 	})
-	app.glossaryPg = paginator.New(paginator.Opt{
-		DefaultPerPage: ko.MustInt("glossary.default_per_page"),
-		MaxPerPage:     ko.MustInt("glossary.max_per_page"),
-		NumPageNums:    ko.MustInt("glossary.num_page_nums"),
-		PageParam:      "page", PerPageParam: "PerPageParam",
-	})
+
+	if app.consts.EnableGlossary {
+		app.glossaryPg = paginator.New(paginator.Opt{
+			DefaultPerPage: ko.MustInt("glossary.default_per_page"),
+			MaxPerPage:     ko.MustInt("glossary.max_per_page"),
+			NumPageNums:    ko.MustInt("glossary.num_page_nums"),
+			PageParam:      "page", PerPageParam: "PerPageParam",
+		})
+	}
 
 	// Load admin HTML templates.
 	app.adminTpl = initAdminTemplates(app)
@@ -199,15 +203,15 @@ func main() {
 	srv := initHTTPServer(app, ko)
 
 	// Load optional HTML website.
-	if app.constants.Site != "" {
-		lo.Printf("loading site theme: %s", app.constants.Site)
-		t, err := loadSite(app.constants.Site, ko.Bool("app.enable_pages"))
+	if app.consts.Site != "" {
+		lo.Printf("loading site theme: %s", app.consts.Site)
+		t, err := loadSite(app.consts.Site, ko.Bool("app.enable_pages"))
 		if err != nil {
 			lo.Fatalf("error loading site theme: %v", err)
 		}
 
 		// Optionally load a language pack.
-		langFile := filepath.Join(app.constants.Site, "lang.json")
+		langFile := filepath.Join(app.consts.Site, "lang.json")
 		if _, err := os.Stat(langFile); !errors.Is(err, os.ErrNotExist) {
 			i, err := i18n.NewFromFile(langFile)
 			if err != nil {

@@ -42,11 +42,11 @@ type pageTpl struct {
 // into public templates for accessing data.
 type tplData struct {
 	// These are available in the template as .Page, .Data etc.
-	RootURL           string
 	EnableSubmissions bool
 	Langs             data.LangMap
 	Dicts             data.Dicts
 	L                 *i18n.I18n
+	Consts            Consts
 
 	Path string
 	Data interface{}
@@ -224,12 +224,11 @@ func (t *tplRenderer) Render(w io.Writer, name string, data interface{}, c echo.
 	app := c.Get("app").(*App)
 
 	return t.tpls.ExecuteTemplate(w, name, tplData{
-		Path:              c.Path(),
-		RootURL:           app.constants.RootURL,
-		EnableSubmissions: app.constants.EnableSubmissions,
-		Langs:             app.data.Langs,
-		Dicts:             app.data.Dicts,
-		L:                 app.i18n,
-		Data:              data,
+		Path:   c.Path(),
+		Consts: app.consts,
+		Langs:  app.data.Langs,
+		Dicts:  app.data.Dicts,
+		L:      app.i18n,
+		Data:   data,
 	})
 }

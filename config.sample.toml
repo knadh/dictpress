@@ -43,6 +43,7 @@ num_page_nums = 10
 
 
 [glossary]
+enabled = true
 default_per_page = 100
 max_per_page = 100
 num_page_nums = 10

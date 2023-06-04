@@ -22,13 +22,14 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func initConstants(ko *koanf.Koanf) constants {
-	c := constants{
+func initConstants(ko *koanf.Koanf) Consts {
+	c := Consts{
 		Site:              ko.String("site"),
 		RootURL:           ko.MustString("app.root_url"),
 		AdminUsername:     ko.MustBytes("app.admin_username"),
 		AdminPassword:     ko.MustBytes("app.admin_password"),
 		EnableSubmissions: ko.Bool("app.enable_submissions"),
+		EnableGlossary:    ko.Bool("glossary.enabled"),
 	}
 
 	if len(c.AdminUsername) < 6 {
@@ -124,16 +125,19 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 	)
 
 	// Dictionary site HTML views.
-	if app.constants.Site != "" {
+	if app.consts.Site != "" {
 		p.GET("/", handleIndexPage)
 		p.GET("/dictionary/:fromLang/:toLang/:q", handleSearchPage)
 		p.GET("/dictionary/:fromLang/:toLang", handleGlossaryPage)
-		p.GET("/glossary/:fromLang/:toLang/:initial", handleGlossaryPage)
 		p.GET("/pages/:page", handleStaticPage)
+
+		if app.consts.EnableGlossary {
+			p.GET("/glossary/:fromLang/:toLang/:initial", handleGlossaryPage)
+		}
 
 		// Static files.
 		fs := http.StripPrefix("/static", http.FileServer(
-			http.Dir(filepath.Join(app.constants.Site, "static"))))
+			http.Dir(filepath.Join(app.consts.Site, "static"))))
 		srv.GET("/static/*", echo.WrapHandler(fs))
 
 	} else {
@@ -152,7 +156,7 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 		p.POST("/api/submissions", handleNewSubmission)
 		p.POST("/api/submissions/comments", handleNewComments)
 
-		if app.constants.Site != "" {
+		if app.consts.Site != "" {
 			p.GET("/submit", handleSubmissionPage)
 			p.POST("/submit", handleSubmissionPage)
 		}

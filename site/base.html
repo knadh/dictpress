@@ -60,8 +60,17 @@
 
 {{ define "footer" }}
     <nav class="nav">
-      {{ if .EnableSubmissions }}
+      {{ if .Consts.EnableSubmissions }}
         <a href="/submit">{{- .L.T "public.submitEntry" -}}</a>
+      {{ end }}
+      {{ if .Consts.EnableGlossary }}
+          {{ range $d := .Dicts }}
+            {{ $from := index $d 0}}
+            {{ $to := index $d 1}}
+            <a href="/glossary/{{ $from.ID }}/{{ $to.ID }}/*" class="tab">
+              {{ $.L.Ts "public.glossary" "lang" $from.Name }}
+            </a>
+          {{ end }}
       {{ end }}
     </nav>
   </div>
