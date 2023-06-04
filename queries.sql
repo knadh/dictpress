@@ -253,7 +253,6 @@ WITH e AS (
     DELETE FROM entries WHERE id = $1 AND status = 'pending'
 ),
 e2 AS (
-    -- Approve all the definition entries connected to the main entry.
     DELETE FROM entries WHERE status = 'pending'
     AND id = ANY(SELECT to_id FROM relations WHERE from_id = $1)
 )

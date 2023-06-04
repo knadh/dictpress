@@ -31,7 +31,12 @@ hr {
   margin: 30px 0;
 }
 h1, h2, h3, h4, h5 {
-  margin: 30px 0 10px 0;
+  margin: 10px 0 10px 0;
+}
+
+h4, h5 {
+  margin: 0 0 10px 0;
+  font-weight: normal;
 }
 
 a {
@@ -71,10 +76,10 @@ button, .button {
   background: var(--white);
   color: var(--primary);
 }
-.button-outline:hover {
-  background: var(--white);
-  color: var(--primary);
-}
+  .button-outline:hover {
+    background: var(--lighter);
+    color: var(--primary);
+  }
 button:hover, .button:hover {
   border-color: #444;
   background: #444;
@@ -275,7 +280,7 @@ button:hover, .button:hover {
 .form-comments {
   margin: 10px 0 45px 0;
   display: none;
-  padding: 20px;
+  padding: 30px;
   clear: both;
 }
   .form-comments textarea {
@@ -418,10 +423,10 @@ button:hover, .button:hover {
 
 @media screen and (min-width: 2000px) {
   body, input, button, select, textarea {
-    font-size: 30px;
+    font-size: 24px;
   }
-  input, button, select, textarea {
-    padding: 30px;
+  button {
+    padding: 20px 30px;
   }
   .wrap {
     max-width: 50%;
