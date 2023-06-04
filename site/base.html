@@ -4,9 +4,9 @@
 <head>
   <meta charset="utf-8" />
   <title>
-    {{- if eq .Data.PageName "/" }}Welcome to the dictionary.
-    {{- else if eq .Data.PageName "glossary" }}Glossary of words
-    {{- else if eq .Data.PageName "search" }}"{{ .Data.Query.Query }}" meaning
+    {{- if eq .Data.PageName "/" }} {{- .L.T "global.siteName" -}}
+    {{- else if eq .Data.PageName "glossary" }}{{- .L.T "public.glossaryTitle" -}}
+    {{- else if eq .Data.PageName "search" }}{{- .L.Ts "public.searchTitle" "query" .Data.Query.Query -}}
     {{- else if ne .Data.Title "" }}{{ .Data.Title }}
     {{- else }}{{ block "title" . }}{{end}}
     {{- end -}}
@@ -21,7 +21,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 	
-	<link rel="shortcut icon" href="static/favicon.png" type="image/x-icon" />
+	<link rel="shortcut icon" href="/static/favicon.png" type="image/x-icon" />
   <link href="/static/flexit.css" rel="stylesheet" type="text/css" />
   <link href="/static/style.css" rel="stylesheet" type="text/css" />
 </head>
@@ -31,17 +31,26 @@
       <div class="row">
         <div class="logo four columns">
           <a href="/"><img src="/static/logo.svg" alt="Dictionary logo" /></a>
-          <div class="intro">
-            <p>Welcome to the dictionary website</p>
-          </div>
+          <h3 class="intro">
+            {{- .L.T "public.subTitle" -}}
+          </h3>
         </div><!-- logo col -->
 
         <div class="search eight columns">
+          <div class="tabs">
+            {{ range $d := .Dicts }}
+              {{ $from := index $d 0}}
+              {{ $to := index $d 1}}
+              <a href="#" class="tab" data-dict="{{ $from.ID }}-{{ $to.ID }}">
+                {{ $from.Name }} - {{ $to.Name }}
+              </a>
+            {{ end }}
+          </div>
           <form class="search-form" method="get" action="/dictionary/english/malayalam">
             <div>
               <input autofocus autocomplete="off" required placeholder=""
                 type="text" id="q" name="q" value="{{ if .Data.Query }}{{ .Data.Query.Query }}{{ end }}" />
-              <button type="submit"><img src="/static/search.svg" alt="Search" /></button>
+              <button type="submit"><img src="/static/search.svg" alt="{{- .L.T "public.btnSearch" -}}" /></button>
             </div>
           </form>
         </div>
@@ -51,11 +60,9 @@
 
 {{ define "footer" }}
     <nav class="nav">
-      <a href="/glossary/english/malayalam/a">Glossary</a>
       {{ if .EnableSubmissions }}
-        <a href="/submit">Submit new</a>
+        <a href="/submit">{{- .L.T "public.submitEntry" -}}</a>
       {{ end }}
-      <a href="/pages/about">About</a>
     </nav>
   </div>
   <footer class="footer">
@@ -63,13 +70,13 @@
   </footer>
   <script src="/static/main.js"></script>
 
-  <form class="box form-comments">
+  <form class="box form-comments" data-success="{{ .L.T "public.suggestSubmitted" }}">
   <div>
-    <h3>Comments and suggestions</h3>
+    <h3>{{ .L.T "public.submitTitle" }}</h3>
     <textarea name="comments" autofocus maxlength="500"></textarea>
     <p>
-      <button type="submit">Submit for review</button>
-      <button type="submit" class="button-outline close">Close</button>
+      <button type="submit">{{ .L.T "public.suggestSubmitBtn" }}</button>
+      <button class="button-outline close">{{ .L.T "global.btnClose" }}</button>
     </p>
   </div>
   </form>

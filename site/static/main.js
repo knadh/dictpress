@@ -1,39 +1,58 @@
-// Search form.
-(function() {
-  var form = document.querySelector(".search-form");
-  if (!form) {
-    return false;
-  }
+function selectDict(dict) {
+  localStorage.dict = dict;
+
+  document.querySelectorAll(`.tabs .tab`).forEach((el) => el.classList.remove("sel"));
+  document.querySelector(`.tabs .tab[data-dict=${dict}]`).classList.add("sel");
+  document.querySelector("form.search-form").setAttribute("action", `/dictionary/${dict.replace("-", "/")}`);
+
+  const q = document.querySelector("#q");
+  q.focus();
+  q.select();
+}
+
+// Capture the form submit and send it as a canonical URL instead
+// of the ?q query param. 
+function search(q) {
+  const val = q.trim().toLowerCase().replace(/[^a-z\u00E0-\u00FC\s]/ig, '').replace(/\s+/g, ' ');
+  const form = document.querySelector(".search-form").cloneNode(true);
+  document.location.href = form.getAttribute("action") + "/" + encodeURIComponent(val).replace(/%20/g, "+");
+}
 
 
-  // Capture the form submit and send it as a canonical URL instead
-  // of the ?q query param. 
-  var isOn = false;
-  function search() {
-    // The autocomplete suggestion click doesn't fire a submit, but Enter
-    // fires a submit. So to avoid double submits in autcomplete.onSelect(),
-    // add a debounce.
-    if (isOn) {
-      return false;
+(() => {
+  // Search input.
+  const q = document.querySelector("#q");
+
+  // On ~ press, focus search input.
+  document.onkeydown = (function (e) {
+    if (e.keyCode != 192) {
+      return;
     }
-    isOn = true;
-    window.setTimeout(function() {
-      isOn = false;
-    }, 50);
 
-    var f = form.querySelector("input[name='q']");
-    if (!f) {
-      return false;
-    }
-    var q = encodeURIComponent(f.value.replace(/\s+/g, " ").trim()).replace(/%20/g, "+");
-    document.location.href = form.getAttribute("action") + "/" + q;
-    return false;
+    e.preventDefault();
+    q.focus();
+    q.select();
+  });
+
+  // Select a language tab on page load.
+  let dict = document.querySelector(`.tabs .tab:first-child`).dataset.dict;
+  if (localStorage.dict && document.querySelector(`.tabs .tab[data-dict=${localStorage.dict}]`)) {
+    dict = localStorage.dict;
   }
+  selectDict(dict);
+
+  // On language tab selector click.
+  document.querySelectorAll(`.tabs .tab`).forEach((el) => {
+    el.onclick = (e) => {
+      e.preventDefault();
+      selectDict(e.target.dataset.dict);
+    }
+  });
 
   // Bind to form submit.
-  form.addEventListener("submit", function(e) {
+  document.querySelector(".search-form").addEventListener("submit", function (e) {
     e.preventDefault();
-    search();
+    search(document.querySelector("#q").value);
   });
 })();
 
@@ -124,7 +143,7 @@
         });
 
         close();
-        alert("Submitted for review");
+        alert(form.dataset.success);
       };
 
       form.querySelector("button.close").onclick = close;

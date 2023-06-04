@@ -1,7 +1,7 @@
 {{ define "glossary-words" }}
 {{ if not .Words }}
-    <h2>No words</h2>
-    <p>No words were found in this glossary.</p>
+    <h2>{{ .L.T "public.noResultsTitle" }}</h2>
+    <p>{{ .L.T "public.noGlossary" }}</p>
 {{ else }}
     <ul class="noul words">
         {{ range $i, $w := .Words }}

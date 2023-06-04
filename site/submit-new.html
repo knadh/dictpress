@@ -1,13 +1,13 @@
 {{ define "submit-entry" }}
 {{ template "header" . }}
 
-<h2>Suggest a new entry</h2>
+<h2>{{ .L.T "public.submitEntryTitle" }}</h2>
 <br />
 <form method="post" action="" class="form-submit">
     <div>
         <div class="row">
             <fieldset class="columns three">
-                <label for="entry-lang">Entry language</label>
+                <label for="entry-lang">{{ .L.T "public.suggestEntryLang" }}</label>
                 <select name="entry_lang" for="entry-lang">
                 {{ range $id, $l := .Langs }}
                     <option value="{{ $id }}">{{ $l.Name }}</option>
@@ -16,20 +16,21 @@
             </fieldset>
             <fieldset class="columns one"></fieldset>
             <fieldset class="columns eight">
-                <label for="entry-content">Content</label>
+                <label for="entry-content">{{ .L.T "public.suggestContent" }}</label>
                 <textarea name="entry_content" id="entry-content" required minlength="3"></textarea>
             </fieldset>
         </div>
         <fieldset>
-            <label>Phonetic notations (pronunciation)</label>
-            <input type="text" name="phones" placeholder="eg: pɛts, pɛt (commma separated)" />
+            <label>{{ .L.T "public.suggestPhones" }}</label>
+            <input type="text" name="phones" placeholder="{{ .L.T "public.suggestPhonesPlaceholder" }}" />
         </fieldset>
 
-        <h4>Definitions</h4>
+        <br />
+        <h4>{{ .L.T "public.suggestDefsTitle" }}</h4>
         <ol class="add-relations">
             <li class="row">
                 <fieldset class="columns three">
-                    <label>Definition language</label>
+                    <label>{{ .L.T "public.suggestDefLang" }}</label>
                     <select name="relation_lang">
                     {{ range $id, $l := .Langs }}
                         <option value="{{ $id }}">{{ $l.Name }}</option>
@@ -45,22 +46,22 @@
                     </select>
 
                     <br />
-                    <a href="#" class="btn-remove-relation">Delete</a>
+                    <a href="#" class="btn-remove-relation">{{ .L.T "global.btnDelete" }}</a>
                 </fieldset>
                 <fieldset class="columns one"></fieldset>
                 <fieldset class="columns eight">
-                    <label for="definition-content">Content</label>
+                    <label for="definition-content">{{ .L.T "public.suggestContent" }}</label>
                     <textarea name="relation_content" required minlength="3"></textarea>
                 </fieldset>
             </li>
         </ol>
         <p class="text-right">
-            <a href="#" class="btn-add-relation">+ Add one more definition</a>
+            <a href="#" class="btn-add-relation">+ {{ .L.T "public.suggestAddDefBtn" }}</a>
         </p>
 
         <br />
         <p>
-            <button type="submit">Submit for review</button>
+            <button type="submit">{{ .L.T "public.submitEntryTitle" }}</button>
         </p>
     </div>
 </form>

@@ -3,14 +3,9 @@
 
 <section class="content results">
     {{ if not .Data.Results.Entries }}
-        <h2>ದೊರೆತಿಲ್ಲ</h2>
+        <h2>{{ .L.T "public.noResultsTitle" }}</h2>
         <p>
-            &ldquo;{{ .Data.Query.Query }}&rdquo; ಪದಕ್ಕೆ ವಿವರಣೆ ದೊರಕುತ್ತಿಲ್ಲ.
-            ಹುಡುಕಿದ ಪದ ಕನ್ನಡದಲ್ಲಿದೆ ಎಂದು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ.
-        </p>
-        <p>
-            No results found for &ldquo;{{ .Data.Query.Query }}&rdquo;.
-            Make sure the search query is in Kannada.
+            {{ .L.T "public.noResults" }}
         </p>
     {{ else }}
         {{ template "results" . }}
