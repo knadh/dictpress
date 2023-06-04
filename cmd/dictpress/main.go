@@ -1,14 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/dictpress/internal/importer"
+	"github.com/knadh/go-i18n"
 	"github.com/knadh/goyesql"
 	goyesqlx "github.com/knadh/goyesql/sqlx"
 	"github.com/knadh/koanf"
@@ -50,6 +53,7 @@ type App struct {
 	db         *sqlx.DB
 	queries    *data.Queries
 	data       *data.Data
+	i18n       *i18n.I18n
 	fs         stuffbin.FileSystem
 	resultsPg  *paginator.Paginator
 	glossaryPg *paginator.Paginator
@@ -200,6 +204,18 @@ func main() {
 		t, err := loadSite(app.constants.Site, ko.Bool("app.enable_pages"))
 		if err != nil {
 			lo.Fatalf("error loading site theme: %v", err)
+		}
+
+		// Optionally load a language pack.
+		langFile := filepath.Join(app.constants.Site, "lang.json")
+		if _, err := os.Stat(langFile); !errors.Is(err, os.ErrNotExist) {
+			i, err := i18n.NewFromFile(langFile)
+			if err != nil {
+				lo.Fatalf("error loading i18n lang.json file: %v", err)
+			}
+			app.i18n = i
+		} else {
+			app.i18n, _ = i18n.New([]byte(`{"_.code": "", "_.name": ""}`))
 		}
 
 		// Attach HTML template renderer.

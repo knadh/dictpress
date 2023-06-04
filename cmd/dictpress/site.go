@@ -10,6 +10,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/knadh/dictpress/internal/data"
+	"github.com/knadh/go-i18n"
 	"github.com/knadh/paginator"
 	"github.com/labstack/echo/v4"
 )
@@ -45,6 +46,7 @@ type tplData struct {
 	EnableSubmissions bool
 	Langs             data.LangMap
 	Dicts             data.Dicts
+	L                 *i18n.I18n
 
 	Path string
 	Data interface{}
@@ -222,6 +224,7 @@ func (t *tplRenderer) Render(w io.Writer, name string, data interface{}, c echo.
 		EnableSubmissions: app.constants.EnableSubmissions,
 		Langs:             app.data.Langs,
 		Dicts:             app.data.Dicts,
+		L:                 app.i18n,
 		Data:              data,
 	})
 }
