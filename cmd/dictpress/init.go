@@ -129,7 +129,6 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 		p.GET("/dictionary/:fromLang/:toLang/:q", handleSearchPage)
 		p.GET("/dictionary/:fromLang/:toLang", handleGlossaryPage)
 		p.GET("/glossary/:fromLang/:toLang/:initial", handleGlossaryPage)
-		p.GET("/glossary/:fromLang/:toLang", handleGlossaryPage)
 		p.GET("/pages/:page", handleStaticPage)
 
 		// Static files.

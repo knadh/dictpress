@@ -4,7 +4,7 @@
 <section class="content glossary">
     {{ if not .Data.Initials }}
         <h2>{{ .L.T "public.glossaryTitle" }}</h2>
-        <p>{{ .L.T "public.noGlossary" }}</p>
+        <p>{{ .L.T "public.noResults" }}</p>
     {{ else }}
         <nav class="index">
             {{ range $k, $a := .Data.Initials }}
@@ -13,7 +13,7 @@
         </nav>
 
         <nav class="pagination top">{{ .Data.PgBar }}</nav>
-        {{ template "glossary-words" .Data.Glossary }}
+        {{ template "glossary-words" . }}
         <nav class="pagination bottom">{{ .Data.PgBar }}</nav>
     {{ end}}
 </section>

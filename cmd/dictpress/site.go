@@ -136,8 +136,13 @@ func handleGlossaryPage(c echo.Context) error {
 	}
 
 	// If there's no initial, pick the first one.
-	if initial == "" {
-		return c.Redirect(http.StatusFound, fmt.Sprintf("/glossary/%s/%s/%s", fromLang, toLang, initials[0]))
+	if initial == "" || initial == "*" {
+		for _, i := range initials {
+			if i == "*" || i == "." {
+				continue
+			}
+			return c.Redirect(http.StatusFound, fmt.Sprintf("/glossary/%s/%s/%s", fromLang, toLang, i))
+		}
 	}
 
 	// Get words.

@@ -1,11 +1,12 @@
 {{ define "glossary-words" }}
-{{ if not .Words }}
-    <h2>{{ .L.T "public.noResultsTitle" }}</h2>
-    <p>{{ .L.T "public.noGlossary" }}</p>
+{{ $g := .Data.Glossary }}
+{{ if not $g.Words }}
+    <h2>{{ $.L.T "public.noResultsTitle" }}</h2>
+    <p>{{ $.L.T "public.noResults" }}</p>
 {{ else }}
     <ul class="noul words">
-        {{ range $i, $w := .Words }}
-            <li><a href="/dictionary/{{ UnicodeURL $.FromLang }}/{{ UnicodeURL $.ToLang }}/{{ UnicodeURL $w.Content }}">{{ $w.Content }}</a></li>
+        {{ range $i, $w := $g.Words }}
+            <li><a href="/dictionary/{{ UnicodeURL $g.FromLang }}/{{ UnicodeURL $g.ToLang }}/{{ UnicodeURL $w.Content }}">{{ $w.Content }}</a></li>
         {{ end }}
     </ul>
 {{ end }}
