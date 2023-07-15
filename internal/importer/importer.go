@@ -179,12 +179,12 @@ func (im *Importer) readEntry(r []string) (entry, error) {
 		return e, fmt.Errorf("unknown language '%s' at column 2", e.Lang)
 	}
 
-	if e.Initial == "" {
-		e.Initial = strings.ToUpper(string(e.Content[0]))
-	}
-
 	if e.Content == "" {
 		return e, fmt.Errorf("empty content (word) at column 1")
+	}
+
+	if e.Initial == "" {
+		e.Initial = strings.ToUpper(string(e.Content[0]))
 	}
 
 	defTypeStr := cleanString(r[9])
