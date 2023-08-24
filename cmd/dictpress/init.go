@@ -163,6 +163,7 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 	}
 
 	// Admin handlers and APIs.
+	a.GET("/api/entries/:fromLang/:toLang", handleSearch)
 	a.GET("/api/entries/:fromLang/:toLang/:q", handleSearch)
 	a.GET("/admin/static/*", echo.WrapHandler(app.fs.FileServer()))
 	a.GET("/admin", adminPage("index"))
