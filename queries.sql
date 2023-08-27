@@ -15,8 +15,10 @@ directMatch AS (
         ($4 = '' OR lang=$4)
         AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR tags && $5)
         AND (
-            LOWER(SUBSTRING(content, 0, 50))=LOWER(SUBSTRING($1, 0, 50))
-            OR tokens @@ PLAINTO_TSQUERY('simple', $1)
+            CASE WHEN $1 = '' THEN TRUE ELSE
+                LOWER(SUBSTRING(content, 0, 50))=LOWER(SUBSTRING($1, 0, 50))
+                OR tokens @@ PLAINTO_TSQUERY('simple', $1)
+            END
         )
         AND (CASE WHEN $6 != '' THEN status = $6::entry_status ELSE TRUE END)
 ),
