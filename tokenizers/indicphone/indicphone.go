@@ -68,7 +68,7 @@ func (ip *IndicPhone) ToQuery(s string, lang string) (string, error) {
 	case "kannada":
 		key0, key1, key2 = ip.kn.Encode(s)
 	case "malayalam":
-		key0, key1, key2 = ip.kn.Encode(s)
+		key0, key1, key2 = ip.ml.Encode(s)
 	}
 
 	if key0 == "" {
