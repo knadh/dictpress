@@ -3,7 +3,17 @@ WITH q AS (
     -- Prepare TS_QUERY tokens for querying with either:
     -- a) built in Postgres dictionary/tokenizer ($1=query, $2=Postgres dictionary name)
     -- b) externally computed and supplied tokens ($3)
-    SELECT (CASE WHEN $2 != '' THEN PLAINTO_TSQUERY($2::regconfig, $1::TEXT) ELSE $3::TSQUERY END) AS query
+    SELECT (
+        CASE WHEN $2 != '' THEN
+            CASE WHEN POSITION(' ' IN $1::TEXT) > 0 OR POSITION('-' IN $1::TEXT) > 0 THEN
+                PLAINTO_TSQUERY($2::regconfig, $1) || PLAINTO_TSQUERY($2::regconfig, REPLACE(REPLACE($1, ' ', ''), '-', ''))
+            ELSE
+                PLAINTO_TSQUERY($2::regconfig, $1)
+            END
+        ELSE
+            $3::TSQUERY
+        END
+    ) AS query
 ),
 directMatch AS (
     -- Do a direct string match (first 50 chars) of the query or see if there are matches for
