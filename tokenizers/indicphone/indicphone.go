@@ -47,7 +47,7 @@ func (ip *IndicPhone) ToTokens(s string, lang string) ([]string, error) {
 		}
 
 		if key0 == "" {
-			return nil, nil
+			continue
 		}
 
 		tokens = append(tokens,

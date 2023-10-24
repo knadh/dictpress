@@ -187,6 +187,17 @@ func (im *Importer) readEntry(r []string) (entry, error) {
 		e.Initial = strings.ToUpper(string(e.Content[0]))
 	}
 
+	// If the Postgres tokenizer is not set, and there are no tokens supplied,
+	// see if the language has a custom one and use it.
+	if lang.Tokenizer != nil && e.TSVectorLang == "" && e.TSVectorTokens == "" {
+		tks, err := lang.Tokenizer.ToTokens(e.Content, lang.ID)
+		if err != nil {
+			return e, fmt.Errorf("error tokenizing content (word) at column 1: %v", err)
+		}
+
+		e.TSVectorTokens = strings.Join(tks, " ")
+	}
+
 	defTypeStr := cleanString(r[9])
 	if typ == typeDef {
 		defTypes := splitString(defTypeStr)
