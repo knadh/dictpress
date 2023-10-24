@@ -162,6 +162,7 @@ func handleGlossaryPage(c echo.Context) error {
 
 	// Render the results.
 	return c.Render(http.StatusOK, "glossary", pageTpl{
+		PageName: pageGlossary,
 		Initial:  initial,
 		Initials: initials,
 		Glossary: gloss,
