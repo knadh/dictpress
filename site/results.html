@@ -6,7 +6,7 @@
             {{ range $k, $r := (mustSlice .Data.Results.Entries 0 $numResults) }}
                 <li class="entry" data-guid="{{ $r.GUID }}">
                     <header class="head">
-                        {{ if $.EnableSubmissions }}
+                        {{ if $.Consts.EnableSubmissions }}
                             <a href="" data-from="{{ $r.GUID }}" class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" $r.Content }}">✏️</a>
                         {{ end }}
                         <h3 class="title">{{ $r.Content }}</h3>
@@ -35,7 +35,7 @@
                                 <div data-guid="{{ $d.GUID }}" class="def">
                                     {{ $d.Content }}
 
-                                    {{ if $.EnableSubmissions }}
+                                    {{ if $.Consts.EnableSubmissions }}
                                         <a href="" data-from="{{ $r.GUID }}" data-to="{{ $d.GUID }}"
                                             class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" $d.Content }}">✏️</a>
                                     {{ end }}
