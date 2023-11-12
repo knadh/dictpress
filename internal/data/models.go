@@ -1,9 +1,16 @@
 package data
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
+
 	"github.com/lib/pq"
 	null "gopkg.in/volatiletech/null.v6"
 )
+
+// JSON is is the wrapper for reading and writing arbitrary JSONB fields from the DB.
+type JSON map[string]interface{}
 
 // Entry represents a dictionary entry.
 type Entry struct {
@@ -17,6 +24,7 @@ type Entry struct {
 	Tags      pq.StringArray `json:"tags" db:"tags"`
 	Phones    pq.StringArray `json:"phones" db:"phones"`
 	Notes     string         `json:"notes" db:"notes"`
+	Meta      JSON           `json:"meta" db:"meta"`
 	Status    string         `json:"status" db:"status"`
 	Relations []Entry        `json:"relations,omitempty" db:"relations"`
 	Total     int            `json:"-" db:"total"`
@@ -71,4 +79,22 @@ type Comments struct {
 	FromID   int      `json:"from_id" db:"from_id"`
 	ToID     null.Int `json:"to_id" db:"to_id"`
 	Comments string   `json:"comments" db:"comments"`
+}
+
+// Value returns the JSON marshalled SubscriberAttribs.
+func (s JSON) Value() (driver.Value, error) {
+	return json.Marshal(s)
+}
+
+// Scan unmarshals JSONB from the DB.
+func (s JSON) Scan(src interface{}) error {
+	if src == nil {
+		s = make(JSON)
+		return nil
+	}
+
+	if data, ok := src.([]byte); ok {
+		return json.Unmarshal(data, &s)
+	}
+	return fmt.Errorf("could not not decode type %T -> %T", src, s)
 }

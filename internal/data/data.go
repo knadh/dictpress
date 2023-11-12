@@ -290,6 +290,7 @@ func (d *Data) UpdateEntry(id int, e Entry) error {
 		e.Tags,
 		e.Phones,
 		e.Notes,
+		e.Meta,
 		e.Status)
 	return err
 }

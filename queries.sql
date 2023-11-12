@@ -162,7 +162,8 @@ UPDATE entries SET
     tags = (CASE WHEN $7::TEXT[] IS NOT NULL THEN $7 ELSE tags END),
     phones = (CASE WHEN $8::TEXT[] IS NOT NULL THEN $8 ELSE phones END),
     notes = (CASE WHEN $9 != '' THEN $9 ELSE notes END),
-    status = (CASE WHEN $10 != '' THEN $10::entry_status ELSE status END),
+    meta = (CASE WHEN $10 != '' THEN $10::JSONB ELSE meta END),
+    status = (CASE WHEN $11 != '' THEN $11::entry_status ELSE status END),
     updated_at = NOW()
     WHERE id = $1;
 

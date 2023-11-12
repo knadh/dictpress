@@ -35,6 +35,9 @@ CREATE TABLE entries (
     -- Optional text notes
     notes           TEXT NOT NULL DEFAULT '',
 
+    -- Optional arbitrary metadata
+    meta            JSONB NOT NULL DEFAULT '{}',
+
     status          entry_status NOT NULL DEFAULT 'enabled',
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()

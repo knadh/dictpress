@@ -344,7 +344,8 @@ function entryComponent() {
                 ...data,
                 phones: data.phones.join('\n'),
                 tags: data.tags.join('\n'),
-                tokens: data.tokens.split(' ').join('\n')
+                tokens: data.tokens.split(' ').join('\n'),
+                meta_str: JSON.stringify(data.meta, null, 2)
             };
             this.parentEntries = [];
             this.isNew = !this.entry.id ? true : false;
@@ -381,13 +382,22 @@ function entryComponent() {
                 }
             }
 
+            try {
+                this.entry.meta = JSON.parse(this.entry.meta_str);
+            } catch (e) {
+                alert(`Error in meta JSON: ${e.toString()}`);
+                return;
+            }
+
             let data = {
                 ...this.entry,
                 initial: this.entry.initial ? this.entry.initial : this.entry.content[0].toUpperCase(),
                 phones: linesToList(this.entry.phones),
                 tags: linesToList(this.entry.tags),
-                tokens: linesToList(this.entry.tokens).join(' '),
+                tokens: linesToList(this.entry.tokens).join(' ')
             };
+
+            delete (data.meta_str);
 
             // New entry.
             if (this.isNew) {
