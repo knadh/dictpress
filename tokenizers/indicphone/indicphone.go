@@ -3,6 +3,7 @@ package indicphone
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/knadh/dictpress/internal/data"
@@ -75,9 +76,16 @@ func (ip *IndicPhone) ToQuery(s string, lang string) (string, error) {
 		return "", nil
 	}
 
-	if key0 != key1 {
+	tokens := slices.Compact([]string{key2, key1, key0})
+
+	switch len(tokens) {
+	case 1:
+		return tokens[0], nil
+	case 2:
+		return fmt.Sprintf("%s |  %s ", tokens[0], tokens[1]), nil
+	case 3:
 		return fmt.Sprintf("%s | (%s & %s) ", key2, key1, key0), nil
 	}
 
-	return fmt.Sprintf("%s", key0), nil
+	return key0, nil
 }
