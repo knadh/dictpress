@@ -48,7 +48,7 @@ type Consts struct {
 // App contains the "global" components that are
 // passed around, especially through HTTP handlers.
 type App struct {
-	consts  Consts
+	consts     Consts
 	adminTpl   *template.Template
 	siteTpl    *template.Template
 	db         *sqlx.DB
@@ -133,9 +133,9 @@ func main() {
 	// Initialize the app context that's passed around.
 	app := &App{
 		consts: initConstants(ko),
-		db:        db,
-		fs:        initFS(),
-		lo:        lo,
+		db:     db,
+		fs:     initFS(),
+		lo:     lo,
 	}
 
 	// Install schema.

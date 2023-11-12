@@ -21,16 +21,16 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 	
-	<link rel="shortcut icon" href="/static/favicon.png" type="image/x-icon" />
-  <link href="/static/flexit.css" rel="stylesheet" type="text/css" />
-  <link href="/static/style.css" rel="stylesheet" type="text/css" />
+	<link rel="shortcut icon" href="/static/favicon.png?v={{ .AssetVer }}" type="image/x-icon" />
+  <link href="/static/flexit.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
+  <link href="/static/style.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
 </head>
 <body class="{{ if eq .Data.PageName "/"}}home{{ end }}">
   <div class="container wrap box">
     <header class="header">
       <div class="row">
         <div class="logo four columns">
-          <a href="/"><img src="/static/logo.svg" alt="Dictionary logo" /></a>
+          <a href="/"><img src="/static/logo.svg?v={{ .AssetVer }}" alt="Dictionary logo" /></a>
           <h3 class="intro">
             {{- .L.T "public.subTitle" -}}
           </h3>
@@ -77,7 +77,7 @@
   <footer class="footer">
     <a href="https://dict.press">Powered by dictpress</a>
   </footer>
-  <script src="/static/main.js"></script>
+  <script src="/static/main.js?v={{ .AssetVer }}"></script>
 
   <form class="box form-comments" data-success="{{ .L.T "public.suggestSubmitted" }}">
   <div>

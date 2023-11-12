@@ -411,8 +411,9 @@ func adminPage(tpl string) func(c echo.Context) error {
 
 		b := &bytes.Buffer{}
 		err := app.adminTpl.ExecuteTemplate(b, tpl, struct {
-			Title string
-		}{title})
+			Title    string
+			AssetVer string
+		}{title, assetVer})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError,
 				fmt.Sprintf("error compiling template: %v", err))

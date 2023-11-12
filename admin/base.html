@@ -4,12 +4,12 @@
 <head>
 	<title>{{ .Title }} {{ if .Title }}|{{ end}} DictPress</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<link rel="stylesheet" type="text/css" href="/admin/static/grid.css">
-	<link rel="stylesheet" type="text/css" href="/admin/static/style.css">
+	<link rel="stylesheet" type="text/css" href="/admin/static/grid.css?v={{ .AssetVer }}">
+	<link rel="stylesheet" type="text/css" href="/admin/static/style.css?v={{ .AssetVer }}">
 
-	<link rel="shortcut icon" href="/admin/static/favicon.png" type="image/x-icon" />
-	<script defer src="/admin/static/main.js"></script>
-	<script defer src="/admin/static/alpine.js"></script>
+	<link rel="shortcut icon" href="/admin/static/favicon.png?v={{ .AssetVer }}" type="image/x-icon" />
+	<script defer src="/admin/static/main.js?v={{ .AssetVer }}"></script>
+	<script defer src="/admin/static/alpine.js?v={{ .AssetVer }}"></script>
 </head>
 <body x-init="onLoad()" x-data="globalComponent()">
 <template x-if="ready">
@@ -17,7 +17,7 @@
 		<header class="header">
 			<div class="row">
 				<div class="three columns logo">
-					<a href="/admin"><img src="/admin/static/logo.svg" alt="logo" /></a>
+					<a href="/admin"><img src="/admin/static/logo.svg?v={{ .AssetVer }}" alt="logo" /></a>
 					<template x-if="Object.keys(loading).length > 0"><span class="loading"></span></template>
 				</div>
 				<nav class="eight columns nav">

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"crypto/md5"
 	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/knadh/dictpress/internal/data"
@@ -48,13 +50,23 @@ type tplData struct {
 	L                 *i18n.I18n
 	Consts            Consts
 
-	Path string
-	Data interface{}
+	AssetVer string
+	Path     string
+	Data     interface{}
 }
 
 // tplRenderer wraps a template.tplRenderer for echo.
 type tplRenderer struct {
 	tpls *template.Template
+}
+
+// Random hash that changes every time the program boots, to append as
+// ?v=$hash to static assets in templates for cache-busting on program restarts.
+var assetVer string
+
+func init() {
+	b := md5.Sum([]byte(time.Now().String()))
+	assetVer = fmt.Sprintf("%x", b)[0:10]
 }
 
 // handleIndexPage renders the homepage.
@@ -225,11 +237,12 @@ func (t *tplRenderer) Render(w io.Writer, name string, data interface{}, c echo.
 	app := c.Get("app").(*App)
 
 	return t.tpls.ExecuteTemplate(w, name, tplData{
-		Path:   c.Path(),
-		Consts: app.consts,
-		Langs:  app.data.Langs,
-		Dicts:  app.data.Dicts,
-		L:      app.i18n,
-		Data:   data,
+		Path:     c.Path(),
+		AssetVer: assetVer,
+		Consts:   app.consts,
+		Langs:    app.data.Langs,
+		Dicts:    app.data.Dicts,
+		L:        app.i18n,
+		Data:     data,
 	})
 }
