@@ -170,7 +170,7 @@ func (d *Data) Search(q Query) ([]Entry, int, error) {
 	}
 
 	// Replace nulls with [].
-	for i := range out {
+	for i, _ := range out {
 		if out[i].Relations == nil {
 			out[i].Relations = []Entry{}
 		}

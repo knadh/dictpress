@@ -49,9 +49,14 @@ totals AS (
 )
 -- Combine results from direct matches and token matches. As directMatches ranks are
 -- forced to be negative, they will rank on top. 
-SELECT *, (SELECT total FROM totals) AS total FROM directMatch
+SELECT DISTINCT ON (combined.id) combined.*, (SELECT total FROM totals) AS total
+FROM (
+    SELECT * FROM directMatch
     UNION ALL
-    SELECT *, (SELECT total FROM totals) AS total FROM tokenMatch ORDER BY rank OFFSET $7 LIMIT $8;
+    SELECT * FROM tokenMatch
+) AS combined
+INNER JOIN relations ON combined.id = relations.from_id
+ORDER BY combined.id, combined.rank OFFSET $7 LIMIT $8;
 
 
 -- name: search-relations
