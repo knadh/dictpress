@@ -41,7 +41,7 @@
             {{ range $d := .Dicts }}
               {{ $from := index $d 0}}
               {{ $to := index $d 1}}
-              <a href="#" class="tab" data-dict="{{ $from.ID }}-{{ $to.ID }}">
+              <a href="#" class="tab" data-dict="{{ $from.ID }}/{{ $to.ID }}">
                 {{ $from.Name }} - {{ $to.Name }}
               </a>
             {{ end }}

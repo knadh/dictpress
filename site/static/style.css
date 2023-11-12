@@ -13,11 +13,12 @@
 body {
   background: #f9f9f9;
   font-family: "Helvetica Neue", "Segoe UI", Helvetica, sans-serif;
-  font-size: 17px;
-  line-height: 1.5;
-  letter-spacing: 0;
   margin: 0;
   color: var(--primary);
+}
+html, body {
+  font-size: 17px;
+  line-height: 1.5;  
 }
 
 img {
@@ -62,6 +63,7 @@ textarea,
 input:focus,
 select:focus {
   border-color: var(--secondary);
+  outline: none;
 }
 
 button, .button {
@@ -92,7 +94,7 @@ button:hover, .button:hover {
 }
 
 .box {
-  border-radius: 3px;
+  border-radius: 5px;
   box-shadow: 2px 2px 1px #eee;
   border: 1px solid #ddd;
   padding: 30px;
@@ -114,7 +116,7 @@ button:hover, .button:hover {
 
 .logo img {
   height: auto;
-  max-width: 200px;
+  max-width: 250px;
 }
   .home .logo img {
     max-width: 80%;
@@ -128,57 +130,49 @@ button:hover, .button:hover {
 }
 
 .search {
-  text-align: right;
   position: relative;
-  margin-top: 30px;
 }
   .search .tabs {
-    z-index: 10;
-    position: absolute;
-    top: -60%;
-    left: 15px;
-    margin: 0;
+    margin-left: 20px;
+    text-align: left;
   }
   .search .tab {
     background: #fff;
-    float: left;
     color: var(--light);
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     text-decoration: none;
 
-    margin: 0 3px 0 0;
-    padding: 3px 10px;
-    border-radius: 3px 3px 0 0;
+    margin: 0 5px 0 0;
+    padding: 8px 15px;
+    border-radius: 4px 4px 0 0;
     border-width: 1px 1px 0 1px;
     border-style: solid;
-    border-color: #ddd;
+    border-color: #d6d6d6;
 
-    text-align: center;
     min-width: 130px;
   }
     .search .tab.sel {
       color: inherit;
       border-color: var(--secondary);
+      border-top-width: 2px;
     }
 .search-form {
-  position: relative;
-  z-index: 100;
 }
   .search-form input {
     width: 100%;
     font-size: 1.3rem;
-    padding: 10px;
+    padding: 15px;
   }
   .search-form button {
     position: absolute;
     right: 0;
-    top: 0;
+    top: 36px;
     bottom: 0;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     line-height: 1rem;
 
-    padding: 10px 15px 8px 15px;
+    padding: 10px 20px 8px 20px;
   }
   .search-form button img {
     max-height: 32px;
@@ -192,7 +186,6 @@ button:hover, .button:hover {
   margin-bottom: 45px;
 }
 .entries .head {
-  margin-bottom: 10px;
   position: relative;
 }
   .entries .title {
@@ -202,17 +195,20 @@ button:hover, .button:hover {
     color: var(--light);
   }
 .entries .defs {
-  margin: 0 0 20px 0;
+  margin: 0 0 20px 30px;
 }
   .entries li::marker {
     color: var(--lighter);
   }
   .entries .defs li {
-    margin-bottom: 6px;
+    margin-bottom: 10px;
     position: relative;
   }
+  .entries .defs li::marker {
+    font-size: 0.8em;
+  }
   .entries .defs li:hover {
-    background: #fafafa;
+    background: #f3f3f3;
   }
 
   .entries .defs .types {
@@ -344,14 +340,15 @@ button:hover, .button:hover {
   }
 
 .nav {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  right: 0;
   border-top: 1px dashed #ccc;
   padding: 10px 15px;
   font-size: .85rem;
   text-align: center;
+
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
   .nav a {
     text-decoration: none;
@@ -395,9 +392,8 @@ button:hover, .button:hover {
 
 /* Homepage */
 .home .wrap {
-  max-height: 475px;
   max-width: 750px;
-  padding: 60px 60px 90px 60px;
+  padding: 60px;
 }
 .home .container {
   margin-top: calc(50vh - (475px / 2));
@@ -422,8 +418,8 @@ button:hover, .button:hover {
 }
 
 @media screen and (min-width: 2000px) {
-  body, input, button, select, textarea {
-    font-size: 24px;
+  html, body, input, button, select, textarea {
+    font-size: 22px;
   }
   button {
     padding: 20px 30px;

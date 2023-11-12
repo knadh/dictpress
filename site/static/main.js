@@ -1,10 +1,12 @@
 function selectDict(dict) {
+  const langs = dict.split("/");
   localStorage.dict = dict;
+  localStorage.from_lang = langs[0];
+  localStorage.to_lang = langs[1];
 
   document.querySelectorAll(`.tabs .tab`).forEach((el) => el.classList.remove("sel"));
-  document.querySelector(`.tabs .tab[data-dict=${dict}]`).classList.add("sel");
-  document.querySelector("form.search-form").setAttribute("action", `/dictionary/${dict.replace("-", "/")}`);
-
+  document.querySelector(`.tabs .tab[data-dict='${dict}']`).classList.add("sel");
+  document.querySelector("form.search-form").setAttribute("action", `/dictionary/${dict}`);
   const q = document.querySelector("#q");
   q.focus();
   q.select();
@@ -13,9 +15,10 @@ function selectDict(dict) {
 // Capture the form submit and send it as a canonical URL instead
 // of the ?q query param. 
 function search(q) {
-  const val = q.trim().toLowerCase().replace(/[^a-z\u00E0-\u00FC\s]/ig, '').replace(/\s+/g, ' ');
-  const form = document.querySelector(".search-form").cloneNode(true);
-  document.location.href = form.getAttribute("action") + "/" + encodeURIComponent(val).replace(/%20/g, "+");
+  let val = q.trim().toLowerCase().replace(/\s+/g, ' ');
+
+  const uri = document.querySelector(".search-form").getAttribute("action");
+  document.location.href = `${uri}/${encodeURIComponent(val).replace(/%20/g, "+")}`;
 }
 
 
@@ -36,7 +39,7 @@ function search(q) {
 
   // Select a language tab on page load.
   let dict = document.querySelector(`.tabs .tab:first-child`).dataset.dict;
-  if (localStorage.dict && document.querySelector(`.tabs .tab[data-dict=${localStorage.dict}]`)) {
+  if (localStorage.dict && document.querySelector(`.tabs .tab[data-dict='${localStorage.dict}']`)) {
     dict = localStorage.dict;
   }
   selectDict(dict);
@@ -142,8 +145,8 @@ function search(q) {
           alert(`Error submitting: ${err}`);
         });
 
-        close();
         alert(form.dataset.success);
+        close();
       };
 
       form.querySelector("button.close").onclick = close;
