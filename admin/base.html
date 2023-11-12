@@ -6,8 +6,9 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<link rel="stylesheet" type="text/css" href="{{ .Consts.RootURL }}/admin/static/grid.css?v={{ .AssetVer }}">
 	<link rel="stylesheet" type="text/css" href="{{ .Consts.RootURL }}/admin/static/style.css?v={{ .AssetVer }}">
-
 	<link rel="shortcut icon" href="{{ .Consts.RootURL }}/admin/static/favicon.png?v={{ .AssetVer }}" type="image/x-icon" />
+
+	<script>window._ROOT_URL = "{{ .Consts.RootURL }}";</script>
 	<script defer src="{{ .Consts.RootURL }}/admin/static/main.js?v={{ .AssetVer }}"></script>
 	<script defer src="{{ .Consts.RootURL }}/admin/static/alpine.js?v={{ .AssetVer }}"></script>
 </head>

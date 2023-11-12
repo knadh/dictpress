@@ -128,7 +128,7 @@ function search(q) {
 
       // Handle form submission.
       form.onsubmit = () => {
-        fetch("/api/submissions/comments", {
+        fetch(`${window._ROOT_URL}/api/submissions/comments`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
