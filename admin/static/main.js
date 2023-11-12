@@ -406,7 +406,10 @@ function entryComponent() {
                     document.location.href = `${_urls.admin}/search?id=${data.id}`;
                 });
             } else {
-                this.api('entries.update', `/entries/${this.entry.id}`, 'PUT', data).then(() => this.onClose());
+                this.api('entries.update', `/entries/${this.entry.id}`, 'PUT', data).then(() => {
+                    this.onClose()
+                    this.$dispatch('search');
+                });
             }
         },
 
@@ -418,6 +421,7 @@ function entryComponent() {
 
             this.api('entries.delete', `/entries/${this.entry.id}`, 'DELETE').then(() => {
                 this.onClose();
+                this.$dispatch('search');
             });
         },
 
