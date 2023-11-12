@@ -19,8 +19,7 @@ directMatch AS (
     -- Do a direct string match (first 50 chars) of the query or see if there are matches for
     -- "simple" (Postgres token dictionary that merely removes English stopwords) tokens.
     -- Rank is the inverted string length so that all results in this query have a negative
-    -- rank, where the smaller numbers represent shorter strings. That is, shorter strings
-    -- are considered closer matches. 
+    -- value to rank higher than results from tokenMatch.
     SELECT COUNT(*) OVER () AS total, entries.*, -1 * ( 50 - LENGTH(content)) AS rank FROM entries WHERE
         ($4 = '' OR lang=$4)
         AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR tags && $5)
@@ -35,7 +34,7 @@ directMatch AS (
 tokenMatch AS (
     -- Full text search for words with proper tokens either from a built-in Postgres dictionary
     -- or externally computed tokens ($3) 
-    SELECT COUNT(*) OVER () AS total, entries.*, 1 - TS_RANK(tokens, (SELECT query FROM q), 1) AS rank FROM entries WHERE
+    SELECT COUNT(*) OVER () AS total, entries.*, 1 - TS_RANK(tokens, (SELECT query FROM q), 0) AS rank FROM entries WHERE
         ($4 = '' OR lang=$4)
         AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR tags && $5)
         AND tokens @@ (SELECT query FROM q)
@@ -46,18 +45,19 @@ totals AS (
     -- Pre-compute the total from both queries as either may return null. This total
     -- is then be selected with every row in the final UNION.
     SELECT COALESCE((SELECT total FROM directMatch LIMIT 1), 0) + COALESCE((SELECT total FROM tokenMatch LIMIT 1), 0) AS total
+),
+results AS (
+    -- Combine results from direct matches and token matches. As directMatches ranks are
+    -- forced to be negative, they will rank on top. 
+    SELECT DISTINCT ON (combined.id) combined.*, (SELECT total FROM totals) AS total
+    FROM (
+        SELECT * FROM directMatch
+        UNION ALL
+        SELECT * FROM tokenMatch
+    ) AS combined
+    INNER JOIN relations ON combined.id = relations.from_id OFFSET $7 LIMIT $8
 )
--- Combine results from direct matches and token matches. As directMatches ranks are
--- forced to be negative, they will rank on top. 
-SELECT DISTINCT ON (combined.id) combined.*, (SELECT total FROM totals) AS total
-FROM (
-    SELECT * FROM directMatch
-    UNION ALL
-    SELECT * FROM tokenMatch
-) AS combined
-INNER JOIN relations ON combined.id = relations.from_id
-ORDER BY combined.id, combined.rank OFFSET $7 LIMIT $8;
-
+SELECT * FROM results ORDER BY rank;
 
 -- name: search-relations
 SELECT entries.*,

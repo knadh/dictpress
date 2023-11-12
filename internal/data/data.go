@@ -494,5 +494,6 @@ func TokensToTSVector(tokens []Token) []string {
 			out = append(out, fmt.Sprintf("%s:%d", t.Token, t.Weight))
 		}
 	}
+
 	return out
 }
