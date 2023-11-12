@@ -4,12 +4,12 @@
 <head>
 	<title>{{ .Title }} {{ if .Title }}|{{ end}} DictPress</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<link rel="stylesheet" type="text/css" href="/admin/static/grid.css?v={{ .AssetVer }}">
-	<link rel="stylesheet" type="text/css" href="/admin/static/style.css?v={{ .AssetVer }}">
+	<link rel="stylesheet" type="text/css" href="{{ .Consts.RootURL }}/admin/static/grid.css?v={{ .AssetVer }}">
+	<link rel="stylesheet" type="text/css" href="{{ .Consts.RootURL }}/admin/static/style.css?v={{ .AssetVer }}">
 
-	<link rel="shortcut icon" href="/admin/static/favicon.png?v={{ .AssetVer }}" type="image/x-icon" />
-	<script defer src="/admin/static/main.js?v={{ .AssetVer }}"></script>
-	<script defer src="/admin/static/alpine.js?v={{ .AssetVer }}"></script>
+	<link rel="shortcut icon" href="{{ .Consts.RootURL }}/admin/static/favicon.png?v={{ .AssetVer }}" type="image/x-icon" />
+	<script defer src="{{ .Consts.RootURL }}/admin/static/main.js?v={{ .AssetVer }}"></script>
+	<script defer src="{{ .Consts.RootURL }}/admin/static/alpine.js?v={{ .AssetVer }}"></script>
 </head>
 <body x-init="onLoad()" x-data="globalComponent()">
 <template x-if="ready">
@@ -17,17 +17,17 @@
 		<header class="header">
 			<div class="row">
 				<div class="three columns logo">
-					<a href="/admin"><img src="/admin/static/logo.svg?v={{ .AssetVer }}" alt="logo" /></a>
+					<a href="{{ .Consts.RootURL }}/admin"><img src="{{ .Consts.RootURL }}/admin/static/logo.svg?v={{ .AssetVer }}" alt="logo" /></a>
 					<template x-if="Object.keys(loading).length > 0"><span class="loading"></span></template>
 				</div>
 				<nav class="eight columns nav">
 					<a href="" @click.prevent="onNewEntry">Add new</a>
-					<a href="/admin/pending">Pending</a>
+					<a href="{{ .Consts.RootURL }}/admin/pending">Pending</a>
 				</nav>
 			</div>
 		</header>
 
-		<form class="search" action="/admin/search" x-data="searchFormComponent()" @submit="onSearch">
+		<form class="search" action="{{ .Consts.RootURL }}/admin/search" x-data="searchFormComponent()" @submit="onSearch">
 			<fieldset class="row">
 				<div class="column four">
 	    			<select name="from_lang" x-model="fromLang">
