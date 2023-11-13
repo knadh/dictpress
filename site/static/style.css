@@ -156,9 +156,14 @@ button:hover, .button:hover {
     white-space: nowrap;
     cursor: pointer;
   }
-    .search .tabs input:checked + label {
-      color: inherit;
+    .search .tabs input:focus + label,
+    .search .tabs label:hover {
       border-color: var(--light);
+      box-shadow: 0 0 6px #ddd;
+    }
+    .search .tabs input:checked + label {
+      border-color: var(--light);
+      color: inherit;
       border-top-width: 2px;
     }
 .search-form > div {
