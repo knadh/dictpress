@@ -114,10 +114,10 @@
       const btn = e.target;
 
       // Form is already open.
-      if (btn.dataset.open) {
+      if (btn.close) {
+        btn.close();
         return;
       }
-      btn.dataset.open = true;
 
       const form = document.querySelector(".form-comments").cloneNode(true);
       o.parentNode.appendChild(form);
@@ -127,12 +127,12 @@
       txt.focus();
       txt.onkeydown = (e) => {
         if (e.key === "Escape") {
-          close();
+          btn.close();
         }
       };
 
-      const close = () => {
-        btn.dataset.open = "";
+      btn.close = () => {
+        btn.close = null;
         form.remove();
       };
 
@@ -153,10 +153,10 @@
         });
 
         alert(form.dataset.success);
-        close();
+        btn.close();
       };
 
-      form.querySelector("button.close").onclick = close;
+      form.querySelector("button.close").onclick = btn.close;
     });
   })
 })();
