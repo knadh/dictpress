@@ -126,7 +126,7 @@
       const txt = form.querySelector("textarea");
       txt.focus();
       txt.onkeydown = (e) => {
-        if (e.key === "Escape") {
+        if (e.key === "Escape" && txt.value === "") {
           btn.close();
         }
       };
