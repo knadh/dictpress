@@ -20,26 +20,30 @@ directMatch AS (
     -- "simple" (Postgres token dictionary that merely removes English stopwords) tokens.
     -- Rank is the inverted string length so that all results in this query have a negative
     -- value to rank higher than results from tokenMatch.
-    SELECT COUNT(*) OVER () AS total, entries.*, -1 * ( 50 - LENGTH(content)) AS rank FROM entries WHERE
+    SELECT COUNT(*) OVER () AS total, entries.*, -1 * ( 50 - LENGTH(content)) AS rank FROM entries
+        INNER JOIN relations ON entries.id = relations.from_id
+        WHERE
         ($4 = '' OR lang=$4)
-        AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR tags && $5)
+        AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR entries.tags && $5)
         AND (
             CASE WHEN $1 = '' THEN TRUE ELSE
                 LOWER(SUBSTRING(content, 0, 50))=LOWER(SUBSTRING($1, 0, 50))
                 OR tokens @@ PLAINTO_TSQUERY('simple', $1)
             END
         )
-        AND (CASE WHEN $6 != '' THEN status = $6::entry_status ELSE TRUE END)
+        AND (CASE WHEN $6 != '' THEN entries.status = $6::entry_status ELSE TRUE END)
 ),
 tokenMatch AS (
     -- Full text search for words with proper tokens either from a built-in Postgres dictionary
     -- or externally computed tokens ($3) 
-    SELECT COUNT(*) OVER () AS total, entries.*, 1 - TS_RANK(tokens, (SELECT query FROM q), 0) AS rank FROM entries WHERE
+    SELECT COUNT(*) OVER () AS total, entries.*, 1 - TS_RANK(tokens, (SELECT query FROM q), 0) AS rank FROM entries
+        INNER JOIN relations ON entries.id = relations.from_id
+        WHERE
         ($4 = '' OR lang=$4)
-        AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR tags && $5)
+        AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR entries.tags && $5)
         AND tokens @@ (SELECT query FROM q)
-        AND id NOT IN (SELECT id FROM directMatch)
-        AND (CASE WHEN $6 != '' THEN status = $6::entry_status ELSE TRUE END)
+        AND entries.id NOT IN (SELECT id FROM directMatch)
+        AND (CASE WHEN $6 != '' THEN entries.status = $6::entry_status ELSE TRUE END)
 ),
 totals AS (
     -- Pre-compute the total from both queries as either may return null. This total
@@ -55,7 +59,7 @@ results AS (
         UNION ALL
         SELECT * FROM tokenMatch
     ) AS combined
-    INNER JOIN relations ON combined.id = relations.from_id OFFSET $7 LIMIT $8
+    OFFSET $7 LIMIT $8
 )
 SELECT * FROM results ORDER BY rank;
 
