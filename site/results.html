@@ -50,7 +50,8 @@
             {{ end }}
         </ol>
     </div>
-    <div class="four columns related">
+    <div class="one column"></div>
+    <div class="three columns related">
         {{ if gt (len .Data.Results.Entries) $numResults  }}
             <h4>{{ .L.T "public.similarTitle" }}</h4>
             <ul>

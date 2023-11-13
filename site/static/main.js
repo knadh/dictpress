@@ -1,30 +1,34 @@
-function selectDict(dict) {
-  const langs = dict.split("/");
-  localStorage.dict = dict;
-  localStorage.from_lang = langs[0];
-  localStorage.to_lang = langs[1];
-
-  document.querySelectorAll(`.tabs .tab`).forEach((el) => el.classList.remove("sel"));
-  document.querySelector(`.tabs .tab[data-dict='${dict}']`).classList.add("sel");
-  document.querySelector("form.search-form").setAttribute("action", `/dictionary/${dict}`);
-  const q = document.querySelector("#q");
-  q.focus();
-  q.select();
-}
-
-// Capture the form submit and send it as a canonical URL instead
-// of the ?q query param. 
-function search(q) {
-  let val = q.trim().toLowerCase().replace(/\s+/g, ' ');
-
-  const uri = document.querySelector(".search-form").getAttribute("action");
-  document.location.href = `${uri}/${encodeURIComponent(val).replace(/%20/g, "+")}`;
-}
-
-
 (() => {
-  // Search input.
-  const q = document.querySelector("#q");
+  const elTabs = document.querySelectorAll(`.tabs input`);
+  const elForm = document.querySelector("form.search-form");
+  const elQ = document.querySelector("#q");
+  const defaultLang = document.querySelector(`.tabs input:first-child`).value;
+
+  function selectDict(dict) {
+    // dict is in the format '$fromLang/$toLang'.
+    const langs = dict.split("/");
+    const t = document.querySelector(`.tabs #tab-${langs[0]}-${langs[1]}`);
+    if (!t) {
+      return;
+    }
+
+    Object.assign(localStorage, { dict, from_lang: langs[0], to_lang: langs[1] });
+
+    t.checked = true;
+    elForm.setAttribute("action", `${_ROOT_URL}/dictionary/${dict}`);
+
+    elQ.focus();
+    elQ.select();
+  }
+
+  // Capture the form submit and send it as a canonical URL instead
+  // of the ?q query param. 
+  function search(q) {
+    let val = q.trim();
+
+    const uri = elForm.getAttribute("action");
+    document.location.href = `${uri}/${encodeURIComponent(val).replace(/%20/g, "+")}`;
+  }
 
   // On ~ press, focus search input.
   document.onkeydown = (function (e) {
@@ -37,26 +41,29 @@ function search(q) {
     q.select();
   });
 
-  // Select a language tab on page load.
-  let dict = document.querySelector(`.tabs .tab:first-child`).dataset.dict;
-  if (localStorage.dict && document.querySelector(`.tabs .tab[data-dict='${localStorage.dict}']`)) {
-    dict = localStorage.dict;
-  }
-  selectDict(dict);
-
   // On language tab selector click.
-  document.querySelectorAll(`.tabs .tab`).forEach((el) => {
-    el.onclick = (e) => {
+  elTabs.forEach((el) => {
+    el.onchange = (e) => {
       e.preventDefault();
-      selectDict(e.target.dataset.dict);
+      selectDict(e.target.value);
     }
   });
 
   // Bind to form submit.
-  document.querySelector(".search-form").addEventListener("submit", function (e) {
+  elForm.addEventListener("submit", function (e) {
     e.preventDefault();
-    search(document.querySelector("#q").value);
+    search(elQ.value);
   });
+
+
+  // Select a language based on the page URL.
+  let dict = localStorage.dict || defaultLang;
+  const uri = /(dictionary)\/((.+?)\/(.+?))\//i.exec(document.location.href);
+  if (uri && uri.length == 5) {
+    dict = uri[2];
+  }
+
+  selectDict(dict);
 })();
 
 

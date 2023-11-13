@@ -3,6 +3,7 @@
   --secondary: #333;
   --light: #888;
   --lighter: #aaa;
+  --lightest: #f4f4f4;
   --white: #fff;
 }
 
@@ -15,10 +16,12 @@ body {
   font-family: "Helvetica Neue", "Segoe UI", Helvetica, sans-serif;
   margin: 0;
   color: var(--primary);
+  min-width: 375px;
 }
 html, body {
-  font-size: 17px;
-  line-height: 1.5;  
+  font-size: 15px;
+  line-height: 1.3;
+  height: 100%;
 }
 
 img {
@@ -62,7 +65,7 @@ textarea,
 }
 input:focus,
 select:focus {
-  border-color: var(--secondary);
+  border-color: var(--light);
   outline: none;
 }
 
@@ -94,6 +97,7 @@ button:hover, .button:hover {
 }
 
 .box {
+  background: var(--white);
   border-radius: 5px;
   box-shadow: 2px 2px 1px #eee;
   border: 1px solid #ddd;
@@ -105,18 +109,15 @@ button:hover, .button:hover {
 }
 
 /* Custom */
-.wrap {
+.main {
   background-color: var(--white);
-  padding: 45px 45px 60px 45px;
   max-width: 800px;
-  min-width: 325px;
   margin: 45px auto 30px auto;
-  position: relative;
 }
 
 .logo img {
   height: auto;
-  max-width: 250px;
+  max-width: 180px;
 }
   .home .logo img {
     max-width: 80%;
@@ -136,6 +137,10 @@ button:hover, .button:hover {
     margin-left: 20px;
     text-align: left;
   }
+  .search .tabs input {
+    opacity: 0;
+    position: absolute;
+  }
   .search .tab {
     background: #fff;
     color: var(--light);
@@ -143,51 +148,55 @@ button:hover, .button:hover {
     text-decoration: none;
 
     margin: 0 5px 0 0;
-    padding: 8px 15px;
+    padding: 6px 15px;
     border-radius: 4px 4px 0 0;
     border-width: 1px 1px 0 1px;
     border-style: solid;
     border-color: #d6d6d6;
-
-    min-width: 130px;
+    white-space: nowrap;
+    cursor: pointer;
   }
-    .search .tab.sel {
+    .search .tabs input:checked + label {
       color: inherit;
-      border-color: var(--secondary);
+      border-color: var(--light);
       border-top-width: 2px;
     }
-.search-form {
+.search-form > div {
+  display: flex;
+  align-items: stretch;
 }
   .search-form input {
-    width: 100%;
+    flex-grow: 1;
+    align-self: center;
     font-size: 1.3rem;
-    padding: 15px;
+    padding: 8px 15px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: 0;
   }
   .search-form button {
-    position: absolute;
-    right: 0;
-    top: 36px;
-    bottom: 0;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     line-height: 1rem;
 
-    padding: 10px 20px 8px 20px;
+    padding: 7px 20px;
   }
   .search-form button img {
     max-height: 32px;
+    min-width: 13px;
   }
 
 .content {
-  margin-top: 45px;
+  margin-bottom: 35px;
 }
 
-.entries .entry {
-  margin-bottom: 45px;
-}
-.entries .head {
-  position: relative;
-}
+  .entries .entry {
+    margin-bottom: 45px;
+  }
+  .entries .head {
+    position: relative;
+    margin-bottom: 10px;
+  }
   .entries .title {
     margin: 0;
   }
@@ -195,7 +204,8 @@ button:hover, .button:hover {
     color: var(--light);
   }
 .entries .defs {
-  margin: 0 0 20px 30px;
+  margin: 0;
+  padding: 0 0 0 30px;
 }
   .entries li::marker {
     color: var(--lighter);
@@ -208,21 +218,22 @@ button:hover, .button:hover {
     font-size: 0.8em;
   }
   .entries .defs li:hover {
-    background: #f3f3f3;
+    background: var(--lightest);
   }
 
   .entries .defs .types {
-    margin: 20px 0 10px -40px ;
+    margin: 0 0 10px -15px;
     color: var(--light);
     font-style: italic;
-    border-bottom: 1px dashed #ddd;
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-decoration-color: var(--lighter);
   }
   .entries .defs .types:first-child {
     margin-top: 0;
   }
 
     .entry .edit {
-      background: rgba(255,255,255,.6);
       color: var(--white);
       border-radius: 3px;
       padding: 12px 10px;
@@ -233,6 +244,8 @@ button:hover, .button:hover {
       text-decoration: none;
       z-index: 1000;
       line-height: 0;
+      text-shadow: 0px 3px 3px #fff;
+      font-size: 0.8rem;
     }
     .entries .defs li:hover .edit {
       display: block;
@@ -276,7 +289,7 @@ button:hover, .button:hover {
 .form-comments {
   margin: 10px 0 45px 0;
   display: none;
-  padding: 30px;
+  padding: 15px;
   clear: both;
 }
   .form-comments textarea {
@@ -285,6 +298,10 @@ button:hover, .button:hover {
   }
   .form-comments h3 {
     margin: 0 0 15px 0;
+  }
+  .form-comments button {
+    margin: 0 10px 10px 0;
+    width: 100%;
   }
 
 
@@ -341,7 +358,7 @@ button:hover, .button:hover {
 
 .nav {
   border-top: 1px dashed #ccc;
-  padding: 10px 15px;
+  padding: 15px;
   font-size: .85rem;
   text-align: center;
 
@@ -360,7 +377,7 @@ button:hover, .button:hover {
   }
 
 .header {
-  margin-bottom: 45px;
+  margin-bottom: 20px;
 } 
 .footer {
   margin-bottom: 30px;
@@ -391,61 +408,82 @@ button:hover, .button:hover {
 }
 
 /* Homepage */
-.home .wrap {
-  max-width: 750px;
-  padding: 60px;
+
+.home {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
-.home .container {
-  margin-top: calc(50vh - (475px / 2));
-}
-.home .header {
-  text-align: center;
-}
-.home .intro {
-  display: block;
-}
-.home .logo {
-  width: 100%;
-  flex: none;
-  margin-bottom: 15px;
-}
-  .home .logo img {
-    max-height: 100%;
+  .home .main {
+    max-width: 700px;
+    padding: 90px 60px;
   }
-.home .search {
-  width: 100%;
-  flex: none;
+  .home .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .home .intro {
+    display: block;
+  }
+  .home .logo {
+    width: 100%;
+    flex: none;
+    margin-bottom: 15px;
+  }
+    .home .logo img {
+      max-height: 100%;
+    }
+  .home .search {
+    width: 100%;
+    flex: none;
+  }
+
+/* autocomp.js */
+.autocomp {
+  background: #f8f8f8;
+  border-radius: 0 0 5px 5px;
+  border: 1px solid #ccc;
+  border-top: 0;
+  box-shadow: 2px 2px 2px #eee;
+  text-align: left;
+  z-index: 100;
+}
+.autocomp-item {
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.autocomp-item:hover,
+.autocomp-sel {
+  background: #f1f1f1;
+  font-weight: bold;
 }
 
 @media screen and (min-width: 2000px) {
   html, body, input, button, select, textarea {
-    font-size: 22px;
+    font-size: 24px;
   }
   button {
     padding: 20px 30px;
   }
-  .wrap {
+  .main {
     max-width: 50%;
   }
-  .home .wrap {
+  .home .main {
     max-width: 900px;
   }
 }
 
 @media screen and (max-width: 775px) {
-  .wrap {
+  .main {
     margin: 0 0 15px 0;
-    padding: 30px;
+    padding: 15px;
     width: 100%;
     max-width: 100%;
   }
-  .home .wrap {
+  .home .main {
     margin: 0 0 15px 0;
     padding: 30px 30px 90px 30px;
-  }
-  .nav {
-    position: static;
-    margin: 0 -30px -30px -30px;
   }
 
   .logo {
@@ -455,6 +493,15 @@ button:hover, .button:hover {
   }
   .logo img {
     max-height: 32px;
+  }
+
+  .entries {
+    padding: 0 0 0 20px;
+  }
+
+  .nav {
+    position: static;
+    margin: 0 -30px -30px -30px;
   }
 
   .footer {

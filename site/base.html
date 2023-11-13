@@ -20,13 +20,14 @@
     {{- end -}}" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-	
+	<script>window._ROOT_URL = "{{ .Consts.RootURL }}";</script>
 	<link rel="shortcut icon" href="{{ .Consts.RootURL }}/static/favicon.png?v={{ .AssetVer }}" type="image/x-icon" />
   <link href="{{ .Consts.RootURL }}/static/flexit.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
   <link href="{{ .Consts.RootURL }}/static/style.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
 </head>
 <body class="{{ if eq .Data.PageName "/"}}home{{ end }}">
-  <div class="container wrap box">
+<div class="wrap">
+  <section class="container main box">
     <header class="header">
       <div class="row">
         <div class="logo four columns">
@@ -41,12 +42,13 @@
             {{ range $d := .Dicts }}
               {{ $from := index $d 0}}
               {{ $to := index $d 1}}
-              <a href="#" class="tab" data-dict="{{ $from.ID }}/{{ $to.ID }}">
-                {{ $from.Name }} - {{ $to.Name }}
-              </a>
+                <input type="radio" name="dict" value="{{ $from.ID }}/{{ $to.ID }}" id="tab-{{ $from.ID }}-{{ $to.ID }}" />
+                <label class="tab" for="tab-{{ $from.ID }}-{{ $to.ID }}">
+                  {{ $from.Name }} - {{ $to.Name }}
+                </label>
             {{ end }}
           </div>
-          <form class="search-form" method="get" action="{{ .Consts.RootURL }}/dictionary/english/malayalam">
+          <form class="search-form" method="get" action="">
             <div>
               <input autofocus autocomplete="off" required placeholder=""
                 type="text" id="q" name="q" value="{{ if .Data.Query }}{{ .Data.Query.Query }}{{ end }}" />
@@ -73,11 +75,11 @@
           {{ end }}
       {{ end }}
     </nav>
-  </div>
+  </section>
   <footer class="footer">
     <a href="https://dict.press">Powered by dictpress</a>
   </footer>
-  <script src="{{ .Consts.RootURL }}/static/main.js?v={{ .AssetVer }}"></script>
+</div><!-- wrap -->
 
   <form class="box form-comments" data-success="{{ .L.T "public.suggestSubmitted" }}">
   <div>
@@ -89,6 +91,8 @@
     </p>
   </div>
   </form>
+
+  <script src="{{ .Consts.RootURL }}/static/main.js?v={{ .AssetVer }}"></script>
 </body>
 
 </html>
