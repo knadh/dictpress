@@ -204,9 +204,11 @@ button:hover, .button:hover {
     color: var(--light);
   }
 .entries .defs {
-  margin: 0;
   padding: 0 0 0 30px;
 }
+  .entries .defs:not(:first-child) {
+    margin-bottom: 30px;
+  }
   .entries li::marker {
     color: var(--lighter);
   }
