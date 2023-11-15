@@ -270,9 +270,9 @@ func (im *Importer) insertEntries(entries []entry, lineStart int) error {
 				e.TSVectorTokens,
 				e.TSVectorLang,
 				e.Lang,
-				pq.StringArray{},
+				pq.StringArray(e.Tags),
 				pq.StringArray(e.Phones),
-				"",
+				e.Notes,
 				data.StatusEnabled); err != nil {
 				return err
 			}
