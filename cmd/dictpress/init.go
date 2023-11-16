@@ -128,7 +128,7 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 	if app.consts.Site != "" {
 		p.GET("/", handleIndexPage)
 		p.GET("/dictionary/:fromLang/:toLang/:q", handleSearchPage)
-		p.GET("/dictionary/:fromLang/:toLang", handleGlossaryPage)
+		p.GET("/dictionary/:fromLang/:toLang", handleSearchPage)
 		p.GET("/pages/:page", handleStaticPage)
 
 		if app.consts.EnableGlossary {

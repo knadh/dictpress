@@ -79,11 +79,23 @@ func doSearch(c echo.Context, isAuthed bool) (data.Query, *results, error) {
 		out = &results{}
 	)
 
+	// Query from /path/:query
 	q, err := url.QueryUnescape(q)
 	if err != nil {
 		return data.Query{}, nil, fmt.Errorf("error parsing query: %v", err)
 	}
 	q = strings.TrimSpace(q)
+	if q == "" {
+		v, err := url.QueryUnescape(qp.Get("q"))
+		if err != nil {
+			return data.Query{}, nil, fmt.Errorf("error parsing query: %v", err)
+		}
+		q = strings.TrimSpace(v)
+	}
+
+	if q == "" {
+		return data.Query{}, nil, errors.New("no query given")
+	}
 
 	if _, ok := app.data.Langs[fromLang]; !ok {
 		return data.Query{}, nil, errors.New("unknown `from` language")
