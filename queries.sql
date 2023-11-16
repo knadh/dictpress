@@ -142,7 +142,7 @@ WITH w AS (
     -- for the initial of the given word and add +1 to it.
     SELECT MAX(weight) + 1 AS weight FROM entries WHERE $3=0 AND (initial=$2 AND lang=$6)
 )
-INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes, status)
+INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes, meta, status)
     VALUES(
         $1,
         $2,
@@ -152,7 +152,8 @@ INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes
         $7,
         $8,
         $9,
-        $10
+        $10,
+        $11
     )
     RETURNING id;
 

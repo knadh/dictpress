@@ -17,6 +17,7 @@ import (
 
 const (
 	insertBatchSize = 5000
+	colCount        = 11
 
 	typeEntry = "-"
 	typeDef   = "^"
@@ -171,8 +172,8 @@ func (im *Importer) readEntry(r []string) (entry, error) {
 		Phones:         splitString(cleanString(r[8])),
 	}
 
-	if len(r) != 10 {
-		return e, fmt.Errorf("every line should have exactly 10 columns. Found %d", len(r))
+	if len(r) != colCount {
+		return e, fmt.Errorf("every line should have exactly %d columns. Found %d", colCount, len(r))
 	}
 
 	lang, ok := im.langs[e.Lang]
@@ -213,10 +214,10 @@ func (im *Importer) readEntry(r []string) (entry, error) {
 	}
 
 	e.Meta = strings.TrimSpace(e.Meta)
-	if e.Meta[0:1] != "{" {
-		return e, fmt.Errorf("column 11, meta JSON should begin with `{`")
-	} else if e.Meta == "" {
+	if e.Meta == "" {
 		e.Meta = "{}"
+	} else if e.Meta[0:1] != "{" {
+		return e, fmt.Errorf("column 11, meta JSON should begin with `{`")
 	}
 
 	return e, nil

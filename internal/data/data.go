@@ -369,9 +369,15 @@ func (d *Data) GetStats() (Stats, error) {
 		return out, err
 	}
 
-	err := json.Unmarshal(b, &out)
+	if err := json.Unmarshal(b, &out); err != nil {
+		return out, nil
+	}
 
-	return out, err
+	if out.Languages == nil {
+		out.Languages = map[string]int{}
+	}
+
+	return out, nil
 }
 
 // ApproveSubmission approves a pending submission (entry, relations, related entries).
@@ -417,7 +423,7 @@ func (d *Data) insertEntry(e Entry, stmt *sqlx.Stmt) (int, error) {
 	}
 
 	var id int
-	err := stmt.Get(&id, e.Content, e.Initial, e.Weight, tokens, tsVectorLang, e.Lang, e.Tags, e.Phones, e.Notes, e.Status)
+	err := stmt.Get(&id, e.Content, e.Initial, e.Weight, tokens, tsVectorLang, e.Lang, e.Tags, e.Phones, e.Notes, e.Meta, e.Status)
 	return id, err
 }
 
