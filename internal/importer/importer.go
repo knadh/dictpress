@@ -24,7 +24,7 @@ const (
 
 // entry represents a single row read from the CSV. The CSV columns are:
 // Array columns like tokens, tags etc. are pipe (|) separated.
-// entry_type, word, initial, language, notes, tsvector_language, [tsvector_tokens], [tags], [phones], definition_type
+// entry_type, word, initial, language, notes, tsvector_language, [tsvector_tokens], [tags], [phones], definition_type, meta
 //
 // entry_type = - represents a main entry and subsequent ^ represents definitions.
 // definition_type (last field) should only be set in definition (^) entries.
@@ -45,6 +45,7 @@ type entry struct {
 	Tags           []string // 7
 	Phones         []string // 8
 	DefTypes       []string // 9 - Only read in definition entries (0=^)
+	Meta           string   // 10
 
 	defs []entry
 }
@@ -208,7 +209,14 @@ func (im *Importer) readEntry(r []string) (entry, error) {
 		}
 		e.DefTypes = defTypes
 	} else if defTypeStr != "" {
-		return e, fmt.Errorf("column 10, definition type (part of speec) should only be set of definition entries (^)")
+		return e, fmt.Errorf("column 10, definition type (part of speech) should only be set of definition entries (^)")
+	}
+
+	e.Meta = strings.TrimSpace(e.Meta)
+	if e.Meta[0:1] != "{" {
+		return e, fmt.Errorf("column 11, meta JSON should begin with `{`")
+	} else if e.Meta == "" {
+		e.Meta = "{}"
 	}
 
 	return e, nil
