@@ -130,12 +130,11 @@ button:hover, .button:hover {
   font-weight: normal;
 }
 
-.search {
-  position: relative;
-}
   .search .tabs {
+    position: relative;
     margin-left: 20px;
     text-align: left;
+    margin-bottom: -2px;
   }
   .search .tabs input {
     opacity: 0;
@@ -152,22 +151,27 @@ button:hover, .button:hover {
     margin: 0 5px 0 0;
     padding: 6px 15px;
     border-radius: 4px 4px 0 0;
-    border-width: 1px 1px 0 1px;
-    border-style: solid;
-    border-color: #d6d6d6;
+    border: 1px solid #d6d6d6;
     white-space: nowrap;
     cursor: pointer;
+    position: relative;
   }
     .search .tabs input:focus + label,
     .search .tabs label:hover {
       border-color: var(--light);
-      box-shadow: 0 0 6px #ddd;
+      box-shadow: -2px -4px 6px var(--lightest);
     }
     .search .tabs input:checked + label {
       border-color: var(--light);
       color: inherit;
       border-top-width: 2px;
+      border-bottom-color: transparent;
+      z-index: 3;
     }
+
+.search-form {
+  position: relative;
+}
 .search-form > div {
   display: flex;
   align-items: stretch;
@@ -531,5 +535,6 @@ button:hover, .button:hover {
   }
   .tabs .tab {
     display: block;
+    border-bottom: 0;
   }
 }
