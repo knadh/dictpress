@@ -186,6 +186,17 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 	a.PUT("/api/entries/:id/submission", handleApproveSubmission)
 	a.DELETE("/api/entries/:id/submission", handleRejectSubmission)
 
+	// 404 pages.
+	srv.RouteNotFound("/api/*", func(c echo.Context) error {
+		return echo.NewHTTPError(http.StatusNotFound, "Unknown endpoint")
+	})
+	srv.RouteNotFound("/*", func(c echo.Context) error {
+		return c.Render(http.StatusNotFound, "message", pageTpl{
+			Title:   "404 Page not found",
+			Heading: "404 Page not found",
+		})
+	})
+
 	return srv
 }
 
