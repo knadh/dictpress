@@ -117,7 +117,7 @@ button:hover, .button:hover {
 
 .logo img {
   height: auto;
-  max-width: 180px;
+  max-width: 200px;
 }
   .home .logo img {
     max-width: 80%;
@@ -146,7 +146,9 @@ button:hover, .button:hover {
     color: var(--light);
     font-size: 0.8rem;
     text-decoration: none;
+    text-align: center;
 
+    display: inline-block;
     margin: 0 5px 0 0;
     padding: 6px 15px;
     border-radius: 4px 4px 0 0;
@@ -173,8 +175,7 @@ button:hover, .button:hover {
   .search-form input {
     flex-grow: 1;
     align-self: center;
-    font-size: 1.3rem;
-    padding: 8px 15px;
+    padding: 10px 15px;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     border-right: 0;
@@ -192,7 +193,7 @@ button:hover, .button:hover {
   }
 
 .content {
-  margin-bottom: 35px;
+  padding-bottom: 35px;
 }
 
   .entries .entry {
@@ -311,7 +312,6 @@ button:hover, .button:hover {
     width: 100%;
   }
 
-
 .glossary .index {
   background: #f7f7f7;
   margin-bottom: 15px;
@@ -336,7 +336,7 @@ button:hover, .button:hover {
     .glossary .words li {
       border-bottom: 1px solid #eee;
       page-break-inside: avoid;
-      padding: 3px 0;
+      margin-bottom: 10px;
     }
     .glossary .words a {
       text-decoration: none;
@@ -448,11 +448,11 @@ button:hover, .button:hover {
 
 /* autocomp.js */
 .autocomp {
-  background: #f8f8f8;
+  background: var(--white);
   border-radius: 0 0 5px 5px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--lighter);
   border-top: 0;
-  box-shadow: 2px 2px 2px #eee;
+  box-shadow: 2px 2px 2px var(--lightest);
   text-align: left;
   z-index: 100;
 }
@@ -460,9 +460,11 @@ button:hover, .button:hover {
   padding: 5px 10px;
   cursor: pointer;
 }
-.autocomp-item:hover,
+.autocomp-item:hover {
+  font-weight: bold;
+}
 .autocomp-sel {
-  background: #f1f1f1;
+  background: var(--lightest);
   font-weight: bold;
 }
 
@@ -520,5 +522,14 @@ button:hover, .button:hover {
   }
   .form-submit button[type="submit"] {
     width: 100%;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .search .tabs {
+    margin: 0 50px;
+  }
+  .tabs .tab {
+    display: block;
   }
 }
