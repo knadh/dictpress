@@ -187,7 +187,7 @@ func handleGlossaryPage(c echo.Context) error {
 func handleStaticPage(c echo.Context) error {
 	var (
 		app = c.Get("app").(*App)
-		id  = "page-" + c.Param("page")
+		id  = "page-" + strings.TrimRight(c.Param("page"), "/")
 	)
 
 	if app.siteTpl.Lookup(id) == nil {
