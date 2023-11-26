@@ -200,6 +200,9 @@ button:hover, .button:hover {
   padding-bottom: 35px;
 }
 
+.page {
+  margin: 60px 0 30px 0;
+}
   .entries .entry {
     margin-bottom: 45px;
   }
@@ -367,6 +370,11 @@ button:hover, .button:hover {
     margin-top: 30px;
   }
 
+.type textarea{
+  width: 100%;
+  min-height: 400px;
+}
+
 .nav {
   border-top: 1px dashed #ccc;
   padding: 15px;
@@ -488,15 +496,22 @@ button:hover, .button:hover {
 }
 
 @media screen and (max-width: 775px) {
+  body {
+    background: var(--white);
+  }
+  .home .main,
   .main {
-    margin: 0 0 15px 0;
-    padding: 15px;
+    margin: 0;
+    padding: 20px;
     width: 100%;
     max-width: 100%;
   }
-  .home .main {
-    margin: 0 0 15px 0;
-    padding: 30px 30px 90px 30px;
+  .box {
+    border: 0;
+    box-shadow: none;
+  }
+  .home {
+    display: block;
   }
 
   .logo {
@@ -514,7 +529,10 @@ button:hover, .button:hover {
 
   .nav {
     position: static;
-    margin: 0 -30px -30px -30px;
+  }
+  .nav a {
+    display: block;
+    margin-bottom: 5px;
   }
 
   .footer {
