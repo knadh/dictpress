@@ -96,14 +96,6 @@ button:hover, .button:hover {
   padding: 0;
 }
 
-.box {
-  background: var(--white);
-  border-radius: 5px;
-  box-shadow: 2px 2px 1px #eee;
-  border: 1px solid #ddd;
-  padding: 30px;
-}
-
 .text-right {
   text-align: right;
 }
@@ -111,9 +103,19 @@ button:hover, .button:hover {
 /* Custom */
 .main {
   background-color: var(--white);
-  max-width: 800px;
+
+  border-radius: 5px;
+  box-shadow: 2px 2px 1px #eee;
+  border: 1px solid #ddd;
   margin: 45px auto 30px auto;
+  padding: 30px 30px 0 30px;
+
+  display: flex;
+  flex-direction: column;
 }
+  .home .container {
+    max-width: 900px;
+  }
 
 .logo img {
   height: auto;
@@ -196,12 +198,8 @@ button:hover, .button:hover {
     min-width: 13px;
   }
 
-.content {
-  padding-bottom: 35px;
-}
-
 .page {
-  margin: 60px 0 30px 0;
+  margin: 30px 0 30px 0;
 }
   .entries .entry {
     margin-bottom: 45px;
@@ -370,21 +368,29 @@ button:hover, .button:hover {
     margin-top: 30px;
   }
 
-.type textarea{
+/* Custom pages */
+.page.type textarea{
   width: 100%;
   min-height: 400px;
 }
 
+.page.open {
+  margin: 60px;
+}
+  .page.open li {
+    margin-bottom: 20px;
+  }
+  .page.open a {
+    color: inherit;
+  }
+
 .nav {
   border-top: 1px dashed #ccc;
-  padding: 15px;
+  padding: 15px 0;
   font-size: .85rem;
   text-align: center;
 
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  margin: 30px -30px 0 -30px;
 }
   .nav a {
     text-decoration: none;
@@ -406,9 +412,15 @@ button:hover, .button:hover {
 }
   .footer a {
     color: var(--light);
+    display: inline-block;
+    margin: 0 10px;
+    text-decoration: none;
   }
   .footer a:hover {
     color: var(--primary);
+  }
+  .footer img {
+    max-width: 15px;
   }
 .footer .slash {
   margin: 0 10px;
@@ -435,8 +447,7 @@ button:hover, .button:hover {
   height: 100%;
 }
   .home .main {
-    max-width: 700px;
-    padding: 90px 60px;
+    padding: 90px 60px 0 60px;
   }
   .home .header {
     text-align: center;
@@ -458,28 +469,6 @@ button:hover, .button:hover {
     flex: none;
   }
 
-/* autocomp.js */
-.autocomp {
-  background: var(--white);
-  border-radius: 0 0 5px 5px;
-  border: 1px solid var(--lighter);
-  border-top: 0;
-  box-shadow: 2px 2px 2px var(--lightest);
-  text-align: left;
-  z-index: 100;
-}
-.autocomp-item {
-  padding: 5px 10px;
-  cursor: pointer;
-}
-.autocomp-item:hover {
-  font-weight: bold;
-}
-.autocomp-sel {
-  background: var(--lightest);
-  font-weight: bold;
-}
-
 @media screen and (min-width: 2000px) {
   html, body, input, button, select, textarea {
     font-size: 24px;
@@ -487,11 +476,8 @@ button:hover, .button:hover {
   button {
     padding: 20px 30px;
   }
-  .main {
+  .container {
     max-width: 50%;
-  }
-  .home .main {
-    max-width: 900px;
   }
 }
 
@@ -505,8 +491,6 @@ button:hover, .button:hover {
     padding: 20px;
     width: 100%;
     max-width: 100%;
-  }
-  .box {
     border: 0;
     box-shadow: none;
   }
@@ -544,6 +528,11 @@ button:hover, .button:hover {
   }
   .form-submit button[type="submit"] {
     width: 100%;
+  }
+
+  .page {
+    margin-left: 0;
+    margin-right: 0;
   }
 }
 

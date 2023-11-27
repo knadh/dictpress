@@ -29,8 +29,8 @@
   <link href="{{ .Consts.RootURL }}/static/style.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
 </head>
 <body class="{{ if eq .Data.PageType "/"}}home{{ end }}">
-<div class="wrap">
-  <section class="container main box">
+<div class="container">
+  <section class="main">
     <header class="header">
       <div class="row">
         <div class="logo four columns">
@@ -79,10 +79,11 @@
       {{ end }}
     </nav>
   </section>
+
   <footer class="footer">
     <a href="https://dict.press">Powered by dictpress</a>
   </footer>
-</div><!-- wrap -->
+</div><!-- container -->
 
   <form class="box form-comments" data-success="{{ .L.T "public.suggestSubmitted" }}">
   <div>
