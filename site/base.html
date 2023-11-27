@@ -3,29 +3,32 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>
-    {{- if eq .Data.PageName "/" }} {{- .L.T "global.siteName" -}}
-    {{- else if eq .Data.PageName "glossary" }}{{- .L.T "public.glossaryTitle" -}}
-    {{- else if eq .Data.PageName "search" }}{{- .L.Ts "public.searchTitle" "query" .Data.Query.Query -}}
-    {{- else if ne .Data.Title "" }}{{ .Data.Title }}
-    {{- else }}{{ block "title" . }}{{end}}
-    {{- end -}}
-  </title>
-  <meta name="description" value="
-    {{- if eq .Data.PageName "/" }}Dictionary website
-    {{- else if eq .Data.PageName "glossary" }}Glossary of words.
-    {{- else if eq .Data.PageName "search" }}{{ .Data.Query.Query }} meaning.
-    {{- else if ne .Data.Description "" }}{{ .Data.Description }}
-    {{- else }}{{ block "description" . }}{{end}}
-    {{- end -}}" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  {{- block "meta" . -}}
+    <title>
+      {{- if eq .Data.PageType "/" }} {{- .L.T "global.siteName" -}}
+      {{- else if eq .Data.PageType "glossary" }}{{- .L.T "public.glossaryTitle" -}}
+      {{- else if eq .Data.PageType "search" }}{{- .L.Ts "public.searchTitle" "query" .Data.Query.Query -}}
+      {{- else if ne .Data.Title "" }}{{ .Data.Title }}
+      {{- end -}}
+    </title>
+    <meta name="description" value="
+      {{- if eq .Data.PageType "/" }}Dictionary website
+      {{- else if eq .Data.PageType "glossary" }}Glossary of words.
+      {{- else if eq .Data.PageType "search" }}{{ .Data.Query.Query }} meaning.
+      {{- else if ne .Data.Description "" }}{{ .Data.Description }}
+      {{- else }}{{ block "description" . }}{{end}}
+      {{- end -}}" />
+  {{- end -}}
+
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 	<script>window._ROOT_URL = "{{ .Consts.RootURL }}";</script>
 	<link rel="shortcut icon" href="{{ .Consts.RootURL }}/static/favicon.png?v={{ .AssetVer }}" type="image/x-icon" />
   <link href="{{ .Consts.RootURL }}/static/flexit.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
   <link href="{{ .Consts.RootURL }}/static/style.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
 </head>
-<body class="{{ if eq .Data.PageName "/"}}home{{ end }}">
+<body class="{{ if eq .Data.PageType "/"}}home{{ end }}">
 <div class="wrap">
   <section class="container main box">
     <header class="header">

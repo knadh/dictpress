@@ -48,9 +48,12 @@ type Consts struct {
 // App contains the "global" components that are
 // passed around, especially through HTTP handlers.
 type App struct {
-	consts     Consts
-	adminTpl   *template.Template
-	siteTpl    *template.Template
+	consts Consts
+
+	adminTpl     *template.Template
+	siteTpl      *template.Template
+	sitePageTpls map[string]*template.Template
+
 	db         *sqlx.DB
 	queries    *data.Queries
 	data       *data.Data
@@ -205,7 +208,7 @@ func main() {
 	// Load optional HTML website.
 	if app.consts.Site != "" {
 		lo.Printf("loading site theme: %s", app.consts.Site)
-		t, err := loadSite(app.consts.Site, ko.Bool("app.enable_pages"))
+		theme, pages, err := loadSite(app.consts.Site, ko.Bool("app.enable_pages"))
 		if err != nil {
 			lo.Fatalf("error loading site theme: %v", err)
 		}
@@ -223,8 +226,9 @@ func main() {
 		}
 
 		// Attach HTML template renderer.
-		app.siteTpl = t
-		srv.Renderer = &tplRenderer{tpls: t}
+		app.siteTpl = theme
+		app.sitePageTpls = pages
+		srv.Renderer = &tplRenderer{tpls: theme}
 	}
 
 	lo.Printf("starting server on %s", ko.MustString("app.address"))

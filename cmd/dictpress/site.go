@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 	"net/url"
+	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -25,7 +28,9 @@ const (
 )
 
 type pageTpl struct {
-	PageName    string
+	PageType string
+	PageID   string
+
 	Title       string
 	Heading     string
 	Description string
@@ -72,7 +77,7 @@ func init() {
 // handleIndexPage renders the homepage.
 func handleIndexPage(c echo.Context) error {
 	return c.Render(http.StatusOK, "index", pageTpl{
-		PageName: pageIndex,
+		PageType: pageIndex,
 	})
 }
 
@@ -88,7 +93,7 @@ func handleSearchPage(c echo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, "search", pageTpl{
-		PageName: pageSearch,
+		PageType: pageSearch,
 		Results:  res,
 		Query:    &query,
 	})
@@ -142,7 +147,7 @@ func handleGlossaryPage(c echo.Context) error {
 	if len(initials) == 0 {
 		// No glossary initials found.
 		return c.Render(http.StatusOK, "glossary", pageTpl{
-			PageName: pageGlossary,
+			PageType: pageGlossary,
 			Initial:  initial,
 		})
 	}
@@ -174,7 +179,7 @@ func handleGlossaryPage(c echo.Context) error {
 
 	// Render the results.
 	return c.Render(http.StatusOK, "glossary", pageTpl{
-		PageName: pageGlossary,
+		PageType: pageGlossary,
 		Initial:  initial,
 		Initials: initials,
 		Glossary: gloss,
@@ -187,35 +192,53 @@ func handleGlossaryPage(c echo.Context) error {
 func handleStaticPage(c echo.Context) error {
 	var (
 		app = c.Get("app").(*App)
-		id  = "page-" + strings.TrimRight(c.Param("page"), "/")
+		id  = strings.TrimRight(c.Param("page"), "/")
 	)
 
-	if app.siteTpl.Lookup(id) == nil {
+	tpl, ok := app.sitePageTpls[id]
+	if !ok {
 		return c.Render(http.StatusNotFound, "message", pageTpl{
 			Title:   "404",
 			Heading: "Page not found",
 		})
 	}
 
-	return c.Render(http.StatusOK, id, pageTpl{
-		PageName: pageStatic,
-	})
+	// Render the body.
+	b := bytes.Buffer{}
+
+	if err := tpl.ExecuteTemplate(&b, "page-"+id, tplData{
+		Path:     c.Path(),
+		AssetVer: assetVer,
+		Consts:   app.consts,
+		Langs:    app.data.Langs,
+		Dicts:    app.data.Dicts,
+		L:        app.i18n,
+		Data: pageTpl{
+			PageType: pageStatic,
+			PageID:   id,
+		},
+	}); err != nil {
+		return err
+	}
+
+	return c.HTMLBlob(http.StatusOK, b.Bytes())
 }
 
-// loadSite loads HTML site theme templates.
-func loadSite(path string, loadPages bool) (*template.Template, error) {
-	t := template.New("site").Funcs(sprig.FuncMap())
+// loadSite loads HTML site theme templates and any additional pages (in the `pages/` dir)
+// in a map indexed by the page's template name in {{ define "page-$name" }}.
+func loadSite(rootPath string, loadPages bool) (*template.Template, map[string]*template.Template, error) {
+	theme := template.New("site").Funcs(sprig.FuncMap())
 
 	// Go percentage encodes unicode characters printed in <a href>,
 	// but the encoded values are in lowercase hex (for some reason)
 	// See: https://github.com/golang/go/issues/33596
-	t.Funcs(template.FuncMap{"UnicodeURL": func(s string) template.URL {
+	theme.Funcs(template.FuncMap{"UnicodeURL": func(s string) template.URL {
 		s = strings.ReplaceAll(s, " ", "+")
 		return template.URL(url.PathEscape(s))
 	}})
 
-	if _, err := t.ParseGlob(path + "/*.html"); err != nil {
-		return t, err
+	if _, err := theme.ParseGlob(rootPath + "/*.html"); err != nil {
+		return nil, nil, err
 	}
 
 	// Load arbitrary pages from (site_dir/pages/*.html).
@@ -223,13 +246,44 @@ func loadSite(path string, loadPages bool) (*template.Template, error) {
 	// rendered on site.com/pages/about where the template is defined
 	// with the name {{ define "page-about" }}. All template name definitions
 	// should be "page-*".
-	if loadPages {
-		if _, err := t.ParseGlob(path + "/pages/*.html"); err != nil {
-			return t, err
-		}
+	if !loadPages {
+		return theme, nil, nil
 	}
 
-	return t, nil
+	pages := make(map[string]*template.Template)
+	files, err := filepath.Glob(path.Join(rootPath, "/pages", "*.html"))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Iterate through all *.html files in the given directory
+	for _, file := range files {
+		copy, err := theme.Clone()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		t, err := copy.ParseFiles(file)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Get the name of individual templates ({{ define "page-$name" }}.
+		name := ""
+		for _, t := range t.Templates() {
+			if t.Tree != nil && strings.HasPrefix(t.Tree.Name, "page-") {
+				name = strings.TrimPrefix(t.Tree.Name, "page-")
+				if old, ok := pages[name]; ok {
+					return nil, nil, fmt.Errorf("template '%s' in %s already defined in %s", t.Tree.Name, t.Name(), old.Name())
+				}
+				break
+			}
+		}
+
+		pages[name] = t
+	}
+
+	return theme, pages, nil
 }
 
 // Render executes and renders a template for echo.
