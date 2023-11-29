@@ -20,7 +20,7 @@ directMatch AS (
     -- "simple" (Postgres token dictionary that merely removes English stopwords) tokens.
     -- Rank is the inverted string length so that all results in this query have a negative
     -- value to rank higher than results from tokenMatch.
-    SELECT COUNT(*) OVER () AS total, entries.*, -1 * ( 50 - LENGTH(content)) AS rank FROM entries
+    SELECT DISTINCT ON (entries.id) entries.*, -1 * ( 50 - LENGTH(content)) AS rank FROM entries
         INNER JOIN relations ON entries.id = relations.from_id
         WHERE
         ($4 = '' OR lang=$4)
@@ -36,7 +36,7 @@ directMatch AS (
 tokenMatch AS (
     -- Full text search for words with proper tokens either from a built-in Postgres dictionary
     -- or externally computed tokens ($3) 
-    SELECT COUNT(*) OVER () AS total, entries.*, 1 - TS_RANK(tokens, (SELECT query FROM q), 0) AS rank FROM entries
+    SELECT DISTINCT ON (entries.id) entries.*, 1 - TS_RANK(tokens, (SELECT query FROM q), 0) AS rank FROM entries
         INNER JOIN relations ON entries.id = relations.from_id
         WHERE
         ($4 = '' OR lang=$4)
@@ -45,23 +45,17 @@ tokenMatch AS (
         AND entries.id NOT IN (SELECT id FROM directMatch)
         AND (CASE WHEN $6 != '' THEN entries.status = $6::entry_status ELSE TRUE END)
 ),
-totals AS (
-    -- Pre-compute the total from both queries as either may return null. This total
-    -- is then be selected with every row in the final UNION.
-    SELECT COALESCE((SELECT total FROM directMatch LIMIT 1), 0) + COALESCE((SELECT total FROM tokenMatch LIMIT 1), 0) AS total
-),
 results AS (
     -- Combine results from direct matches and token matches. As directMatches ranks are
     -- forced to be negative, they will rank on top. 
-    SELECT DISTINCT ON (combined.id) combined.*, (SELECT total FROM totals) AS total
+    SELECT DISTINCT ON (combined.id) combined.*
     FROM (
         SELECT * FROM directMatch
         UNION ALL
         SELECT * FROM tokenMatch
     ) AS combined
-    OFFSET $7 LIMIT $8
 )
-SELECT * FROM results ORDER BY rank;
+SELECT COUNT(*) OVER () AS total, * FROM results ORDER BY rank OFFSET $7 LIMIT $8;
 
 -- name: search-relations
 SELECT entries.*,
