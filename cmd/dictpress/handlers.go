@@ -14,9 +14,15 @@ import (
 
 // results represents a set of results.
 type results struct {
-	FromLang string       `json:"-"`
-	ToLang   string       `json:"-"`
-	Entries  []data.Entry `json:"entries"`
+	Entries []data.Entry `json:"entries"`
+
+	Query struct {
+		Query    string   `json:"query"`
+		FromLang string   `json:"from_lang"`
+		ToLang   string   `json:"to_lang"`
+		Types    []string `json:"types"`
+		Tags     []string `json:"tags"`
+	} `json:"query"`
 
 	// Pagination fields.
 	paginator.Set
@@ -24,8 +30,8 @@ type results struct {
 
 // glossary represents a set of glossary words.
 type glossary struct {
-	FromLang string              `json:"-"`
-	ToLang   string              `json:"-"`
+	FromLang string              `json:"from_lang"`
+	ToLang   string              `json:"to_lang"`
 	Words    []data.GlossaryWord `json:"entries"`
 
 	// Pagination fields.
@@ -163,6 +169,19 @@ func doSearch(c echo.Context, isAuthed bool) (data.Query, *results, error) {
 	}
 
 	pg.SetTotal(total)
+
+	out.Query.FromLang = fromLang
+	out.Query.ToLang = toLang
+	out.Query.Types = qp["type"]
+	out.Query.Tags = qp["tag"]
+	out.Query.Query = q
+
+	if out.Query.Types == nil {
+		out.Query.Types = []string{}
+	}
+	if out.Query.Tags == nil {
+		out.Query.Tags = []string{}
+	}
 
 	out.Entries = res
 	out.Page = pg.Page
