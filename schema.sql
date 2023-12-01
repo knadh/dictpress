@@ -78,3 +78,12 @@ CREATE TABLE comments (
 
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- settings
+DROP TABLE IF EXISTS settings CASCADE;
+CREATE TABLE settings (
+    key             TEXT NOT NULL UNIQUE,
+    value           JSONB NOT NULL DEFAULT '{}',
+    updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+DROP INDEX IF EXISTS idx_settings_key; CREATE INDEX idx_settings_key ON settings(key);

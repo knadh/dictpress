@@ -84,8 +84,9 @@ func init() {
 		"path to one or more config files (will be merged in order)")
 	f.String("site", "", "path to a site theme. If left empty, only HTTP APIs will be available.")
 	f.Bool("install", false, "run first time DB installation")
+	f.Bool("upgrade", false, "upgrade database to the current version")
+	f.Bool("yes", false, "assume 'yes' to prompts during --install/upgrade")
 	f.String("import", "", "import a CSV file into the database. eg: --import=data.csv")
-	f.Bool("yes", false, "assume 'yes' to prompts, eg: during --install")
 	f.Bool("version", false, "current version of the build")
 
 	if err := f.Parse(os.Args[1:]); err != nil {
@@ -143,9 +144,17 @@ func main() {
 
 	// Install schema.
 	if ko.Bool("install") {
-		installSchema(app, !ko.Bool("yes"))
+		installSchema(migList[len(migList)-1].version, app, !ko.Bool("yes"))
 		return
 	}
+
+	if ko.Bool("upgrade") {
+		upgrade(db, app.fs, !ko.Bool("yes"))
+		os.Exit(0)
+	}
+
+	// Before the queries are prepared, see if there are pending upgrades.
+	checkUpgrade(db)
 
 	// Load SQL queries.
 	qB, err := app.fs.Read("/queries.sql")

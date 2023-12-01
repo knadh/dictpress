@@ -18,6 +18,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/spf13/pflag v1.0.5
 	gitlab.com/joice/mlphone-go v0.0.0-20201001084309-2bb02984eed8
+	golang.org/x/mod v0.8.0
 	gopkg.in/volatiletech/null.v6 v6.0.0-20170828023728-0bef4e07ae1b
 )
 
