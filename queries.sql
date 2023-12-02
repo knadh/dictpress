@@ -210,7 +210,7 @@ old AS (
     LIMIT 1
 ),
 e AS (
-    INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes, status)
+    INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes, meta, status)
     SELECT
         $1,
         $2,
@@ -220,7 +220,8 @@ e AS (
         $7,
         $8,
         $9,
-        $10
+        $10,
+        $11
     WHERE NOT EXISTS (SELECT * FROM old)
     RETURNING id
 )

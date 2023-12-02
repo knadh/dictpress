@@ -98,8 +98,7 @@ func handleNewSubmission(c echo.Context) error {
 	fromID, err := app.data.InsertSubmissionEntry(e)
 	if err != nil {
 		app.lo.Printf("error inserting submission entry: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError,
-			fmt.Sprintf("Error saving entry.", err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error saving entry.")
 	}
 
 	// Insert relations.
