@@ -45,15 +45,17 @@
             {{ range $d := .Dicts }}
               {{ $from := index $d 0}}
               {{ $to := index $d 1}}
-                <input type="radio" name="dict" value="{{ $from.ID }}/{{ $to.ID }}" id="tab-{{ $from.ID }}-{{ $to.ID }}" />
-                <label class="tab" for="tab-{{ $from.ID }}-{{ $to.ID }}">
-                  {{ $from.Name }} - {{ $to.Name }}
-                </label>
+                <div class="group">
+                  <input type="radio" name="dict" value="{{ $from.ID }}/{{ $to.ID }}" id="tab-{{ $from.ID }}-{{ $to.ID }}" aria-label="{{ $from.Name }} - {{ $to.Name }}" />
+                  <label class="tab" for="tab-{{ $from.ID }}-{{ $to.ID }}">
+                    {{ $from.Name }} - {{ $to.Name }}
+                  </label>
+                </div>
             {{ end }}
           </div>
           <form class="search-form" method="get" action="">
             <div>
-              <input autofocus autocomplete="off" required placeholder=""
+              <input autofocus autocomplete="off" required placeholder="" aria-label="Search keyword"
                 type="text" id="q" name="q" value="{{ if .Data.Query }}{{ .Data.Query.Query }}{{ end }}" />
               <button type="submit"><img src="{{ .Consts.RootURL }}/static/search.svg?v={{ .AssetVer }}" alt="{{- .L.T "global.btnSearch" -}}" /></button>
             </div>

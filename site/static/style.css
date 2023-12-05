@@ -1,10 +1,11 @@
 :root {
   --primary: #111;
   --secondary: #333;
-  --light: #888;
+  --light: #666;
   --lighter: #aaa;
   --lightest: #f4f4f4;
   --white: #fff;
+  --blue: #1a0dab;
 }
 
 * {
@@ -19,7 +20,7 @@ body {
   min-width: 375px;
 }
 html, body {
-  font-size: 15px;
+  font-size: 18px;
   line-height: 1.3;
   height: 100%;
 }
@@ -46,11 +47,11 @@ h4, h5 {
 a {
   color: var(--primary);
 }
-a:hover {
-  color: var(--secondary);
-}
+  a:hover {
+    color: var(--blue);
+  }
 
-input,
+input:not([type="radio"]),
 select,
 button,
 textarea,
@@ -136,7 +137,10 @@ button:hover, .button:hover {
     position: relative;
     margin-left: 20px;
     text-align: left;
-    margin-bottom: -2px;
+    margin-bottom: -1px;
+  }
+  .search .tabs .group {
+    display: inline;
   }
   .search .tabs input {
     opacity: 0;
@@ -235,6 +239,7 @@ button:hover, .button:hover {
   }
 
   .entries .defs .types {
+    list-style-type: none;
     margin: 0 0 10px -15px;
     color: var(--light);
     font-style: italic;
@@ -270,6 +275,12 @@ button:hover, .button:hover {
 .related ul {
   font-size: 0.875rem;
 }
+  .related ul li {
+    margin-bottom: 10px;
+  }
+  .related h2 {
+    font-size: 1rem;
+  }
 
 .form-submit {
 }
@@ -374,20 +385,22 @@ button:hover, .button:hover {
   min-height: 400px;
 }
 
-.page.open {
-  margin: 60px;
+.page {
+  margin: 0 30px;
 }
-  .page.open li {
+  .page li {
     margin-bottom: 20px;
   }
-  .page.open a {
-    color: inherit;
+  .page a {
+    color: var(--blue);
+  }
+  .page a:hover {
+    color: var(--secondary);
   }
 
 .nav {
   border-top: 1px dashed #ccc;
   padding: 15px 0;
-  font-size: .85rem;
   text-align: center;
 
   margin: 30px -30px 0 -30px;
@@ -398,11 +411,11 @@ button:hover, .button:hover {
     margin: 0 15px;
   }
   .nav a:hover {
-    color: var(--primary);
+    color: var(--blue);
   }
 
 .header {
-  margin-bottom: 20px;
+  margin-bottom: 40px;
 } 
 .footer {
   margin-bottom: 30px;
@@ -417,7 +430,7 @@ button:hover, .button:hover {
     text-decoration: none;
   }
   .footer a:hover {
-    color: var(--primary);
+    color: var(--blue);
   }
   .footer img {
     max-width: 15px;
@@ -479,6 +492,9 @@ button:hover, .button:hover {
   .container {
     max-width: 50%;
   }
+  .nav a {
+    font-size: 0.75rem;
+  }
 }
 
 @media screen and (max-width: 775px) {
@@ -517,11 +533,15 @@ button:hover, .button:hover {
   .nav a {
     display: block;
     margin-bottom: 5px;
+    padding: 5px 0;
   }
 
   .footer {
     margin-bottom: 15px;
   }
+    .footer a {
+      padding: 10px;
+    }
 
   .form-submit .columns {
     width: 100%;
@@ -538,10 +558,31 @@ button:hover, .button:hover {
 
 @media screen and (max-width: 500px) {
   .search .tabs {
-    margin: 0 50px;
+    margin: 0;
   }
-  .tabs .tab {
-    display: block;
+  .search .tabs .tab {
+    display: inline-block;
     border-bottom: 0;
+    text-align: left;
+    border: 0;
+    padding: 5px 0;
+  }
+  .search .tabs input {
+    opacity: 1;
+    position: relative;
+  }
+  .search .tabs .group {
+    display: block;
+  }
+
+  .footer a {
+    display: block;
+  }
+  .footer a.icon {
+    display: inline-block;
+  }
+  .related a {
+    display: inline-block;
+    padding: 5px 0;
   }
 }

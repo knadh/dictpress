@@ -7,7 +7,7 @@
                 <li class="entry" data-guid="{{ $r.GUID }}">
                     <header class="head">
                         {{ if $.Consts.EnableSubmissions }}
-                            <a href="" data-from="{{ $r.GUID }}" class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" $r.Content }}">✏️</a>
+                            <a href="#" data-from="{{ $r.GUID }}" class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" $r.Content }}">✏️</a>
                         {{ end }}
                         <h3 class="title">{{ $r.Content }}</h3>
 
@@ -23,12 +23,14 @@
                             {{ if ne $lastType $types }}
                                 {{- if $lastType -}}</ol>{{- end }}
                                 <ol class="defs">
-                                    <div class="types">
+                                    <li class="types">
                                         :{{- range $t := $d.RelationTypes -}}
                                             {{ index (index $.Langs $d.Lang).Types $t }} -
                                             {{ index (index $.Langs $r.Lang).Types $t }} 
-                                        {{- end -}}
-                                    </div>
+                                        {{- else -}}
+                                            -
+                                        {{ end }}
+                                    </li>
                             {{ end }}
 
                             <li>
@@ -36,7 +38,7 @@
                                     {{ $d.Content }}
 
                                     {{ if $.Consts.EnableSubmissions }}
-                                        <a href="" data-from="{{ $r.GUID }}" data-to="{{ $d.GUID }}"
+                                        <a href="#" data-from="{{ $r.GUID }}" data-to="{{ $d.GUID }}"
                                             class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" $d.Content }}">✏️</a>
                                     {{ end }}
                                 </div>
