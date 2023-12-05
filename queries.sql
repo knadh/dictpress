@@ -27,7 +27,7 @@ directMatch AS (
         AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR entries.tags && $5)
         AND (
             CASE WHEN $1 = '' THEN TRUE ELSE
-                LOWER(SUBSTRING(content, 0, 50))=LOWER(SUBSTRING($1, 0, 50))
+                REGEXP_REPLACE(LOWER(SUBSTRING(content, 0, 50)), '[0-9\s]+', '', 'g') = REGEXP_REPLACE(LOWER(SUBSTRING($1, 0, 50)), '[0-9\s]+', '', 'g')
                 OR tokens @@ PLAINTO_TSQUERY('simple', $1)
             END
         )
