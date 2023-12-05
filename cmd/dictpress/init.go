@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"unicode"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/dictpress/tokenizers/indicphone"
@@ -30,6 +31,7 @@ func initConstants(ko *koanf.Koanf) Consts {
 		AdminPassword:     ko.MustBytes("app.admin_password"),
 		EnableSubmissions: ko.Bool("app.enable_submissions"),
 		EnableGlossary:    ko.Bool("glossary.enabled"),
+		AdminAssets:       ko.Strings("app.admin_assets"),
 	}
 
 	if len(c.AdminUsername) < 6 {
@@ -89,10 +91,11 @@ func initFS() stuffbin.FileSystem {
 
 func initAdminTemplates(app *App) *template.Template {
 	// Init admin templates.
-	tpls, err := stuffbin.ParseTemplatesGlob(nil, app.fs, "/admin/*.html")
+	tpls, err := stuffbin.ParseTemplatesGlob(sprig.FuncMap(), app.fs, "/admin/*.html")
 	if err != nil {
-		lo.Fatalf("error parsing e-mail notif templates: %v", err)
+		lo.Fatalf("error parsing admin templates: %v", err)
 	}
+
 	return tpls
 }
 

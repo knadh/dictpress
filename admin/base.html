@@ -11,6 +11,14 @@
 	<script>window._ROOT_URL = "{{ .Consts.RootURL }}";</script>
 	<script defer src="{{ .Consts.RootURL }}/admin/static/main.js?v={{ .AssetVer }}"></script>
 	<script defer src="{{ .Consts.RootURL }}/admin/static/alpine.js?v={{ .AssetVer }}"></script>
+
+	{{ range $j := .Consts.AdminAssets -}}
+		{{- if (hasSuffix ".js" $j) -}}
+			<script defer src="{{ $j }}?v={{ $.AssetVer }}"></script>
+		{{- else if (hasSuffix ".css" $j) -}}
+			<link rel="stylesheet" type="text/css" href="{{ $j }}?v={{ $.AssetVer }}">
+		{{- end }}
+	{{ end }}
 </head>
 <body x-init="onLoad()" x-data="globalComponent()">
 <template x-if="ready">

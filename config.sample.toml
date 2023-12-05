@@ -10,6 +10,10 @@ admin_password = "dictpress_admin_password"
 # Example: yourdictionary.site.com
 root_url = "http://localhost:9000"
 
+# (Optional) URLs to one or more JS/CSS files (ending in .js or .css) to load on the admin UI.
+# This may be useful to integrate multi-lingual typing capabilities in admin UI boxes when dealing with different languages.
+admin_assets = []
+
 # Enable rendering arbitrary pages from (site_dir/pages/*.html).
 # For instance, "about" for site_dir/pages/about.html will be
 # rendered on site.com/pages/about where the template is defined

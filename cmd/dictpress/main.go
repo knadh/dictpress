@@ -40,6 +40,7 @@ type Lang struct {
 type Consts struct {
 	Site                         string
 	RootURL                      string
+	AdminAssets                      []string
 	EnableSubmissions            bool
 	EnableGlossary               bool
 	AdminUsername, AdminPassword []byte
