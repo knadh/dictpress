@@ -78,14 +78,9 @@ func (ip *IndicPhone) ToQuery(s string, lang string) (string, error) {
 
 	tokens := slices.Compact([]string{key2, key1, key0})
 
-	switch len(tokens) {
-	case 1:
-		return tokens[0], nil
-	case 2:
-		return fmt.Sprintf("%s |  %s ", tokens[0], tokens[1]), nil
-	case 3:
-		return fmt.Sprintf("%s | (%s & %s) ", key2, key1, key0), nil
+	if len(tokens) == 3 {
+		return fmt.Sprintf("%s | %s", key2, key1), nil
 	}
 
-	return key0, nil
+	return tokens[0], nil
 }
