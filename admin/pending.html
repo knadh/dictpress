@@ -3,7 +3,9 @@
 
 <section x-data="searchResultsComponent('pending')" x-init="onLoad" @search.window="onSearch">
     <template x-if="!id && loading['entries.search'] !== true">
-        <h3><span x-text="total"></span> pending entries</h3>
+        <h3><span x-text="total"></span> pending entries
+            <template x-if="total > -1"><a href="" @click.prevent="onClearPending()">(Clear all)</a></template>
+        </h3>
     </template>
     <template x-if="loading['entries.search'] === true">
         <span class="loading"></span>

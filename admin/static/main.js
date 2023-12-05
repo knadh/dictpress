@@ -321,7 +321,14 @@ function searchResultsComponent(typ) {
                 return;
             }
             this.api('relations.delete', `/entries/${id}`, 'DELETE').then(() => this.refresh());
-        }
+        },
+
+        onClearPending() {
+            if (!confirm("Delete all pending entries and comments?")) {
+                return false;
+            }
+            this.api('entries.delete', `/entries/pending`, 'DELETE').then(() => this.refresh());
+        },
     }
 }
 

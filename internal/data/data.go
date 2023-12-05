@@ -73,6 +73,7 @@ type Queries struct {
 	InsertComments           *sqlx.Stmt `query:"insert-comments"`
 	GetComments              *sqlx.Stmt `query:"get-comments"`
 	DeleteComments           *sqlx.Stmt `query:"delete-comments"`
+	DeleteAllPending         *sqlx.Stmt `query:"delete-all-pending"`
 	ApproveSubmission        *sqlx.Stmt `query:"approve-submission"`
 	RejectSubmission         *sqlx.Stmt `query:"reject-submission"`
 }
@@ -356,6 +357,12 @@ func (d *Data) GetComments() ([]Comments, error) {
 // DeleteComments deletes a change suggestion from the public.
 func (d *Data) DeleteComments(id int) error {
 	_, err := d.queries.DeleteComments.Exec(id)
+	return err
+}
+
+// DeleteAllPending deletes a change suggestion from the public.
+func (d *Data) DeleteAllPending() error {
+	_, err := d.queries.DeleteAllPending.Exec()
 	return err
 }
 

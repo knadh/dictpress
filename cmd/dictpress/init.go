@@ -174,6 +174,7 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 	a.GET("/api/entries/pending", handleGetPendingEntries)
 	a.GET("/api/entries/comments", handleGetComments)
 	a.DELETE("/api/entries/comments/:commentID", handleDeletecomments)
+	a.DELETE("/api/entries/pending", handleDeletePending)
 	a.GET("/api/entries/:id", handleGetEntry)
 	a.GET("/api/entries/:id/parents", handleGetParentEntries)
 	a.POST("/api/entries", handleInsertEntry)

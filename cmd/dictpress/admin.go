@@ -348,6 +348,10 @@ func handleGetComments(c echo.Context) error {
 			fmt.Sprintf("error deleting relation: %v", err))
 	}
 
+	if out == nil {
+		return c.JSON(http.StatusOK, okResp{[]interface{}{}})
+	}
+
 	return c.JSON(http.StatusOK, okResp{out})
 }
 
@@ -364,6 +368,19 @@ func handleDeletecomments(c echo.Context) error {
 	if err := app.data.DeleteComments(id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error deleting comments: %v", err))
+	}
+
+	return c.JSON(http.StatusOK, okResp{true})
+}
+
+func handleDeletePending(c echo.Context) error {
+	var (
+		app = c.Get("app").(*App)
+	)
+
+	if err := app.data.DeleteAllPending(); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			fmt.Sprintf("error deleting pending entries: %v", err))
 	}
 
 	return c.JSON(http.StatusOK, okResp{true})

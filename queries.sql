@@ -288,3 +288,11 @@ SELECT * FROM comments;
 
 -- name: delete-comments
 DELETE FROM comments WHERE id = $1;
+
+-- name: delete-all-pending
+WITH d1 AS (
+    DELETE FROM entries WHERE status = 'pending'
+), d2 AS (
+    DELETE FROM relations WHERE status = 'pending'
+)
+DELETE FROM comments;
