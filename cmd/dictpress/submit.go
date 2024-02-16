@@ -122,7 +122,7 @@ func handleNewSubmission(c echo.Context) error {
 		if err != nil {
 			app.lo.Printf("error inserting submission definition: %v", err)
 			return echo.NewHTTPError(http.StatusInternalServerError,
-				fmt.Sprintf("Error saving definition.", err))
+				fmt.Sprintf("Error saving definition: %v", err))
 		}
 
 		rel := data.Relation{
@@ -133,7 +133,7 @@ func handleNewSubmission(c echo.Context) error {
 		if _, err := app.data.InsertSubmissionRelation(fromID, toID, rel); err != nil {
 			app.lo.Printf("error inserting submission relation: %v", err)
 			return echo.NewHTTPError(http.StatusInternalServerError,
-				fmt.Sprintf("Error saving relation.", err))
+				fmt.Sprintf("Error saving relation.%v", err))
 		}
 	}
 
@@ -163,7 +163,7 @@ func handleNewComments(c echo.Context) error {
 	if err := app.data.InsertComments(s.FromGUID, s.ToGUID, s.Comments); err != nil {
 		app.lo.Printf("error inserting change submission: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError,
-			fmt.Sprintf("Error saving submission.", err))
+			fmt.Sprintf("Error saving submission: %v", err))
 	}
 
 	return c.JSON(http.StatusOK, okResp{true})
