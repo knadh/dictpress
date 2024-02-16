@@ -36,21 +36,6 @@ var (
 	langs data.LangMap
 )
 
-// func migrate(t *testing.T, db *sqlx.DB) error {
-// 	f, err := os.OpenFile("../../schema.sql", os.O_RDONLY, 0400)
-// 	if err != nil {
-// 		t.Fatal(err.Error())
-// 	}
-// 	b, err := io.ReadAll(f)
-// 	if err != nil {
-// 		t.Fatal(err.Error())
-// 	}
-//
-// 	if _, err := db.Exec(string(b)); err != nil {
-// 		t.Fatal(err.Error())
-// 	}
-// }
-
 func initDB(t *testing.T) *sqlx.DB {
 	// assumes  postgres is up
 	dbInstance, err := sqlx.Connect("postgres",
