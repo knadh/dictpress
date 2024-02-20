@@ -16,3 +16,8 @@ To configure the `[db]` section of `config.toml`, you will need a postgres insta
 1. Install postgresql.
 2. `createuser` and `createdb`. Fill config.toml with these details.
 3. `psql -Upostgres dictpress -f sample/sample.sql`
+
+## To run unit tests
+
+1. Prerequisite docker
+2.  Run `make test`

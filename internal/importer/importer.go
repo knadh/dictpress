@@ -247,7 +247,9 @@ func (im *Importer) insertEntries(entries []entry, lineStart int) error {
 			pq.StringArray(e.Tags),
 			pq.StringArray(e.Phones),
 			e.Notes,
+			e.Meta,
 			data.StatusEnabled); err != nil {
+			log.Printf("error inserting entry: %v", err)
 			return err
 		}
 		lineStart++
@@ -282,6 +284,7 @@ func (im *Importer) insertEntries(entries []entry, lineStart int) error {
 				pq.StringArray{},
 				pq.StringArray(e.Phones),
 				"",
+				e.Meta,
 				data.StatusEnabled); err != nil {
 				return err
 			}

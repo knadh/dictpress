@@ -1,0 +1,31 @@
+# contents extracted form config.sample.toml
+
+dicts = [["english", "italian"], ["italian", "english"]]
+
+[lang.english]
+name = "English"
+
+# The name of the tokenizer used to tokenize search queries.
+# This can be either a Postgres supported tsvector regconfig (eg: english|german|finnish etc.)
+# or a built-in tokenizer (eg: indicphone)
+# tokenizer_type = postgres | custom
+tokenizer = "english"
+tokenizer_type = "postgres"
+
+[lang.english.types]
+noun = "Noun"
+adj = "Adjective"
+verb = "Verb"
+adv = "Adverb"
+conj = "Conjugation"
+
+[lang.italian]
+tokenzier = "italian"
+tokenizer_type = "postgres"
+
+[lang.italian.types]
+sost = "Sostantivo"       # Noun
+verb = "Verbo"            # Verb
+
+
+

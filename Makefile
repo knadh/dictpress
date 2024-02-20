@@ -26,9 +26,22 @@ $(BIN): $(shell find . -type f -name "*.go")
 run:
 	CGO_ENABLED=0 go run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/${BIN}/*.go
 
+
+run-mock-db:
+	docker run --rm -d -p 5432:5432 --name dictpress-db -e POSTGRES_PASSWORD=dictpress -e POSTGRES_USER=dictpress -e POSTGRES_DB=dictpress postgres:13 -c log_statement=all
+	sleep 1
+	docker exec -i dictpress-db psql -U dictpress -d dictpress < schema.sql
+	touch run-mock-db
+
+clean-mock-db:
+	docker rm -f dictpress-db
+	rm run-mock-db
+
 # Run Go tests.
 .PHONY: test
-test:
+test: run-mock-db unit-test clean-mock-db
+
+unit-test:
 	go test ./...
 
 .PHONY: dist
