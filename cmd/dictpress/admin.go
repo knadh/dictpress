@@ -61,6 +61,10 @@ func handleInsertEntry(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
+	if len(e.Meta) == 0 {
+		e.Meta = map[string]interface{}{}
+	}
+
 	id, err := app.data.InsertEntry(e)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
