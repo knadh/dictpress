@@ -1,0 +1,14 @@
+on:
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  unittests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: run unit tests
+        run: make test
