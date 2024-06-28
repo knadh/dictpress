@@ -1,0 +1,17 @@
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  unittests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: run unit tests
+        run: make test
