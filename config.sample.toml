@@ -79,7 +79,7 @@ adv = "Adverb"
 conj = "Conjugation"
 
 [lang.italian]
-tokenzier = "italian"
+tokenizer = "italian"
 tokenizer_type = "postgres"
 
 [lang.italian.types]
