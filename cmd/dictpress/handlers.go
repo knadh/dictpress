@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/knadh/dictpress/internal/data"
@@ -68,6 +71,55 @@ func handleSearch(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, okResp{out})
+}
+
+// handleServeBundle serves concatenated JS or CSS files based on query parameters
+func handleServeBundle(c echo.Context, bundleType string, staticDir string) error {
+	files := c.QueryParams()["f"]
+	if len(files) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "no files specified")
+	}
+
+	var (
+		contentType string
+		ext         string
+	)
+
+	switch bundleType {
+	case "js":
+		contentType = "application/javascript"
+		ext = ".js"
+	case "css":
+		contentType = "text/css"
+		ext = ".css"
+	default:
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid bundle type")
+	}
+
+	// Build the combined buf
+	var buf bytes.Buffer
+	for _, fname := range files {
+		if filepath.Ext(fname) != ext {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid file extension")
+		}
+
+		fname = filepath.Clean(fname)
+		if strings.Contains(fname, "..") {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid filename")
+			continue
+		}
+
+		fullPath := filepath.Join(staticDir, fname)
+		data, err := os.ReadFile(fullPath)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("file not found: %s", fname))
+		}
+
+		buf.Write(data)
+		buf.WriteString("\n")
+	}
+
+	return c.Blob(http.StatusOK, contentType, buf.Bytes())
 }
 
 // doSearch is a helper function that takes an HTTP query context,
