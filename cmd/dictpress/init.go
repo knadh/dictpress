@@ -138,10 +138,21 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 			p.GET("/glossary/:fromLang/:toLang/:initial", handleGlossaryPage)
 		}
 
-		// Static files.
-		fs := http.StripPrefix("/static", http.FileServer(
-			http.Dir(filepath.Join(app.consts.Site, "static"))))
-		srv.GET("/static/*", echo.WrapHandler(fs))
+		// Static files with custom bundle handling
+		srv.GET("/static/*", func(c echo.Context) error {
+			staticDir := filepath.Join(app.consts.Site, "static")
+
+			switch c.Param("*") {
+			case "_bundle.js":
+				return handleServeBundle(c, "js", staticDir)
+			case "_bundle.css":
+				return handleServeBundle(c, "css", staticDir)
+			default:
+				// Normal static file serving
+				fs := http.StripPrefix("/static", http.FileServer(http.Dir(staticDir)))
+				return echo.WrapHandler(fs)(c)
+			}
+		})
 
 	} else {
 		// API greeting if there's no site.
