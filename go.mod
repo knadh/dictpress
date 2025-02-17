@@ -18,8 +18,9 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/spf13/pflag v1.0.5
 	gitlab.com/joice/mlphone-go v0.0.0-20201001084309-2bb02984eed8
-	golang.org/x/mod v0.8.0
+	golang.org/x/mod v0.17.0
 	gopkg.in/volatiletech/null.v6 v6.0.0-20170828023728-0bef4e07ae1b
+	gotest.tools/v3 v3.5.1
 )
 
 require (
@@ -43,12 +44,11 @@ require (
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
+	golang.org/x/crypto v0.33.0 // indirect
+	golang.org/x/net v0.35.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	gotest.tools/v3 v3.5.1 // indirect
 )
 
 replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.8
