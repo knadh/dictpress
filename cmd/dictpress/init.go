@@ -1,22 +1,18 @@
 package main
 
 import (
-	"bytes"
-	"crypto/rand"
-	"errors"
 	"fmt"
 	"html/template"
-	"io/ioutil"
-	mrand "math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
-	"unicode"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/dictpress/tokenizers/indicphone"
+	"github.com/knadh/goyesql"
+	goyesqlx "github.com/knadh/goyesql/sqlx"
 	"github.com/knadh/koanf/v2"
 	"github.com/knadh/stuffbin"
 	"github.com/labstack/echo/v4"
@@ -46,9 +42,14 @@ func initConstants(ko *koanf.Koanf) Consts {
 }
 
 // initDB initializes a database connection.
-func initDB(host string, port int, user, pwd, dbName string) *sqlx.DB {
+func initDB(ko *koanf.Koanf) *sqlx.DB {
 	db, err := sqlx.Connect("postgres",
-		fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, pwd, dbName))
+		fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			ko.MustString("db.host"),
+			ko.MustInt("db.port"),
+			ko.MustString("db.user"),
+			ko.MustString("db.password"),
+			ko.MustString("db.db")))
 	if err != nil {
 		lo.Fatalf("error initializing DB: %v", err)
 	}
@@ -89,9 +90,30 @@ func initFS() stuffbin.FileSystem {
 	return fs
 }
 
-func initAdminTemplates(app *App) *template.Template {
+func initQueries(fs stuffbin.FileSystem, db *sqlx.DB) *data.Queries {
+	// Load SQL queries.
+	qB, err := fs.Read("/queries.sql")
+	if err != nil {
+		lo.Fatalf("error reading queries.sql: %v", err)
+	}
+
+	qMap, err := goyesql.ParseBytes(qB)
+	if err != nil {
+		lo.Fatalf("error loading SQL queries: %v", err)
+	}
+
+	// Map queries to the query container.
+	var q data.Queries
+	if err := goyesqlx.ScanToStruct(&q, qMap, db.Unsafe()); err != nil {
+		lo.Fatalf("no SQL queries loaded: %v", err)
+	}
+
+	return &q
+}
+
+func initAdminTemplates(fs stuffbin.FileSystem) *template.Template {
 	// Init admin templates.
-	tpls, err := stuffbin.ParseTemplatesGlob(sprig.FuncMap(), app.fs, "/admin/*.html")
+	tpls, err := stuffbin.ParseTemplatesGlob(sprig.FuncMap(), fs, "/admin/*.html")
 	if err != nil {
 		lo.Fatalf("error parsing admin templates: %v", err)
 	}
@@ -289,39 +311,4 @@ func initDicts(langs data.LangMap, ko *koanf.Koanf) data.Dicts {
 	}
 
 	return out
-}
-
-func generateNewFiles() error {
-	if _, err := os.Stat("config.toml"); !os.IsNotExist(err) {
-		return errors.New("config.toml exists. Remove it to generate a new one")
-	}
-
-	// Initialize the static file system into which all
-	// required static assets (.sql, .js files etc.) are loaded.
-	fs := initFS()
-
-	// Generate config file.
-	b, err := fs.Read("config.sample.toml")
-	if err != nil {
-		return fmt.Errorf("error reading sample config (is binary stuffed?): %v", err)
-	}
-
-	// Inject a random password.
-	p := make([]byte, 12)
-	rand.Read(p)
-	pwd := []byte(fmt.Sprintf("%x", p))
-
-	for i, c := range pwd {
-		if mrand.Intn(4) == 1 {
-			pwd[i] = byte(unicode.ToUpper(rune(c)))
-		}
-	}
-
-	b = bytes.Replace(b, []byte("dictpress_admin_password"), pwd, -1)
-
-	if err := ioutil.WriteFile("config.toml", b, 0644); err != nil {
-		return err
-	}
-
-	return nil
 }

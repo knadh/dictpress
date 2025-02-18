@@ -30,7 +30,7 @@ var migList = []migFunc{
 
 // upgrade upgrades the database to the current version by running SQL migration files
 // for all version from the last known version to the current one.
-func upgrade(db *sqlx.DB, fs stuffbin.FileSystem, prompt bool) {
+func upgrade(prompt bool, fs stuffbin.FileSystem, db *sqlx.DB, ko *koanf.Koanf) {
 	if prompt {
 		var ok string
 		fmt.Printf("** IMPORTANT: Take a backup of the database before upgrading.\n")

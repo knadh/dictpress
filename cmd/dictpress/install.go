@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/knadh/koanf/v2"
+	"github.com/knadh/stuffbin"
 )
 
-func installSchema(ver string, app *App, prompt bool) {
+func installSchema(ver string, prompt bool, fs stuffbin.FileSystem, db *sqlx.DB, ko *koanf.Koanf) {
 	if prompt {
 		fmt.Println("")
 		fmt.Println("** first time installation **")
@@ -30,23 +32,23 @@ func installSchema(ver string, app *App, prompt bool) {
 		}
 	}
 
-	q, err := app.fs.Read("/schema.sql")
+	q, err := fs.Read("/schema.sql")
 	if err != nil {
-		app.lo.Fatal(err.Error())
+		lo.Fatal(err.Error())
 		return
 	}
 
-	if _, err := app.db.Exec(string(q)); err != nil {
-		app.lo.Fatal(err.Error())
+	if _, err := db.Exec(string(q)); err != nil {
+		lo.Fatal(err.Error())
 		return
 	}
 
 	// Insert the current migration version.
-	if err := recordMigrationVersion(ver, app.db); err != nil {
-		app.lo.Fatal(err)
+	if err := recordMigrationVersion(ver, db); err != nil {
+		lo.Fatal(err)
 	}
 
-	app.lo.Println("successfully installed schema")
+	lo.Println("successfully installed schema")
 }
 
 // recordMigrationVersion inserts the given version (of DB migration) into the

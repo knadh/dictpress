@@ -1,26 +1,27 @@
 package main
 
 import (
+	"bytes"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"html/template"
 	"log"
+	mrand "math/rand"
 	"os"
 	"path/filepath"
+	"unicode"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/dictpress/internal/importer"
 	"github.com/knadh/go-i18n"
-	"github.com/knadh/goyesql"
-	goyesqlx "github.com/knadh/goyesql/sqlx"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
-	"github.com/knadh/koanf/providers/posflag"
 	"github.com/knadh/koanf/v2"
 	"github.com/knadh/paginator"
 	"github.com/knadh/stuffbin"
-	flag "github.com/spf13/pflag"
+	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -40,7 +41,7 @@ type Lang struct {
 type Consts struct {
 	Site                         string
 	RootURL                      string
-	AdminAssets                      []string
+	AdminAssets                  []string
 	EnableSubmissions            bool
 	EnableGlossary               bool
 	AdminUsername, AdminPassword []byte
@@ -49,12 +50,7 @@ type Consts struct {
 // App contains the "global" components that are
 // passed around, especially through HTTP handlers.
 type App struct {
-	consts Consts
-
-	adminTpl     *template.Template
-	siteTpl      *template.Template
-	sitePageTpls map[string]*template.Template
-
+	consts     Consts
 	db         *sqlx.DB
 	queries    *data.Queries
 	data       *data.Data
@@ -63,144 +59,127 @@ type App struct {
 	resultsPg  *paginator.Paginator
 	glossaryPg *paginator.Paginator
 	lo         *log.Logger
+
+	adminTpl     *template.Template
+	siteTpl      *template.Template
+	sitePageTpls map[string]*template.Template
 }
 
 var (
 	lo = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
-	ko = koanf.New(".")
 )
 
-func init() {
-	// Commandline flags.
-	f := flag.NewFlagSet("config", flag.ContinueOnError)
+// loadConfig loads the configuration files before any cli actions are run.
+func loadConfig(c *cli.Context) *koanf.Koanf {
+	ko := koanf.New(".")
 
-	f.Usage = func() {
-		fmt.Println(f.FlagUsages())
-		fmt.Printf("dictpress (%s). Build dictionary websites. https://dict.press", versionString)
-		os.Exit(0)
-	}
-
-	f.Bool("new-config", false, "generate a new sample config.toml file.")
-	f.StringSlice("config", []string{"config.toml"},
-		"path to one or more config files (will be merged in order)")
-	f.String("site", "", "path to a site theme. If left empty, only HTTP APIs will be available.")
-	f.Bool("install", false, "run first time DB installation")
-	f.Bool("upgrade", false, "upgrade database to the current version")
-	f.Bool("yes", false, "assume 'yes' to prompts during --install/upgrade")
-	f.String("import", "", "import a CSV file into the database. eg: --import=data.csv")
-	f.Bool("version", false, "current version of the build")
-
-	if err := f.Parse(os.Args[1:]); err != nil {
-		lo.Fatalf("error parsing flags: %v", err)
-	}
-
-	if ok, _ := f.GetBool("version"); ok {
-		fmt.Println(buildString)
-		os.Exit(0)
-	}
-
-	// Generate new config file.
-	if ok, _ := f.GetBool("new-config"); ok {
-		if err := generateNewFiles(); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		fmt.Println("config.toml generated. Edit and run --install.")
-		os.Exit(0)
-	}
-
-	// Load config files.
-	cFiles, _ := f.GetStringSlice("config")
-	for _, f := range cFiles {
+	// Load config files in order.
+	for _, f := range c.StringSlice("config") {
 		lo.Printf("reading config: %s", f)
-
 		if err := ko.Load(file.Provider(f), toml.Parser()); err != nil {
-			fmt.Printf("error reading config: %v", err)
-			os.Exit(1)
+			log.Fatalf("error reading config: %v", err)
 		}
 	}
 
-	if err := ko.Load(posflag.Provider(f, ".", ko), nil); err != nil {
-		lo.Fatalf("error loading config: %v", err)
+	// Load command line flags into koanf.
+	if c.String("site") != "" {
+		ko.Set("site", c.String("site"))
 	}
+
+	return ko
 }
 
-func main() {
-	// Connect to the DB.
-	db := initDB(ko.MustString("db.host"),
-		ko.MustInt("db.port"),
-		ko.MustString("db.user"),
-		ko.MustString("db.password"),
-		ko.MustString("db.db"),
+func runNewConfig(ctx *cli.Context) error {
+	if _, err := os.Stat("config.toml"); !os.IsNotExist(err) {
+		lo.Fatal("config.toml exists. Remove it to generate a new one")
+	}
+
+	// Initialize the static file system into which all
+	// required static assets (.sql, .js files etc.) are loaded.
+	fs := initFS()
+
+	// Generate config file.
+	b, err := fs.Read("config.sample.toml")
+	if err != nil {
+		lo.Fatalf("error reading sample config (is binary stuffed?): %v", err)
+	}
+
+	// Inject a random password.
+	p := make([]byte, 12)
+	rand.Read(p)
+	pwd := []byte(fmt.Sprintf("%x", p))
+
+	for i, c := range pwd {
+		if mrand.Intn(4) == 1 {
+			pwd[i] = byte(unicode.ToUpper(rune(c)))
+		}
+	}
+
+	b = bytes.Replace(b, []byte("dictpress_admin_password"), pwd, -1)
+	if err := os.WriteFile("config.toml", b, 0644); err != nil {
+		return err
+	}
+
+	fmt.Println("config.toml generated. Edit and run --install.")
+	os.Exit(0)
+	return nil
+}
+
+func runInstall(c *cli.Context) error {
+	installSchema(versionString, !c.Bool("yes"), initFS(), initDB(loadConfig(c)), loadConfig(c))
+	return nil
+}
+
+func runUpgrade(c *cli.Context) error {
+	upgrade(!c.Bool("yes"), initFS(), initDB(loadConfig(c)), loadConfig(c))
+	return nil
+}
+
+func runImport(c *cli.Context) error {
+	ko := loadConfig(c)
+	q := initQueries(initFS(), initDB(ko))
+
+	imp := importer.New(initLangs(ko), q.InsertSubmissionEntry, q.InsertSubmissionRelation, initDB(ko), lo)
+	lo.Printf("importing data from %s ...", c.String("file"))
+	if err := imp.Import(c.String("file")); err != nil {
+		lo.Fatal(err)
+	}
+	os.Exit(0)
+
+	return nil
+}
+
+func runServer(c *cli.Context) error {
+	var (
+		ko     = loadConfig(c)
+		consts = initConstants(ko)
+		fs     = initFS()
+		db     = initDB(ko)
+		langs  = initLangs(ko)
+		dt     = data.New(initQueries(fs, db), langs, initDicts(langs, ko))
 	)
-	defer db.Close()
-
-	// Initialize the app context that's passed around.
-	app := &App{
-		consts: initConstants(ko),
-		db:     db,
-		fs:     initFS(),
-		lo:     lo,
-	}
-
-	// Install schema.
-	if ko.Bool("install") {
-		installSchema(migList[len(migList)-1].version, app, !ko.Bool("yes"))
-		return
-	}
-
-	if ko.Bool("upgrade") {
-		upgrade(db, app.fs, !ko.Bool("yes"))
-		os.Exit(0)
-	}
 
 	// Before the queries are prepared, see if there are pending upgrades.
 	checkUpgrade(db)
+	queries := initQueries(fs, db)
 
-	// Load SQL queries.
-	qB, err := app.fs.Read("/queries.sql")
-	if err != nil {
-		lo.Fatalf("error reading queries.sql: %v", err)
+	// Initialize the global app context for the server.
+	app := &App{
+		consts:  consts,
+		db:      db,
+		fs:      fs,
+		queries: queries,
+		data:    dt,
+
+		resultsPg: paginator.New(paginator.Opt{
+			DefaultPerPage: ko.MustInt("results.default_per_page"),
+			MaxPerPage:     ko.MustInt("results.max_per_page"),
+			NumPageNums:    ko.MustInt("results.num_page_nums"),
+			PageParam:      "page", PerPageParam: "PerPageParam",
+		}),
 	}
 
-	qMap, err := goyesql.ParseBytes(qB)
-	if err != nil {
-		lo.Fatalf("error loading SQL queries: %v", err)
-	}
-
-	// Map queries to the query container.
-	var q data.Queries
-	if err := goyesqlx.ScanToStruct(&q, qMap, db.Unsafe()); err != nil {
-		lo.Fatalf("no SQL queries loaded: %v", err)
-	}
-
-	// Load language config.
-	var (
-		langs = initLangs(ko)
-		dicts = initDicts(langs, ko)
-	)
-	// Run the CSV importer.
-	if fPath := ko.String("import"); fPath != "" {
-		imp := importer.New(langs, q.InsertSubmissionEntry, q.InsertSubmissionRelation, db, lo)
-		lo.Printf("importing data from %s ...", fPath)
-		if err := imp.Import(fPath); err != nil {
-			lo.Fatal(err)
-		}
-		os.Exit(0)
-	}
-
-	app.data = data.New(&q, langs, dicts)
-	app.queries = &q
-
-	// Result paginators.
-	app.resultsPg = paginator.New(paginator.Opt{
-		DefaultPerPage: ko.MustInt("results.default_per_page"),
-		MaxPerPage:     ko.MustInt("results.max_per_page"),
-		NumPageNums:    ko.MustInt("results.num_page_nums"),
-		PageParam:      "page", PerPageParam: "PerPageParam",
-	})
-
-	if app.consts.EnableGlossary {
+	if consts.EnableGlossary {
 		app.glossaryPg = paginator.New(paginator.Opt{
 			DefaultPerPage: ko.MustInt("glossary.default_per_page"),
 			MaxPerPage:     ko.MustInt("glossary.max_per_page"),
@@ -210,21 +189,21 @@ func main() {
 	}
 
 	// Load admin HTML templates.
-	app.adminTpl = initAdminTemplates(app)
+	app.adminTpl = initAdminTemplates(fs)
 
 	// Initialize the echo HTTP server.
 	srv := initHTTPServer(app, ko)
 
 	// Load optional HTML website.
-	if app.consts.Site != "" {
-		lo.Printf("loading site theme: %s", app.consts.Site)
-		theme, pages, err := loadSite(app.consts.Site, ko.Bool("app.enable_pages"))
+	if consts.Site != "" {
+		lo.Printf("loading site theme: %s", consts.Site)
+		theme, pages, err := loadSite(consts.Site, ko.Bool("app.enable_pages"))
 		if err != nil {
 			lo.Fatalf("error loading site theme: %v", err)
 		}
 
 		// Optionally load a language pack.
-		langFile := filepath.Join(app.consts.Site, "lang.json")
+		langFile := filepath.Join(consts.Site, "lang.json")
 		if _, err := os.Stat(langFile); !errors.Is(err, os.ErrNotExist) {
 			i, err := i18n.NewFromFile(langFile)
 			if err != nil {
@@ -244,5 +223,74 @@ func main() {
 	lo.Printf("starting server on %s", ko.MustString("app.address"))
 	if err := srv.Start(ko.MustString("app.address")); err != nil {
 		lo.Fatalf("error starting HTTP server: %v", err)
+	}
+
+	return nil
+}
+
+func main() {
+	cliApp := &cli.App{
+		Name:    "dictpress",
+		Usage:   "Build dictionary websites. https://dict.press",
+		Version: versionString,
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:    "config",
+				Value:   cli.NewStringSlice("config.toml"),
+				Usage:   "path to one or more config files (will be merged in order)",
+				EnvVars: []string{"DICTPRESS_CONFIG"},
+			},
+			&cli.StringFlag{
+				Name:    "site",
+				Usage:   "path to a site theme. If left empty, only HTTP APIs will be available",
+				EnvVars: []string{"DICTPRESS_SITE"},
+			},
+		},
+		Action: runServer,
+		Commands: []*cli.Command{
+			{
+				Name:   "new-config",
+				Usage:  "Generate a new sample config.toml file",
+				Action: runNewConfig,
+			},
+			{
+				Name:   "install",
+				Usage:  "Run first time DB installation",
+				Action: runInstall,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "yes",
+						Usage: "assume 'yes' to prompts during installation",
+					},
+				},
+			},
+			{
+				Name:   "upgrade",
+				Usage:  "Upgrade database to the current version",
+				Action: runUpgrade,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "yes",
+						Usage: "assume 'yes' to prompts during upgrade",
+					},
+				},
+			},
+			{
+				Name:   "import",
+				Usage:  "Import a CSV file into the database",
+				Action: runImport,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "file",
+						Usage:    "CSV file to import",
+						Required: true,
+					},
+				},
+			},
+		},
+	}
+
+	if err := cliApp.Run(os.Args); err != nil {
+		lo.Fatal(err)
 	}
 }
