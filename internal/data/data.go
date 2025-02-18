@@ -52,20 +52,21 @@ type Token struct {
 
 // Queries contains prepared DB queries.
 type Queries struct {
-	Search             *sqlx.Stmt `query:"search"`
-	SearchRelations    *sqlx.Stmt `query:"search-relations"`
-	GetEntry           *sqlx.Stmt `query:"get-entry"`
-	GetParentRelations *sqlx.Stmt `query:"get-parent-relations"`
-	GetInitials        *sqlx.Stmt `query:"get-initials"`
-	GetGlossaryWords   *sqlx.Stmt `query:"get-glossary-words"`
-	InsertEntry        *sqlx.Stmt `query:"insert-entry"`
-	UpdateEntry        *sqlx.Stmt `query:"update-entry"`
-	InsertRelation     *sqlx.Stmt `query:"insert-relation"`
-	UpdateRelation     *sqlx.Stmt `query:"update-relation"`
-	ReorderRelations   *sqlx.Stmt `query:"reorder-relations"`
-	DeleteEntry        *sqlx.Stmt `query:"delete-entry"`
-	DeleteRelation     *sqlx.Stmt `query:"delete-relation"`
-	GetStats           *sqlx.Stmt `query:"get-stats"`
+	Search               *sqlx.Stmt `query:"search"`
+	SearchRelations      *sqlx.Stmt `query:"search-relations"`
+	GetEntry             *sqlx.Stmt `query:"get-entry"`
+	GetParentRelations   *sqlx.Stmt `query:"get-parent-relations"`
+	GetInitials          *sqlx.Stmt `query:"get-initials"`
+	GetGlossaryWords     *sqlx.Stmt `query:"get-glossary-words"`
+	InsertEntry          *sqlx.Stmt `query:"insert-entry"`
+	UpdateEntry          *sqlx.Stmt `query:"update-entry"`
+	InsertRelation       *sqlx.Stmt `query:"insert-relation"`
+	UpdateRelation       *sqlx.Stmt `query:"update-relation"`
+	ReorderRelations     *sqlx.Stmt `query:"reorder-relations"`
+	DeleteEntry          *sqlx.Stmt `query:"delete-entry"`
+	DeleteRelation       *sqlx.Stmt `query:"delete-relation"`
+	GetStats             *sqlx.Stmt `query:"get-stats"`
+	GetEntriesForSitemap *sqlx.Stmt `query:"get-entries-for-sitemap"`
 
 	GetPendingEntries        *sqlx.Stmt `query:"get-pending-entries"`
 	InsertSubmissionEntry    *sqlx.Stmt `query:"insert-submission-entry"`

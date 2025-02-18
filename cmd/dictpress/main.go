@@ -148,6 +148,36 @@ func runImport(c *cli.Context) error {
 
 	return nil
 }
+func runSitemap(c *cli.Context) error {
+	var (
+		ko      = loadConfig(c)
+		queries = initQueries(initFS(), initDB(ko))
+		consts  = initConstants(ko)
+	)
+
+	lo.Printf("generating sitemaps for %s -> %s", c.String("from-lang"), c.String("to-lang"))
+
+	// Generate the sitemaps.
+	err := generateSitemaps(c.String("from-lang"),
+		c.String("to-lang"),
+		consts.RootURL,
+		c.Int("max-rows"),
+		c.String("output-prefix"),
+		c.String("output-dir"),
+		queries.GetEntriesForSitemap)
+	if err != nil {
+		lo.Fatal(err)
+	}
+
+	// Generate robots.txt?
+	if c.Bool("robots") {
+		if err := generateRobotsTxt(c.String("url"), c.String("output-dir")); err != nil {
+			lo.Fatal(err)
+		}
+	}
+
+	return nil
+}
 
 func runServer(c *cli.Context) error {
 	var (
@@ -284,6 +314,47 @@ func main() {
 						Name:     "file",
 						Usage:    "CSV file to import",
 						Required: true,
+					},
+				},
+			},
+			{
+				Name:   "sitemap",
+				Usage:  "Generate static txt sitemap files for all dictionary entries for search engines.",
+				Action: runSitemap,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "from-lang",
+						Usage:    "Language to translate from",
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:     "to-lang",
+						Usage:    "Language to translate to",
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:     "url",
+						Usage:    "Root URL where sitemaps will be placed (only used in robots.txt). Eg: https://site.com/sitemaps",
+						Required: false,
+					},
+					&cli.IntFlag{
+						Name:  "max-rows",
+						Usage: "Maximum number of URL rows per sitemap file",
+						Value: 49990,
+					},
+					&cli.StringFlag{
+						Name:  "output-prefix",
+						Usage: "Prefix for the sitemap files. Eg: sitemap generates sitemap_1.txt, sitemap_2.txt etc.",
+						Value: "sitemap",
+					},
+					&cli.StringFlag{
+						Name:  "output-dir",
+						Usage: "Directory to generate the files in",
+						Value: "sitemaps",
+					},
+					&cli.BoolFlag{
+						Name:  "robots",
+						Usage: "Generate robots.txt",
 					},
 				},
 			},

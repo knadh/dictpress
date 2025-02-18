@@ -296,3 +296,6 @@ WITH d1 AS (
     DELETE FROM relations WHERE status = 'pending'
 )
 DELETE FROM comments;
+
+-- name: get-entries-for-sitemap
+SELECT DISTINCT e.content FROM entries e INNER JOIN relations r ON e.id = r.from_id WHERE e.lang = $1 ORDER BY content;
