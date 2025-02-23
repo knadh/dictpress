@@ -60,6 +60,16 @@ db = "dbname"
 user = "username"
 password = "password"
 
+# Tokenizer specific config. IndicPhone generates a phone based index for Indian languages.
+# Every input word generates 3 keys, key0 being the broadest phonetic match and key2 being the closest.
+# The broadest key when used as a search token generally returns a lot of false positives.
+# The number of keys to include, 1-3, can be configured here. The inclusion is in the order key2, key1, key0.
+[tokenizer.indicphone.kn]
+num_keys = 2
+
+[tokenizer.indicphone.ml]
+num_keys = 2
+
 
 [lang.english]
 name = "English"

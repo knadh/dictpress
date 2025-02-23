@@ -122,9 +122,14 @@ func initAdminTemplates(fs stuffbin.FileSystem) *template.Template {
 }
 
 // initTokenizers initializes all bundled tokenizers.
-func initTokenizers() map[string]data.Tokenizer {
+func initTokenizers(ko *koanf.Koanf) map[string]data.Tokenizer {
 	return map[string]data.Tokenizer{
-		"indicphone": indicphone.New(),
+		"indicphone": indicphone.New(
+			indicphone.Config{
+				NumKNKeys: ko.MustInt("tokenizer.indicphone.kn.num_keys"),
+				NumMLKeys: ko.MustInt("tokenizer.indicphone.ml.num_keys"),
+			},
+		),
 	}
 }
 
@@ -240,7 +245,7 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 // initLangs loads language configuration into a given *App instance.
 func initLangs(ko *koanf.Koanf) data.LangMap {
 	var (
-		tks = initTokenizers()
+		tks = initTokenizers(ko)
 		out = make(data.LangMap)
 	)
 
