@@ -7,7 +7,7 @@ theme:
   language: "en"
   font:
     text: 'Inter'
-    weights: 400
+    weights: 400, 500, 600
   direction: 'ltr'
   extra:
   search:

@@ -1,5 +1,5 @@
 dictpress comes with a built in CSV to database importer tool. Once dictionary data has been organised into
-the below described structure, import it by running `./dictpress --import=yourfile.csv`.
+the below described structure, import it by running `./dictpress import --file=yourfile.csv`.
 
 Entries with the same content in the same language are not inserted into the database multiple times, but are instead re-used.
 For instance, if there are multiple `Apple (English)` entries, it is inserted once but re-used in multiple relations.

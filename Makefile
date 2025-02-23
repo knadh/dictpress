@@ -6,7 +6,6 @@ VERSION := $(or $(shell git describe --tags --abbrev=0 2> /dev/null),$(shell gre
 
 BUILDSTR := ${VERSION} (\#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
 
-YARN ?= yarn
 GOPATH ?= $(HOME)/go
 STUFFBIN ?= $(GOPATH)/bin/stuffbin
 
