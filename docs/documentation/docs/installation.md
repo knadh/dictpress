@@ -14,7 +14,7 @@ See [Importing data](import.md) to populate the dictionary database from CSVs.
 
 Make sure `go` is installed on your system.
 
-1. Download or `git clone` the latest tagged release or the bleeding edge `master` branch from the [repository](https://github.com/knadh/listmonk).
+1. Download or `git clone` the latest tagged release or the bleeding edge `master` branch from the [repository](https://github.com/knadh/dictpress).
 Eg: `git clone git@github.com:knadh/dictpress.git`
 
 1. `cd` into the dictpress directory and run `make dist`. This compiles the `dictpress` binary.
