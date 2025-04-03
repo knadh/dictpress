@@ -102,7 +102,8 @@ function globalComponent() {
                 tags: [],
                 phones: [],
                 relations: [],
-                status: 'enabled'
+                status: 'enabled',
+                meta: {}
             });
         }
     }
@@ -346,7 +347,6 @@ function entryComponent() {
             this.$dispatch('close-definition-form');
 
             const data = e.detail;
-
             this.entry = {
                 ...data,
                 phones: data.phones.join('\n'),
