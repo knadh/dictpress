@@ -106,7 +106,6 @@ func handleServeBundle(c echo.Context, bundleType string, staticDir string) erro
 		fname = filepath.Clean(fname)
 		if strings.Contains(fname, "..") {
 			return echo.NewHTTPError(http.StatusBadRequest, "invalid filename")
-			continue
 		}
 
 		fullPath := filepath.Join(staticDir, fname)

@@ -23,10 +23,10 @@
   {{- end -}}
 
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-	<script>window._ROOT_URL = "{{ .Consts.RootURL }}";</script>
-	<link rel="shortcut icon" href="{{ .Consts.RootURL }}/static/favicon.png?v={{ .AssetVer }}" type="image/x-icon" />
-  <link href="{{ .Consts.RootURL }}/static/flexit.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
-  <link href="{{ .Consts.RootURL }}/static/style.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
+	<script>window._ROOT_URL = "/";</script>
+	<link rel="shortcut icon" href="/static/favicon.png?v={{ .AssetVer }}" type="image/x-icon" />
+  <link href="/static/flexit.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
+  <link href="/static/style.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
 </head>
 <body class="{{ if eq .Data.PageType "/"}}home{{ end }}">
 <div class="container">
@@ -34,7 +34,7 @@
     <header class="header">
       <div class="row">
         <div class="logo four columns">
-          <a href="{{ .Consts.RootURL }}"><img src="{{ .Consts.RootURL }}/static/logo.svg?v={{ .AssetVer }}" alt="Dictionary logo" /></a>
+          <a href=""><img src="/static/logo.svg?v={{ .AssetVer }}" alt="Dictionary logo" /></a>
           <h3 class="intro">
             {{- .L.T "public.subTitle" -}}
           </h3>
@@ -57,7 +57,7 @@
             <div>
               <input autofocus autocomplete="off" required placeholder="" aria-label="Search keyword"
                 type="text" id="q" name="q" value="{{ if .Data.Query }}{{ .Data.Query.Query }}{{ end }}" />
-              <button type="submit"><img src="{{ .Consts.RootURL }}/static/search.svg?v={{ .AssetVer }}" alt="{{- .L.T "global.btnSearch" -}}" /></button>
+              <button type="submit"><img src="/static/search.svg?v={{ .AssetVer }}" alt="{{- .L.T "global.btnSearch" -}}" /></button>
             </div>
           </form>
         </div>
@@ -98,7 +98,7 @@
   </div>
   </form>
 
-  <script src="{{ .Consts.RootURL }}/static/main.js?v={{ .AssetVer }}"></script>
+  <script src="/static/main.js?v={{ .AssetVer }}"></script>
 </body>
 
 </html>
