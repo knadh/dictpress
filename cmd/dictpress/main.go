@@ -137,9 +137,10 @@ func runUpgrade(c *cli.Context) error {
 
 func runImport(c *cli.Context) error {
 	ko := loadConfig(c)
-	q := initQueries(initFS(), initDB(ko))
+	db := initDB(ko)
+	q := initQueries(initFS(), db)
 
-	imp := importer.New(initLangs(ko), q.InsertSubmissionEntry, q.InsertSubmissionRelation, initDB(ko), lo)
+	imp := importer.New(initLangs(ko), q.InsertSubmissionEntry, q.InsertSubmissionRelation, db, lo)
 	lo.Printf("importing data from %s ...", c.String("file"))
 	if err := imp.Import(c.String("file")); err != nil {
 		lo.Fatal(err)
