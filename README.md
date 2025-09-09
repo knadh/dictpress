@@ -5,6 +5,7 @@ dictpress is a free and open source, single binary webserver application for bui
 Example dictionaries:
 - [Alar](https://alar.ink/) — Kannada-English dictionary.
 - [Olam](https://olam.in/) — English-Malayalam, Malayalam-Malayalam dictionary.
+- [Sourashtra Dictionary](https://dictionary.thinnal.org/) - Sourashtra English, Sourashtra Tamil dictionary.
 
 
 ## Features
