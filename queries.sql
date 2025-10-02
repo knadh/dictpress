@@ -20,7 +20,7 @@ directMatch AS (
     -- "simple" (Postgres token dictionary that merely removes English stopwords) tokens.
     -- Rank is the inverted string length so that all results in this query have a negative
     -- value to rank higher than results from tokenMatch.
-    SELECT DISTINCT ON (entries.id) entries.*, -1 * ( 50 - LENGTH(content)) AS rank FROM entries
+    SELECT DISTINCT ON (entries.id) entries.*, entries.weight + (-1 * ( 50 - LENGTH(content))) AS rank FROM entries
         INNER JOIN relations ON entries.id = relations.from_id
         WHERE
         ($4 = '' OR lang=$4)
@@ -36,7 +36,7 @@ directMatch AS (
 tokenMatch AS (
     -- Full text search for words with proper tokens either from a built-in Postgres dictionary
     -- or externally computed tokens ($3) 
-    SELECT DISTINCT ON (entries.id) entries.*, 1 - TS_RANK(tokens, (SELECT query FROM q), 0) AS rank FROM entries
+    SELECT DISTINCT ON (entries.id) entries.*, entries.weight + (1 - TS_RANK(tokens, (SELECT query FROM q), 0)) AS rank FROM entries
         INNER JOIN relations ON entries.id = relations.from_id
         WHERE
         ($4 = '' OR lang=$4)
