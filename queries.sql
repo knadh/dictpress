@@ -77,7 +77,7 @@ WHERE
     -- AND tokens @@ (CASE WHEN $4 != '' THEN plainto_tsquery($4::regconfig, $5::TEXT) ELSE to_tsquery($5) END)
     AND from_id = ANY($4::INT[])
     AND (CASE WHEN $5 != '' THEN relations.status = $5::entry_status ELSE TRUE END)
-ORDER BY relations.weight, relations.types;
+ORDER BY relations.types, relations.weight;
 
 -- name: get-pending-entries
 WITH ids AS (
