@@ -123,13 +123,12 @@ func initAdminTemplates(fs stuffbin.FileSystem) *template.Template {
 
 // initTokenizers initializes all bundled tokenizers.
 func initTokenizers(ko *koanf.Koanf) map[string]data.Tokenizer {
+	cfg := indicphone.Config{
+		NumKNKeys: ko.Int("tokenizer.indicphone.kn.num_keys"),
+		NumMLKeys: ko.Int("tokenizer.indicphone.ml.num_keys"),
+	}
 	return map[string]data.Tokenizer{
-		"indicphone": indicphone.New(
-			indicphone.Config{
-				NumKNKeys: ko.MustInt("tokenizer.indicphone.kn.num_keys"),
-				NumMLKeys: ko.MustInt("tokenizer.indicphone.ml.num_keys"),
-			},
-		),
+		"indicphone": indicphone.New(cfg),
 	}
 }
 

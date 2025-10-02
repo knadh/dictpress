@@ -26,6 +26,13 @@ type IndicPhone struct {
 
 // New returns a new instance of the Kannada tokenizer.
 func New(config Config) *IndicPhone {
+	if config.NumKNKeys < 0 {
+		config.NumKNKeys = 2
+	}
+	if config.NumMLKeys < 0 {
+		config.NumMLKeys = 2
+	}
+
 	return &IndicPhone{
 		config: config,
 		kn:     knphone.New(),
