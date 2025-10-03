@@ -23,7 +23,10 @@
   {{- end -}}
 
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-	<script>window._ROOT_URL = "/";</script>
+	<script>
+    window._ROOT_URL = "";
+    window._MAX_CONTENT_ITEMS = {{ .Consts.SiteMaxEntryContentItems }};
+  </script>
 	<link rel="shortcut icon" href="/static/favicon.png?v={{ .AssetVer }}" type="image/x-icon" />
   <link href="/static/flexit.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
   <link href="/static/style.css?v={{ .AssetVer }}" rel="stylesheet" type="text/css" />
@@ -34,30 +37,29 @@
     <header class="header">
       <div class="row">
         <div class="logo four columns">
-          <a href=""><img src="/static/logo.svg?v={{ .AssetVer }}" alt="Dictionary logo" /></a>
+          <a href="/"><img src="/static/logo.svg?v={{ .AssetVer }}" alt="Dictionary logo" /></a>
           <h3 class="intro">
             {{- .L.T "public.subTitle" -}}
           </h3>
         </div><!-- logo col -->
 
         <div class="search eight columns">
-          <div class="tabs">
-            {{ range $d := .Dicts }}
-              {{ $from := index $d 0}}
-              {{ $to := index $d 1}}
-                <div class="group">
-                  <input type="radio" name="dict" value="{{ $from.ID }}/{{ $to.ID }}" id="tab-{{ $from.ID }}-{{ $to.ID }}" aria-label="{{ $from.Name }} - {{ $to.Name }}" />
-                  <label class="tab" for="tab-{{ $from.ID }}-{{ $to.ID }}">
-                    {{ $from.Name }} - {{ $to.Name }}
-                  </label>
-                </div>
-            {{ end }}
-          </div>
           <form class="search-form" method="get" action="">
             <div>
-              <input autofocus autocomplete="off" required placeholder="" aria-label="Search keyword"
-                type="text" id="q" name="q" value="{{ if .Data.Query }}{{ .Data.Query.Query }}{{ end }}" />
-              <button type="submit"><img src="/static/search.svg?v={{ .AssetVer }}" alt="{{- .L.T "global.btnSearch" -}}" /></button>
+              <select name="lang" aria-label="Select dictionary">
+                {{ range $d := .Dicts }}
+                  {{ $from := index $d 0}}
+                  {{ $to := index $d 1}}
+                    <option value="{{ $from.ID }}/{{ $to.ID }}">
+                      {{ $from.Name }} - {{ $to.Name }}
+                    </option>
+                {{ end }}
+              </select>
+              <div class="input-group">
+                <input autofocus autocomplete="off" required placeholder="" aria-label="Search word"
+                  type="text" id="q" name="q" value="{{ if .Data.Query }}{{ .Data.Query.Query }}{{ end }}" />
+                <button type="submit" aria-label="Search"><img src="/static/search.svg?v={{ .AssetVer }}" alt="{{- .L.T "global.btnSearch" -}}" /></button>
+              </div>
             </div>
           </form>
         </div>
@@ -98,7 +100,7 @@
   </div>
   </form>
 
-  <script src="/static/main.js?v={{ .AssetVer }}"></script>
+  <script type="module" src="/static/main.js?v={{ .AssetVer }}"></script>
 </body>
 
 </html>

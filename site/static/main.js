@@ -1,24 +1,19 @@
 (() => {
-  const elTabs = document.querySelectorAll(`.tabs input`);
   const elForm = document.querySelector("form.search-form");
   const elQ = document.querySelector("#q");
-  const defaultLang = document.querySelector(`.tabs input:first-child`).value;
+  const elSelDict = document.querySelector("form.search-form select");
+  const defaultLang = elSelDict.value;
+
+
+  // ===================================
+  // Helper functions.
 
   function selectDict(dict) {
     // dict is in the format '$fromLang/$toLang'.
     const langs = dict.split("/");
-    const t = document.querySelector(`.tabs #tab-${langs[0]}-${langs[1]}`);
-    if (!t) {
-      return;
-    }
-
     Object.assign(localStorage, { dict, from_lang: langs[0], to_lang: langs[1] });
-
-    t.checked = true;
+    elSelDict.value = dict;
     elForm.setAttribute("action", `${_ROOT_URL}/dictionary/${dict}`);
-
-    elQ.focus();
-    elQ.select();
   }
 
   // Capture the form submit and send it as a canonical URL instead
@@ -30,9 +25,12 @@
     document.location.href = `${uri}/${encodeURIComponent(val).replace(/%20/g, "+")}`;
   }
 
+  // ===================================
+  // Events
+
   // On ~ press, focus search input.
   document.onkeydown = (function (e) {
-    if (e.keyCode != 192) {
+    if (e.key !== "`" && e.key !== "~") {
       return;
     }
 
@@ -41,12 +39,9 @@
     q.select();
   });
 
-  // On language tab selector click.
-  elTabs.forEach((el) => {
-    el.onchange = (e) => {
-      e.preventDefault();
-      selectDict(e.target.value);
-    }
+  // Bind to language change.
+  elSelDict.addEventListener("change", function (e) {
+    selectDict(e.target.value);
   });
 
   // Bind to form submit.
@@ -55,6 +50,58 @@
     search(elQ.value);
   });
 
+  // "More" link next to entries/defs that expands an entry.
+  document.querySelectorAll(".more-toggle").forEach((el) => {
+    el.onclick = (e) => {
+      e.preventDefault();
+
+      let state = "block";
+      if (el.dataset.open) {
+        delete (el.dataset.open);
+        state = "none";
+      } else {
+        el.dataset.open = true;
+        state = "block";
+      }
+
+      const container = document.getElementById(el.dataset.id);
+      container.style.display = state;
+
+      // fetch() content from the dataset data.guid from /api/entry/{guid}
+      // and populate the div.more innerHTML with the content.
+      if (state === "block" && !el.dataset.fetched) {
+        container.innerHTML = `<div class="loader"></div>`;
+
+        fetch(`${window._ROOT_URL}/api/dictionary/entries/${el.dataset.entryGuid}`)
+          .then((resp) => resp.json())
+          .then((data) => {
+            const d = data.data;
+            container.innerHTML = "";
+
+            // If there's data.data.meta.synonyms, add them to the synonyms div.
+            if (d.meta.synonyms) {
+              const syns = document.createElement("div");
+              syns.classList.add("synonyms");
+              syns.innerHTML = d.meta.synonyms.map((s) => `<a href="${window._ROOT_URL}/dictionary/${el.dataset.fromLang}/${el.dataset.toLang}/${s}">${s}</a>`).join("");
+              container.appendChild(syns);
+            }
+
+            // Each data.content[] word, add to target.
+            const more = document.createElement("div");
+            more.classList.add("words");
+            more.innerHTML = d.content.slice(window._MAX_CONTENT_ITEMS).map((c) => `<span class="word">${c}</span>`).join("");
+            container.appendChild(more);
+
+            el.dataset.fetched = true;
+          })
+          .catch((err) => {
+            console.error("Error fetching entry content:", err);
+          });
+      }
+    };
+  });
+
+  // ===================================
 
   // Select a language based on the page URL.
   let dict = localStorage.dict || defaultLang;
@@ -64,6 +111,8 @@
   }
 
   selectDict(dict);
+  elQ.focus();
+  elQ.select();
 })();
 
 
@@ -160,3 +209,4 @@
     });
   })
 })();
+
