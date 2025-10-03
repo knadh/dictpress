@@ -12,7 +12,7 @@ CREATE TABLE entries (
     guid            UUID NOT NULL UNIQUE DEFAULT GEN_RANDOM_UUID(),
 
     -- Actual language content. Dictionary word or definition entries
-    content         TEXT NOT NULL CHECK (content <> ''),
+    content         TEXT[] NOT NULL CHECK (ARRAY_LENGTH(content, 1) > 0),
 
     -- The first “alphabet” of the content. For English, for the word Apple, the initial is A
     initial         TEXT NOT NULL DEFAULT '',
@@ -42,7 +42,7 @@ CREATE TABLE entries (
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-DROP INDEX IF EXISTS idx_content; CREATE INDEX idx_entries_content ON entries((LOWER(SUBSTRING(content, 0, 50))));
+DROP INDEX IF EXISTS idx_content; CREATE INDEX idx_entries_content ON entries((LOWER(SUBSTRING(content[1], 0, 50))));
 DROP INDEX IF EXISTS idx_entries_initial; CREATE INDEX idx_entries_initial ON entries(initial);
 DROP INDEX IF EXISTS idx_entries_lang; CREATE INDEX idx_entries_lang ON entries(lang);
 DROP INDEX IF EXISTS idx_entries_tokens; CREATE INDEX idx_entries_tokens ON entries USING GIN(tokens);

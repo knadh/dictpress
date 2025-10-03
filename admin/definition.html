@@ -7,11 +7,21 @@
         <div class="panel relation-form">
             <h3>Add definition</h3>
             <form @submit.prevent="onSave">
-                <div x-text="parent.content"></div>
+                <div>
+                    <template x-for="(item, idx) in parent.content" :key="idx">
+                        <span x-text="item" style="display: block;"></span>
+                    </template>
+                </div>
                 <div>&darr;</div>
                 <div>
                     <label>Definition</label>
-                    <textarea required autofocus name="content" x-ref="content" x-model="def.content"></textarea>
+                    <template x-for="(item, idx) in def.content" :key="idx">
+                        <div style="margin-bottom: 0.5rem;">
+                            <textarea required x-model="def.content[idx]" x-ref="contentInput" :autofocus="idx === 0" style="width: calc(100% - 60px); display: inline-block;"></textarea>
+                            <a href="#" @click.prevent="onDeleteDefContentItem(idx)" x-show="def.content.length > 1" style="margin-left: 0.5rem;">Delete</a>
+                        </div>
+                    </template>
+                    <a href="#" @click.prevent="onAddDefContentItem">+ Add</a>
                 </div>
                 <br />
                 <template x-if="Object.keys(config.languages[parent.lang].types).length > 0">

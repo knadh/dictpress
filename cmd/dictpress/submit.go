@@ -88,7 +88,7 @@ func handleNewSubmission(c echo.Context) error {
 	e := data.Entry{
 		Lang:    s.EntryLang,
 		Initial: strings.ToUpper(string(s.EntryContent[0])),
-		Content: s.EntryContent,
+		Content: pq.StringArray([]string{s.EntryContent}),
 		Phones:  pq.StringArray(phones),
 		Tags:    pq.StringArray{},
 		Status:  data.StatusPending,
@@ -113,8 +113,8 @@ func handleNewSubmission(c echo.Context) error {
 
 		toID, err := app.data.InsertSubmissionEntry(data.Entry{
 			Lang:    s.RelationLang[i],
-			Initial: strings.ToUpper(string(s.RelationContent[0][0])),
-			Content: s.RelationContent[i],
+			Initial: strings.ToUpper(string(s.RelationContent[i][0])),
+			Content: pq.StringArray([]string{s.RelationContent[i]}),
 			Phones:  pq.StringArray(phones),
 			Tags:    pq.StringArray{},
 			Status:  data.StatusPending,

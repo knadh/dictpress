@@ -6,7 +6,7 @@
 {{ else }}
     <ul class="noul words">
         {{ range $i, $w := $g.Words }}
-            <li><a href="{{ $.Consts.RootURL }}/dictionary/{{ UnicodeURL $g.FromLang }}/{{ UnicodeURL $g.ToLang }}/{{ UnicodeURL $w.Content }}">{{ $w.Content }}</a></li>
+            <li><a href="{{ $.Consts.RootURL }}/dictionary/{{ UnicodeURL $g.FromLang }}/{{ UnicodeURL $g.ToLang }}/{{ UnicodeURL (index $w.Content 0) }}">{{ $w.Content | join ", " }}</a></li>
         {{ end }}
     </ul>
 {{ end }}

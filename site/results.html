@@ -7,9 +7,9 @@
                 <li class="entry" data-guid="{{ $r.GUID }}">
                     <header class="head">
                         {{ if $.Consts.EnableSubmissions }}
-                            <a href="#" data-from="{{ $r.GUID }}" class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" $r.Content }}">✏️</a>
+                            <a href="#" data-from="{{ $r.GUID }}" class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" ($r.Content | join ", ") }}">✏️</a>
                         {{ end }}
-                        <h3 class="title">{{ $r.Content }}</h3>
+                        <h3 class="title">{{ $r.Content | join ", " }}</h3>
 
                         {{ if $r.Phones }}
                             <span class="pronun">♪ {{ $r.Phones | join "," }}</span>
@@ -35,11 +35,11 @@
 
                             <li>
                                 <div data-guid="{{ $d.GUID }}" class="def">
-                                    {{ $d.Content }}
+                                    {{ $d.Content | join ", " }}
 
                                     {{ if $.Consts.EnableSubmissions }}
                                         <a href="#" data-from="{{ $r.GUID }}" data-to="{{ $d.GUID }}"
-                                            class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" $d.Content }}">✏️</a>
+                                            class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" ($d.Content | join ", ") }}">✏️</a>
                                     {{ end }}
                                 </div>
                             </li>
@@ -58,7 +58,7 @@
             <h4>{{ .L.T "public.similarTitle" }}</h4>
             <ul>
             {{ range $k, $r := (mustSlice .Data.Results.Entries $numResults) }}
-                <li><a href="{{ UnicodeURL $r.Content }}">{{ $r.Content }}</a></li>
+                <li><a href="{{ UnicodeURL (index $r.Content 0) }}">{{ $r.Content | join ", " }}</a></li>
             {{ end }}
             </ul>
         {{ end }}

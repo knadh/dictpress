@@ -20,14 +20,14 @@ directMatch AS (
     -- "simple" (Postgres token dictionary that merely removes English stopwords) tokens.
     -- Rank is the inverted string length so that all results in this query have a negative
     -- value to rank higher than results from tokenMatch.
-    SELECT DISTINCT ON (entries.id) entries.*, entries.weight + (-1 * ( 50 - LENGTH(content))) AS rank FROM entries
+    SELECT DISTINCT ON (entries.id) entries.*, entries.weight + (-1 * ( 50 - LENGTH(content[1]))) AS rank FROM entries
         INNER JOIN relations ON entries.id = relations.from_id
         WHERE
         ($4 = '' OR lang=$4)
         AND (COALESCE(CARDINALITY($5::TEXT[]), 0) = 0 OR entries.tags && $5)
         AND (
             CASE WHEN $1 = '' THEN TRUE ELSE
-                REGEXP_REPLACE(LOWER(SUBSTRING(content, 0, 50)), '[0-9\s]+', '', 'g') = REGEXP_REPLACE(LOWER(SUBSTRING($1, 0, 50)), '[0-9\s]+', '', 'g')
+                REGEXP_REPLACE(LOWER(SUBSTRING(content[1], 0, 50)), '[0-9\s]+', '', 'g') = REGEXP_REPLACE(LOWER(SUBSTRING($1, 0, 50)), '[0-9\s]+', '', 'g')
                 OR tokens @@ PLAINTO_TSQUERY('simple', $1)
             END
         )
@@ -138,11 +138,10 @@ WITH w AS (
 )
 INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes, meta, status)
     VALUES(
-        $1,
+        $1::TEXT[],
         $2,
         COALESCE((SELECT weight FROM w), $3),
-        (CASE WHEN $5 != '' THEN TO_TSVECTOR($5::regconfig, $1::TEXT) ELSE $4::TSVECTOR END),
-        $6,
+        (CASE WHEN $5 != '' THEN TO_TSVECTOR($5::regconfig, ARRAY_TO_STRING($1, ' ')) ELSE $4::TSVECTOR END),    $6,
         $7,
         $8,
         $9,
@@ -153,7 +152,7 @@ INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes
 
 -- name: update-entry
 UPDATE entries SET
-    content = (CASE WHEN $2 != '' THEN $2 ELSE content END),
+    content = (CASE WHEN CARDINALITY($2::TEXT[]) != 0 THEN $2 ELSE content END),
     initial = (CASE WHEN $3 != '' THEN $3 ELSE initial END),
     weight = (CASE WHEN $4::DECIMAL != 0 THEN $4 ELSE weight END),
     tokens = (CASE WHEN $5 != '' THEN $5::TSVECTOR ELSE tokens END),
@@ -206,13 +205,13 @@ WITH w AS (
 ),
 old AS (
     SELECT id FROM entries WHERE
-    LOWER(SUBSTRING(content, 0, 50)) = LOWER(SUBSTRING($1, 0, 50)) AND lang = $6 AND status != 'disabled'
+    LOWER(SUBSTRING(content[1], 0, 50)) = LOWER(SUBSTRING($1, 0, 50)) AND lang = $6 AND status != 'disabled'
     LIMIT 1
 ),
 e AS (
     INSERT INTO entries (content, initial, weight, tokens, lang, tags, phones, notes, meta, status)
     SELECT
-        $1,
+        $1::TEXT[],
         $2,
         COALESCE((SELECT weight FROM w), $3),
         (CASE WHEN $5::TEXT != '' THEN TO_TSVECTOR($5::regconfig, $1::TEXT) ELSE $4::TSVECTOR END),

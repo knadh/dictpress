@@ -284,7 +284,7 @@ func (d *Data) UpdateEntry(id int, e Entry) error {
 	}
 
 	_, err := d.queries.UpdateEntry.Exec(id,
-		e.Content,
+		pq.Array(e.Content),
 		e.Initial,
 		e.Weight,
 		e.Tokens,
@@ -416,9 +416,13 @@ func (d *Data) insertEntry(e Entry, stmt *sqlx.Stmt) (int, error) {
 			// No external tokenizer. Use the Postgres tokenizer name.
 			tsVectorLang = lang.TokenizerName
 		} else {
-			// If there's an external tokenizer loaded, run it to get the tokens
+			// If there'content an external tokenizer loaded, run it to get the tokens
 			// and pass it to the DB directly instructing the DB not to tokenize internally.
-			t, err := lang.Tokenizer.ToTokens(e.Content, e.Lang)
+			var content string
+			if len(e.Content) > 0 {
+				content = strings.Join(e.Content, " ")
+			}
+			t, err := lang.Tokenizer.ToTokens(content, e.Lang)
 			if err != nil {
 				return 0, nil
 			}
@@ -431,7 +435,7 @@ func (d *Data) insertEntry(e Entry, stmt *sqlx.Stmt) (int, error) {
 	}
 
 	var id int
-	err := stmt.Get(&id, e.Content, e.Initial, e.Weight, tokens, tsVectorLang, e.Lang, e.Tags, e.Phones, e.Notes, e.Meta, e.Status)
+	err := stmt.Get(&id, pq.Array(e.Content), e.Initial, e.Weight, tokens, tsVectorLang, e.Lang, e.Tags, e.Phones, e.Notes, e.Meta, e.Status)
 	return id, err
 }
 
