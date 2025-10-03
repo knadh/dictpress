@@ -57,7 +57,8 @@ func handleInsertEntry(c echo.Context) error {
 			fmt.Sprintf("error parsing request: %v", err))
 	}
 
-	if err := validateEntry(e, app); err != nil {
+	e, err := validateEntry(e, app)
+	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
@@ -181,6 +182,11 @@ func handleUpdateEntry(c echo.Context) error {
 	if err := c.Bind(&e); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest,
 			fmt.Sprintf("error parsing request: %v", err))
+	}
+
+	e, err := validateEntry(e, app)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	if err := app.data.UpdateEntry(id, e); err != nil {
@@ -390,20 +396,24 @@ func handleDeletePending(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-func validateEntry(e data.Entry, app *App) error {
-	if strings.TrimSpace(e.Content) == "" {
-		return errors.New("invalid `content`.")
+func validateEntry(e data.Entry, app *App) (data.Entry, error) {
+	for i, v := range e.Content {
+		e.Content[i] = strings.TrimSpace(v)
+	}
+
+	if len(e.Content) == 0 || strings.TrimSpace(e.Content[0]) == "" {
+		return data.Entry{}, errors.New("invalid `content`")
 	}
 
 	if strings.TrimSpace(e.Initial) == "" {
-		return errors.New("invalid `initial`.")
+		return data.Entry{}, errors.New("invalid `initial`")
 	}
 
 	if _, ok := app.data.Langs[e.Lang]; !ok {
-		return errors.New("unknown `lang`.")
+		return data.Entry{}, errors.New("unknown `lang`")
 	}
 
-	return nil
+	return e, nil
 }
 
 // handleAdminPage is the root handler that renders the Javascript admin frontend.

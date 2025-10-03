@@ -19,7 +19,7 @@ type Entry struct {
 	Weight    float64        `json:"weight" db:"weight"`
 	Initial   string         `json:"initial" db:"initial"`
 	Lang      string         `json:"lang" db:"lang"`
-	Content   string         `json:"content" db:"content"`
+	Content   pq.StringArray `json:"content" db:"content"`
 	Tokens    string         `json:"tokens" db:"tokens"`
 	Tags      pq.StringArray `json:"tags" db:"tags"`
 	Phones    pq.StringArray `json:"phones" db:"phones"`
@@ -62,9 +62,9 @@ type Relation struct {
 
 // GlossaryWord to read glosary content from db.
 type GlossaryWord struct {
-	ID      int    `json:"id,omitempty" db:"id"`
-	Content string `json:"content" db:"content"`
-	Total   int    `json:"-" db:"total"`
+	ID      int            `json:"id,omitempty" db:"id"`
+	Content pq.StringArray `json:"content" db:"content"`
+	Total   int            `json:"-" db:"total"`
 }
 
 // Stats contains database statistics.

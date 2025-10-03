@@ -140,6 +140,10 @@ section {
   margin-bottom: 45px;
 }
 
+.text-xsmall {
+  font-size: 0.775rem;
+}
+
 .box {
   border: 1px solid #ddd;
   border-radius: 3px;

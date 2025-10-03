@@ -11,7 +11,13 @@
                     <div class="row">
                         <div class="column nine">
                             <label>Content</label>
-                            <textarea required autofocus name="content" x-ref="content" x-model="entry.content"></textarea>
+                            <template x-for="(item, idx) in entry.content" :key="idx">
+                                <div style="margin-bottom: 0.5rem;">
+                                    <textarea required x-model="entry.content[idx]" x-ref="contentInput" :autofocus="idx === 0"></textarea>
+                                    <a href="#" @click.prevent="onDeleteContentItem(idx)" x-show="entry.content.length > 1" class="text-xsmall float-right">Delete</a>
+                                </div>
+                            </template>
+                            <a href="#" @click.prevent="onAddContentItem">+ Add</a>
                         </div>
                         <div class="column three">
                             <label>Initial</label>
@@ -106,7 +112,11 @@
                         <template x-for="r in parentEntries" :key="r.id">
                             <li class="rel">
                                 <p>
-                                    <a x-bind:href="makeURL({'id': r.id})" x-text="r.content" class="content"></a>
+                                    <a x-bind:href="makeURL({'id': r.id})" class="content">
+                                        <template x-for="(item, idx) in r.content" :key="idx">
+                                            <span><span x-text="item"></span><span x-show="idx < r.content.length - 1">, </span></span>
+                                        </template>
+                                    </a>
                                     <template x-if="r.phones.length > 0">
                                         <span class="phones" x-text="r.phones.join(', ')"></span>
                                     </template>

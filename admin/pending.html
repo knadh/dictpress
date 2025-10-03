@@ -24,7 +24,11 @@
                         <span class="tag new">New word</span>
                     </template>
                     <h3>
-                        <a x-bind:href="makeURL({id: e.id})" @click.prevent="onEditEntry(e)" x-text="e.content"></a>
+                        <a x-bind:href="makeURL({id: e.id})" @click.prevent="onEditEntry(e)">
+                            <template x-for="(item, idx) in e.content" :key="idx">
+                                <span><span x-text="item"></span><span x-show="idx < e.content.length - 1">, </span></span>
+                            </template>
+                        </a>
                     </h3>
                     <sup class="lang meta" x-text="config.languages[e.lang].name"></sup>
 
@@ -50,7 +54,12 @@
                                     <span class="tag" :class="{ [r.relation.status]: true }" x-text="r.relation.status"></span>
                                 </template>
                                 <span class="meta lang" x-text="config.languages[r.lang].name"></span>
-                                <span class="meta types" x-text="r.relation.types"></span> <span x-text="r.content" class="content"></span>
+                                <span class="meta types" x-text="r.relation.types"></span>
+                                <span class="content">
+                                    <template x-for="(item, idx) in r.content" :key="idx">
+                                        <span><span x-text="item"></span><span x-show="idx < r.content.length - 1">, </span></span>
+                                    </template>
+                                </span>
                             </p>
                             <template x-if="e.id in comments && r.id in comments[e.id]">
                                 <template x-for="(c, n) in comments[e.id][r.id]" :key="c.id">

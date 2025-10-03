@@ -238,7 +238,7 @@ func (im *Importer) insertEntries(entries []entry, lineStart int) error {
 	stmt = tx.Stmtx(im.stmtInsertEntry)
 	for i, e := range entries {
 		if err := stmt.Get(&entryIDs[i],
-			e.Content,
+			pq.StringArray([]string{e.Content}),
 			e.Initial,
 			lineStart,
 			e.TSVectorTokens,
@@ -275,7 +275,7 @@ func (im *Importer) insertEntries(entries []entry, lineStart int) error {
 			// Insert the definition entry and record the resulting ID
 			// against the parent ID.
 			if err := stmt.Get(&relIDs[i][j],
-				e.Content,
+				pq.StringArray([]string{e.Content}),
 				e.Initial,
 				i+j,
 				e.TSVectorTokens,

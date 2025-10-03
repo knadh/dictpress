@@ -96,6 +96,7 @@ function globalComponent() {
 
         onNewEntry() {
             this.$dispatch('open-entry-form', {
+                content: [''],
                 weight: 0,
                 lang: Object.keys(this.config.languages)[0],
                 tokens: '',
@@ -349,6 +350,7 @@ function entryComponent() {
             const data = e.detail;
             this.entry = {
                 ...data,
+                content: Array.isArray(data.content) ? [...data.content] : [data.content || ''],
                 phones: data.phones.join('\n'),
                 tags: data.tags.join('\n'),
                 tokens: data.tokens.split(' ').join('\n'),
@@ -358,12 +360,18 @@ function entryComponent() {
             this.isNew = !this.entry.id ? true : false;
             this.isVisible = true;
 
-            this.$nextTick(() => {
-                this.$refs.content.focus();
-            });
-
             if (this.entry.parent) {
                 this.getParentEntries(this.entry.id);
+            }
+        },
+
+        onAddContentItem() {
+            this.entry.content.push('');
+        },
+
+        onDeleteContentItem(idx) {
+            if (this.entry.content.length > 1) {
+                this.entry.content.splice(idx, 1);
             }
         },
 
@@ -373,8 +381,8 @@ function entryComponent() {
         },
 
         onFocusInitial() {
-            if (!this.entry.initial && this.entry.content && this.entry.content.length > 0) {
-                this.entry.initial = this.entry.content[0].toUpperCase();
+            if (!this.entry.initial && Array.isArray(this.entry.content) && this.entry.content.length > 0 && this.entry.content[0].length > 0) {
+                this.entry.initial = this.entry.content[0][0].toUpperCase();
             }
         },
 
@@ -398,7 +406,8 @@ function entryComponent() {
 
             let data = {
                 ...this.entry,
-                initial: this.entry.initial ? this.entry.initial : this.entry.content[0].toUpperCase(),
+                content: this.entry.content.filter(c => c.trim() !== ''),
+                initial: this.entry.initial ? this.entry.initial : (this.entry.content.length > 0 && this.entry.content[0].length > 0 ? this.entry.content[0][0].toUpperCase() : ''),
                 phones: linesToList(this.entry.phones),
                 tags: linesToList(this.entry.tags),
                 tokens: linesToList(this.entry.tokens).join(' ')
@@ -498,17 +507,28 @@ function definitionComponent() {
             this.parent = e.detail.parent;
             delete (e.detail.parent);
 
-            this.def = { ...e.detail, tags: e.detail.tags.join('\n') };
+            this.def = {
+                ...e.detail,
+                content: [''],
+                tags: e.detail.tags.join('\n')
+            };
             this.isVisible = true;
-            this.$nextTick(() => {
-                this.$refs.content.focus();
-            });
+        },
+
+        onAddDefContentItem() {
+            this.def.content.push('');
+        },
+
+        onDeleteDefContentItem(idx) {
+            if (this.def.content.length > 1) {
+                this.def.content.splice(idx, 1);
+            }
         },
 
         onSave() {
             const params = {
-                content: this.def.content,
-                initial: this.def.content[0].toUpperCase(),
+                content: this.def.content.filter(c => c.trim() !== ''),
+                initial: this.def.content.length > 0 && this.def.content[0].length > 0 ? this.def.content[0][0].toUpperCase() : '',
                 lang: this.def.lang,
                 phones: [],
                 tags: [],

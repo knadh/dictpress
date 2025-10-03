@@ -18,7 +18,7 @@ build: $(BIN)
 $(STUFFBIN):
 	go install github.com/knadh/stuffbin/...
 
-$(BIN): $(shell find . -type f -name "*.go")
+$(BIN): $(shell find . -type f -name "*.go") ${STATIC}
 	CGO_ENABLED=0 go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/${BIN}/*.go
 
 .PHONY: run
