@@ -3,7 +3,6 @@
   width: 100%;
   max-width: 960px;
   margin: 0 auto;
-  padding: 20px;
   box-sizing: border-box;
 }
 .row {
@@ -23,6 +22,7 @@
 .columns {
   box-sizing: border-box;
   flex: 0 1 auto;
+  min-width: 0;
 }
 .one {
   flex-basis: 8.33333333%;
@@ -120,7 +120,7 @@
 .space-top {
   margin-top: 10px;
 }
-@media (min-width: 320px) and (max-width: 780px) {
+@media (max-width: 980px) {
   .columns {
     flex: 1 1 auto;
   }
@@ -129,4 +129,7 @@
   .offset-2 {
     margin: unset;
   }
-} /*# sourceMappingURL=dist/flexit.min.css.map */
+  .container {
+    padding: 0 15px;
+  }
+} 

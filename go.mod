@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/knadh/go-i18n v0.1.0
+	github.com/knadh/go-i18n v1.0.0
 	github.com/knadh/goyesql v0.0.0-20190822122127-22fd9176b589
 	github.com/knadh/knphone v0.0.0-20190624172359-d31f66505cbf
 	github.com/knadh/koanf/parsers/toml v0.1.0

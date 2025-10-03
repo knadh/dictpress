@@ -2,7 +2,7 @@
 {{ template "header" . }}
 
 <h2>{{ .L.T "public.submitEntryTitle" }}</h2>
-<br />
+<hr />
 <form method="post" action="" class="form-submit">
     <div>
         <div class="row">
@@ -26,8 +26,8 @@
         </fieldset>
 
         <br />
-        <h4>{{ .L.T "public.suggestDefsTitle" }}</h4>
-        <ol class="add-relations">
+        <h3>{{ .L.T "public.suggestDefsTitle" }}</h3>
+        <ol class="add-relations box">
             <li class="row">
                 <fieldset class="columns three">
                     <label>{{ .L.T "public.suggestDefLang" }}</label>
@@ -61,10 +61,14 @@
 
         <br />
         <p>
-            <button type="submit">{{ .L.T "public.submitEntryTitle" }}</button>
+            <button type="submit">{{ .L.T "public.suggestSubmitBtn" }}</button>
         </p>
     </div>
 </form>
+
+<script>
+    (() => { window.setTimeout(() => { document.querySelector('#entry-content').focus() }, 10); })();
+</script>
 
 {{ template "footer" . }}
 {{ end }}

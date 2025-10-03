@@ -10,7 +10,7 @@ GOPATH ?= $(HOME)/go
 STUFFBIN ?= $(GOPATH)/bin/stuffbin
 
 BIN := dictpress
-STATIC := config.sample.toml schema.sql queries.sql admin
+STATIC := config.sample.toml schema.sql queries.sql admin go.mod go.sum
 
 .PHONY: build
 build: $(BIN)
