@@ -1,67 +1,71 @@
 {{ define "results" }}
+{{ $maxContentItems := .Consts.SiteMaxEntryContentItems }}
 {{ $numResults := (min (len .Data.Results.Entries) 10) }}
 <div class="row">
     <div class="eight columns">
         <ol class="entries">
-            {{ range $k, $r := (mustSlice .Data.Results.Entries 0 $numResults) }}
-                <li class="entry" data-guid="{{ $r.GUID }}">
-                    <header class="head">
-                        {{ if $.Consts.EnableSubmissions }}
-                            <a href="#" data-from="{{ $r.GUID }}" class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" ($r.Content | join ", ") }}">✏️</a>
-                        {{ end }}
-                        <h3 class="title">{{ $r.Content | join ", " }}</h3>
+            {{- range $k, $r := (mustSlice .Data.Results.Entries 0 $numResults) -}}
+            <li class="entry" data-guid="{{ $r.GUID }}">
+                <header class="head">
+                {{- if $.Consts.EnableSubmissions -}}
+                    <a href="#" data-from="{{ $r.GUID }}" class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" $r.Content }}">✏️</a>
+                {{- end -}}
+                <h3 class="title">{{ $r.Content | join ", " }}</h3>
 
-                        {{ if $r.Phones }}
-                            <span class="pronun">♪ {{ $r.Phones | join "," }}</span>
-                        {{ end }}
-                    </header>
+                {{- if $r.Phones -}}
+                    <span class="pronun">♪ {{ $r.Phones | join "," }}</span>
+                {{- end -}}
+                </header>
 
-                    {{ if $r.Relations }}
-                        {{ $lastType := "" }}
-                        {{ range $k, $d := $r.Relations }}
-                            {{ $types := ($d.RelationTypes | join ", ") }}
-                            {{ if ne $lastType $types }}
-                                {{- if $lastType -}}</ol>{{- end }}
-                                <ol class="defs">
-                                    <li class="types">
-                                        :{{- range $t := $d.RelationTypes -}}
-                                            {{ index (index $.Langs $d.Lang).Types $t }} -
-                                            {{ index (index $.Langs $r.Lang).Types $t }} 
-                                        {{- else -}}
-                                            -
-                                        {{ end }}
-                                    </li>
-                            {{ end }}
+                {{- if $r.Relations -}}
+                    {{- $lastType := "" -}}
+                    {{- range $k, $d := $r.Relations -}}
+                    {{- $types := ($d.RelationTypes | join ", ") -}}
 
-                            <li>
-                                <div data-guid="{{ $d.GUID }}" class="def">
-                                    {{ $d.Content | join ", " }}
-
-                                    {{ if $.Consts.EnableSubmissions }}
-                                        <a href="#" data-from="{{ $r.GUID }}" data-to="{{ $d.GUID }}"
-                                            class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" ($d.Content | join ", ") }}">✏️</a>
-                                    {{ end }}
-                                </div>
+                    {{- if ne $lastType $types -}}
+                        {{- if $lastType -}}</ol>{{- end }}
+                        <ol class="defs">
+                            <li class="types">
+                                {{- range $t := $d.RelationTypes -}}
+                                    {{- $dType := index (index $.Langs $r.Lang).Types $t }}
+                                    {{- if $dType }}{{ $dType }} {{ end -}}
+                                    {{- $rType := index (index $.Langs $d.Lang).Types $t }}
+                                    {{- if $rType }}({{ $rType }}){{ end -}}
+                                {{- end -}}
                             </li>
-                            {{ $lastType = $types }}
-                        {{ end }}
-                        </ol>
-                    {{ end }}
+                    {{- end -}}
 
-                </li>
-            {{ end }}
+                    <li><div data-guid="{{ $d.GUID }}" class="def">
+                        {{ $d.Content | join ", " }}
+
+                        {{ if gt $d.ContentLength $maxContentItems -}}
+                            <a href="#" class="more-toggle" data-id="{{ $r.GUID }}-{{ $d.GUID }}" title="See {{ $d.ContentLength }} more"
+                                data-entry-guid="{{ $d.GUID }}" data-from-lang="{{ $r.Lang }}" data-to-lang="{{ $d.Lang }}">
+                            </a>
+                        {{- end -}}
+                        <!-- This is dynamically populated by JS when the "more" link is clicked -->
+                        <div class="more" id="{{ $r.GUID }}-{{ $d.GUID }}"></div>
+
+                        {{- if $.Consts.EnableSubmissions }}
+                            <a href="#" data-from="{{ $r.GUID }}" data-to="{{ $d.GUID }}"class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" $d.Content }}">✏️</a>
+                        {{ end -}}
+                    </div></li>
+                    {{ $lastType = $types }}
+                {{- end -}}
+                </ol>
+                {{ end }}
+
+            </li>
+            {{- end -}}
         </ol>
     </div>
-    <div class="one column"></div>
-    <div class="three columns related">
+    <nav class="three columns col-offset-1 related">
         {{ if gt (len .Data.Results.Entries) $numResults  }}
-            <h4>{{ .L.T "public.similarTitle" }}</h4>
-            <ul>
+            <h3>{{ .L.T "public.similarTitle" }}</h3>
             {{ range $k, $r := (mustSlice .Data.Results.Entries $numResults) }}
-                <li><a href="{{ UnicodeURL (index $r.Content 0) }}">{{ $r.Content | join ", " }}</a></li>
+                <a href="{{ UnicodeURL (index $r.Content 0) }}" class="word">{{ index $r.Content 0 }}</a>
             {{ end }}
-            </ul>
         {{ end }}
-    </div>
+    </nav>
 </div>
 {{ end }}
