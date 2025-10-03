@@ -244,9 +244,9 @@ func (d *Data) GetGlossaryWords(lang, initial string, offset, limit int) ([]Glos
 }
 
 // GetEntry returns an entry by its id.
-func (d *Data) GetEntry(id int) (Entry, error) {
+func (d *Data) GetEntry(id int, guid string) (Entry, error) {
 	var out Entry
-	if err := d.queries.GetEntry.Get(&out, id); err != nil {
+	if err := d.queries.GetEntry.Get(&out, id, guid); err != nil {
 		return out, err
 	}
 

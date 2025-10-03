@@ -107,7 +107,12 @@ r AS (
 UPDATE relations WHERE from_id = $1;
 
 -- name: get-entry
-SELECT * FROM entries WHERE id=$1;
+SELECT * FROM entries WHERE
+    CASE
+        WHEN $1 > 0 THEN id = $1
+        WHEN $2 != '' THEN guid = $2::UUID
+        ELSE FALSE
+    END;
 
 -- name: get-parent-relations
 SELECT entries.*, relations.id as relation_id FROM entries

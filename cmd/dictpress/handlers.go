@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -71,6 +72,42 @@ func handleSearch(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, okResp{out})
+}
+
+// handleGetEntryPublic returns an entry by its guid.
+func handleGetEntryPublic(c echo.Context) error {
+	var (
+		app  = c.Get("app").(*App)
+		guid = c.Param("guid")
+	)
+
+	e, err := app.data.GetEntry(0, guid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return echo.NewHTTPError(http.StatusBadRequest, "entry not found")
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	e.Relations = make([]data.Entry, 0)
+
+	out := []data.Entry{e}
+	if err := app.data.SearchAndLoadRelations(out, data.Query{}); err != nil {
+		app.lo.Printf("error loading relations: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "error loading relations")
+	}
+
+	for i := range out {
+		out[i].ID = 0
+
+		for j := range out[i].Relations {
+			out[i].Relations[j].ID = 0
+			out[i].Relations[j].Relation.ID = 0
+		}
+	}
+
+	return c.JSON(http.StatusOK, okResp{out[0]})
 }
 
 // handleServeBundle serves concatenated JS or CSS files based on query parameters

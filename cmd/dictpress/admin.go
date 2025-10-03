@@ -128,7 +128,7 @@ func handleGetEntry(c echo.Context) error {
 		id, _ = strconv.Atoi(c.Param("id"))
 	)
 
-	e, err := app.data.GetEntry(id)
+	e, err := app.data.GetEntry(id, "")
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusBadRequest, "entry not found")

@@ -190,6 +190,7 @@ func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
 	// Public APIs.
 	p.GET("/api/config", handleGetConfig)
 	p.GET("/api/dictionary/:fromLang/:toLang/:q", handleSearch)
+	p.GET("/api/dictionary/entries/:guid", handleGetEntryPublic)
 
 	// Public user submission APIs.
 	if ko.Bool("app.enable_submissions") {
