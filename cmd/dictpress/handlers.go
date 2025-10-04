@@ -303,15 +303,3 @@ func getGlossaryWords(lang, initial string, pg paginator.Set, app *App) (*glossa
 
 	return out, nil
 }
-
-// validateSearchQuery does basic validation and sanity checks
-// on data.Query (useful for params coming from the outside world).
-func validateSearchQuery(q data.Query, langs data.LangMap) error {
-	for _, t := range q.Types {
-		if _, ok := langs[q.FromLang].Types[t]; !ok {
-			return fmt.Errorf("unknown type %s", t)
-		}
-	}
-
-	return nil
-}

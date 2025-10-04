@@ -14,22 +14,25 @@ type JSON map[string]interface{}
 
 // Entry represents a dictionary entry.
 type Entry struct {
-	ID        int            `json:"id,omitempty" db:"id"`
-	GUID      string         `json:"guid" db:"guid"`
-	Weight    float64        `json:"weight" db:"weight"`
-	Initial   string         `json:"initial" db:"initial"`
-	Lang      string         `json:"lang" db:"lang"`
-	Content   pq.StringArray `json:"content" db:"content"`
-	Tokens    string         `json:"tokens" db:"tokens"`
-	Tags      pq.StringArray `json:"tags" db:"tags"`
-	Phones    pq.StringArray `json:"phones" db:"phones"`
-	Notes     string         `json:"notes" db:"notes"`
-	Meta      JSON           `json:"meta" db:"meta"`
-	Status    string         `json:"status" db:"status"`
-	Relations []Entry        `json:"relations,omitempty" db:"relations"`
-	Total     int            `json:"-" db:"total"`
-	CreatedAt null.Time      `json:"created_at" db:"created_at"`
-	UpdatedAt null.Time      `json:"updated_at" db:"updated_at"`
+	ID            int            `json:"id,omitempty" db:"id"`
+	GUID          string         `json:"guid" db:"guid"`
+	Weight        float64        `json:"weight" db:"weight"`
+	Initial       string         `json:"initial" db:"initial"`
+	Lang          string         `json:"lang" db:"lang"`
+	Content       pq.StringArray `json:"content" db:"content"`
+	ContentLength int            `json:"content_length" db:"content_length"`
+	Tokens        string         `json:"tokens" db:"tokens"`
+	Tags          pq.StringArray `json:"tags" db:"tags"`
+	Phones        pq.StringArray `json:"phones" db:"phones"`
+	Notes         string         `json:"notes" db:"notes"`
+	Meta          JSON           `json:"meta" db:"meta"`
+	Status        string         `json:"status" db:"status"`
+	Relations     []Entry        `json:"relations,omitempty" db:"relations"`
+	CreatedAt     null.Time      `json:"created_at" db:"created_at"`
+	UpdatedAt     null.Time      `json:"updated_at" db:"updated_at"`
+
+	TotalRelations int `json:"total_relations" db:"total_relations"`
+	Total          int `json:"-" db:"total"`
 
 	// Non-public fields for scanning relationship data and populating Relation.
 	FromID            int            `json:"-" db:"from_id"`

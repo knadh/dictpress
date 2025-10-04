@@ -55,10 +55,10 @@ results AS (
         SELECT * FROM tokenMatch
     ) AS combined
 )
-SELECT COUNT(*) OVER () AS total, * FROM results ORDER BY rank OFFSET $7 LIMIT $8;
+SELECT COUNT(*) OVER () AS total, *, ARRAY_LENGTH(content, 1) AS content_length FROM results ORDER BY rank OFFSET $7 LIMIT $8;
 
 -- name: search-relations
-SELECT entries.*,
+SELECT entries.*, ARRAY_LENGTH(entries.content, 1) AS content_length,
     sub.from_id AS from_id,
     sub.types AS relation_types,
     sub.tags AS relation_tags,
@@ -67,11 +67,14 @@ SELECT entries.*,
     sub.weight as relation_weight,
     sub.status as relation_status,
     sub.created_at as relation_created_at,
-    sub.updated_at as relation_updated_at
+    sub.updated_at as relation_updated_at,
+    sub.total_relations AS total_relations
 FROM entries
 INNER JOIN (
-    SELECT *,ROW_NUMBER() OVER (PARTITION BY relations.from_id, relations.types ORDER BY relations.weight) as rn
-        FROM relations
+    SELECT *,
+        ROW_NUMBER() OVER (PARTITION BY relations.from_id, relations.types ORDER BY relations.weight) as rn,
+        COUNT(*) OVER (PARTITION BY relations.from_id) as total_relations
+    FROM relations
     WHERE from_id = ANY($4::INT[])
         AND (CASE WHEN $5 != '' THEN relations.status = $5::entry_status ELSE TRUE END)
         AND (COALESCE(CARDINALITY($2::TEXT[]), 0) = 0 OR relations.types && $2)
@@ -87,7 +90,7 @@ WITH ids AS (
     UNION
     SELECT DISTINCT from_id FROM comments
 )
-SELECT COUNT(*) OVER () AS total, e.* FROM entries e
+SELECT COUNT(*) OVER () AS total, e.*, ARRAY_LENGTH(e.content, 1) AS content_length FROM entries e
     INNER JOIN ids ON (ids.from_id = e.id)
     WHERE ($1 = '' OR lang=$1)
     AND (COALESCE(CARDINALITY($2::TEXT[]), 0) = 0 OR e.tags && $2)
@@ -109,7 +112,7 @@ r AS (
 UPDATE relations WHERE from_id = $1;
 
 -- name: get-entry
-SELECT * FROM entries WHERE
+SELECT *, ARRAY_LENGTH(content, 1) AS content_length FROM entries WHERE
     CASE
         WHEN $1 > 0 THEN id = $1
         WHEN $2 != '' THEN guid = $2::UUID

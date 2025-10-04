@@ -479,7 +479,8 @@ func (d *Data) SearchAndLoadRelations(e []Entry, q Query) error {
 		pq.StringArray(q.Types),
 		pq.StringArray(q.Tags),
 		pq.Int64Array(IDs),
-		q.Status, q.MaxRelations)
+		q.Status,
+		q.MaxRelations)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil
@@ -507,6 +508,7 @@ func (d *Data) SearchAndLoadRelations(e []Entry, q Query) error {
 
 		idx := idMap[r.FromID]
 		e[idx].Relations = append(e[idx].Relations, r)
+		e[idx].TotalRelations = r.TotalRelations
 	}
 
 	return nil
