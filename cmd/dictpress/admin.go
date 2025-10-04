@@ -83,7 +83,7 @@ func handleGetPendingEntries(c echo.Context) error {
 	var (
 		app = c.Get("app").(*App)
 
-		pg = app.resultsPg.NewFromURL(c.Request().URL.Query())
+		pg = app.pgSite.NewFromURL(c.Request().URL.Query())
 	)
 
 	// Search and compose results.

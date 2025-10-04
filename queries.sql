@@ -59,25 +59,27 @@ SELECT COUNT(*) OVER () AS total, * FROM results ORDER BY rank OFFSET $7 LIMIT $
 
 -- name: search-relations
 SELECT entries.*,
-    relations.from_id AS from_id,
-    relations.types AS relation_types,
-    relations.tags AS relation_tags,
-    relations.notes AS relation_notes,
-    relations.id as relation_id,
-    relations.weight as relation_weight,
-    relations.status as relation_status,
-    relations.created_at as relation_created_at,
-    relations.updated_at as relation_updated_at
+    sub.from_id AS from_id,
+    sub.types AS relation_types,
+    sub.tags AS relation_tags,
+    sub.notes AS relation_notes,
+    sub.id as relation_id,
+    sub.weight as relation_weight,
+    sub.status as relation_status,
+    sub.created_at as relation_created_at,
+    sub.updated_at as relation_updated_at
 FROM entries
-LEFT JOIN relations ON (relations.to_id = entries.id)
-WHERE
-    ($1 = '' OR lang=$1)
-    AND (COALESCE(CARDINALITY($2::TEXT[]), 0) = 0 OR relations.types && $2)
-    AND (COALESCE(CARDINALITY($3::TEXT[]), 0) = 0 OR relations.tags && $3)
-    -- AND tokens @@ (CASE WHEN $4 != '' THEN plainto_tsquery($4::regconfig, $5::TEXT) ELSE to_tsquery($5) END)
-    AND from_id = ANY($4::INT[])
-    AND (CASE WHEN $5 != '' THEN relations.status = $5::entry_status ELSE TRUE END)
-ORDER BY relations.types, relations.weight;
+INNER JOIN (
+    SELECT *,ROW_NUMBER() OVER (PARTITION BY relations.from_id, relations.types ORDER BY relations.weight) as rn
+        FROM relations
+    WHERE from_id = ANY($4::INT[])
+        AND (CASE WHEN $5 != '' THEN relations.status = $5::entry_status ELSE TRUE END)
+        AND (COALESCE(CARDINALITY($2::TEXT[]), 0) = 0 OR relations.types && $2)
+        AND (COALESCE(CARDINALITY($3::TEXT[]), 0) = 0 OR relations.tags && $3)
+        -- If $6 > 0, limit the number of relations per type to $6.
+) sub ON (sub.to_id = entries.id AND CASE WHEN $6 > 0 THEN sub.rn <= $6 ELSE TRUE END)
+WHERE ($1 = '' OR lang=$1)
+ORDER BY sub.types, sub.weight;
 
 -- name: get-pending-entries
 WITH ids AS (

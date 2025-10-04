@@ -45,6 +45,9 @@ type Consts struct {
 	EnableSubmissions            bool
 	EnableGlossary               bool
 	AdminUsername, AdminPassword []byte
+
+	SiteMaxEntryRelationsPerType int
+	SiteMaxEntryContentItems     int
 }
 
 // App contains the "global" components that are
@@ -56,7 +59,8 @@ type App struct {
 	data       *data.Data
 	i18n       *i18n.I18n
 	fs         stuffbin.FileSystem
-	resultsPg  *paginator.Paginator
+	pgSite     *paginator.Paginator
+	pgAPI      *paginator.Paginator
 	glossaryPg *paginator.Paginator
 	lo         *log.Logger
 
@@ -202,12 +206,16 @@ func runServer(c *cli.Context) error {
 		fs:      fs,
 		queries: queries,
 		data:    dt,
+		lo:      lo,
 
-		resultsPg: paginator.New(paginator.Opt{
-			DefaultPerPage: ko.MustInt("results.default_per_page"),
-			MaxPerPage:     ko.MustInt("results.max_per_page"),
-			NumPageNums:    ko.MustInt("results.num_page_nums"),
-			PageParam:      "page", PerPageParam: "PerPageParam",
+		pgSite: paginator.New(paginator.Opt{
+			DefaultPerPage: ko.MustInt("site_results.per_page"),
+			MaxPerPage:     ko.MustInt("site_results.max_per_page"),
+			NumPageNums:    ko.MustInt("site_results.num_page_nums"),
+		}),
+		pgAPI: paginator.New(paginator.Opt{
+			DefaultPerPage: ko.MustInt("api_results.per_page"),
+			MaxPerPage:     ko.MustInt("api_results.max_per_page"),
 		}),
 	}
 
@@ -216,7 +224,6 @@ func runServer(c *cli.Context) error {
 			DefaultPerPage: ko.MustInt("glossary.default_per_page"),
 			MaxPerPage:     ko.MustInt("glossary.max_per_page"),
 			NumPageNums:    ko.MustInt("glossary.num_page_nums"),
-			PageParam:      "page", PerPageParam: "PerPageParam",
 		})
 	}
 

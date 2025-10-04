@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/knadh/paginator"
 	"github.com/lib/pq"
 )
 
@@ -88,14 +89,21 @@ type Data struct {
 
 // Query represents the parameters of a single search query.
 type Query struct {
-	Query    string   `json:"query"`
-	FromLang string   `json:"from_lang"`
-	ToLang   string   `json:"to_lang"`
-	Types    []string `json:"types"`
-	Tags     []string `json:"tags"`
-	Status   string   `json:"status"`
-	Offset   int      `json:"offset"`
-	Limit    int      `json:"limit"`
+	Query    string   `json:"q" query:"q"`
+	FromLang string   `json:"from_lang" query:"from_lang"`
+	ToLang   string   `json:"to_lang" query:"to_lang"`
+	Types    []string `json:"types" query:"type"`
+	Tags     []string `json:"tags" query:"tag"`
+	Status   string   `json:"status" query:"status"`
+	Page     int      `json:"page" query:"page"`
+	PerPage  int      `json:"per_page" query:"per_page"`
+
+	// Internal.
+	MaxRelations    int           `json:"-"`
+	MaxContentItems int           `json:"-"`
+	Offset          int           `json:"-"`
+	Limit           int           `json:"-"`
+	Paginator       paginator.Set `json:"-"`
 }
 
 // New returns an instance of the search interface.
@@ -466,16 +474,16 @@ func (d *Data) SearchAndLoadRelations(e []Entry, q Query) error {
 	}
 
 	var relEntries []Entry
-	if err := d.queries.SearchRelations.Select(&relEntries,
+	err := d.queries.SearchRelations.Select(&relEntries,
 		q.ToLang,
 		pq.StringArray(q.Types),
 		pq.StringArray(q.Tags),
 		pq.Int64Array(IDs),
-		q.Status); err != nil {
+		q.Status, q.MaxRelations)
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil
 		}
-
 		return err
 	}
 
@@ -490,6 +498,11 @@ func (d *Data) SearchAndLoadRelations(e []Entry, q Query) error {
 			Status:    r.Status,
 			CreatedAt: r.RelationCreatedAt,
 			UpdatedAt: r.RelationUpdatedAt,
+		}
+
+		// Slice to max content items.
+		if q.MaxContentItems > 0 {
+			r.Content = r.Content[:min(len(r.Content), q.MaxContentItems)]
 		}
 
 		idx := idMap[r.FromID]

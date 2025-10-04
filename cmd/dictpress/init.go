@@ -20,6 +20,7 @@ import (
 )
 
 func initConstants(ko *koanf.Koanf) Consts {
+
 	c := Consts{
 		Site:              ko.String("site"),
 		RootURL:           ko.MustString("app.root_url"),
@@ -28,6 +29,9 @@ func initConstants(ko *koanf.Koanf) Consts {
 		EnableSubmissions: ko.Bool("app.enable_submissions"),
 		EnableGlossary:    ko.Bool("glossary.enabled"),
 		AdminAssets:       ko.Strings("app.admin_assets"),
+
+		SiteMaxEntryRelationsPerType: ko.MustInt("site_results.max_entry_relations_per_type"),
+		SiteMaxEntryContentItems:     ko.MustInt("site_results.max_entry_content_items"),
 	}
 
 	if len(c.AdminUsername) < 6 {

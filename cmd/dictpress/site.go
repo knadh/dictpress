@@ -83,19 +83,32 @@ func handleIndexPage(c echo.Context) error {
 
 // handleSearchPage renders the search results page.
 func handleSearchPage(c echo.Context) error {
-	query, res, err := doSearch(c, false)
+	var (
+		app = c.Get("app").(*App)
+	)
+
+	q, err := prepareQuery(c)
 	if err != nil {
 		return c.Render(http.StatusInternalServerError, "message", pageTpl{
-			Title:       "Error",
-			Heading:     "Error",
-			Description: err.Error(),
+			Title: "Error", Heading: "Error", Description: err.Error(),
+		})
+	}
+
+	// Apply search query limits on relations and content items.
+	q.MaxRelations = app.consts.SiteMaxEntryRelationsPerType
+	q.MaxContentItems = app.consts.SiteMaxEntryContentItems
+
+	res, err := doSearch(q, false, app.pgSite, app)
+	if err != nil {
+		return c.Render(http.StatusInternalServerError, "message", pageTpl{
+			Title: "Error", Heading: "Error", Description: err.Error(),
 		})
 	}
 
 	return c.Render(http.StatusOK, "search", pageTpl{
 		PageType: pageSearch,
 		Results:  res,
-		Query:    &query,
+		Query:    &q,
 	})
 }
 

@@ -20,13 +20,7 @@ import (
 type results struct {
 	Entries []data.Entry `json:"entries"`
 
-	Query struct {
-		Query    string   `json:"query"`
-		FromLang string   `json:"from_lang"`
-		ToLang   string   `json:"to_lang"`
-		Types    []string `json:"types"`
-		Tags     []string `json:"tags"`
-	} `json:"query"`
+	Query data.Query `json:"query"`
 
 	// Pagination fields.
 	paginator.Set
@@ -44,31 +38,25 @@ type glossary struct {
 
 // okResp represents the HTTP response wrapper.
 type okResp struct {
-	Data interface{} `json:"data"`
-}
-
-type httpResp struct {
-	Status  string      `json:"status"`
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
+	Data any `json:"data"`
 }
 
 // handleSearch performs a search and responds with JSON results.
 func handleSearch(c echo.Context) error {
-	isAuthed := c.Get(isAuthed) != nil
+	var (
+		app      = c.Get("app").(*App)
+		isAuthed = c.Get(isAuthed) != nil
+	)
 
-	_, out, err := doSearch(c, isAuthed)
+	// Prepare the query.
+	query, err := prepareQuery(c)
 	if err != nil {
-		var s int
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
 
-		// If out is nil, it's a non 500 "soft" error.
-		if out != nil {
-			s = http.StatusBadRequest
-		} else {
-			s = http.StatusInternalServerError
-		}
-
-		return echo.NewHTTPError(s, err.Error())
+	out, err := doSearch(query, isAuthed, app.pgAPI, app)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, okResp{out})
@@ -158,90 +146,107 @@ func handleServeBundle(c echo.Context, bundleType string, staticDir string) erro
 	return c.Blob(http.StatusOK, contentType, buf.Bytes())
 }
 
-// doSearch is a helper function that takes an HTTP query context,
-// gets search params from it, performs a search and returns results.
-func doSearch(c echo.Context, isAuthed bool) (data.Query, *results, error) {
+// prepareQuery extracts and validates search parameters from the HTTP context.
+// Returns a filled data.Query struct ready for searching.
+func prepareQuery(c echo.Context) (data.Query, error) {
 	var (
 		app = c.Get("app").(*App)
 
 		fromLang = c.Param("fromLang")
 		toLang   = c.Param("toLang")
-		q        = strings.TrimSpace(c.Param("q"))
-
-		qp  = c.Request().URL.Query()
-		pg  = app.resultsPg.NewFromURL(qp)
-		out = &results{}
+		qStr     = strings.TrimSpace(c.Param("q"))
 	)
 
-	// Query from /path/:query
-	q, err := url.QueryUnescape(q)
+	// Scan query params.
+	var q data.Query
+	if err := c.Bind(&q); err != nil {
+		return data.Query{}, fmt.Errorf("error parsing query: %v", err)
+	}
+
+	// Query string from /path/:query
+	qStr, err := url.QueryUnescape(qStr)
 	if err != nil {
-		return data.Query{}, nil, fmt.Errorf("error parsing query: %v", err)
+		return data.Query{}, fmt.Errorf("error parsing query: %v", err)
 	}
-	q = strings.TrimSpace(q)
-	if q == "" {
-		v, err := url.QueryUnescape(qp.Get("q"))
+	qStr = strings.TrimSpace(qStr)
+	if qStr == "" {
+		v, err := url.QueryUnescape(q.Query)
 		if err != nil {
-			return data.Query{}, nil, fmt.Errorf("error parsing query: %v", err)
+			return data.Query{}, fmt.Errorf("error parsing query: %v", err)
 		}
-		q = strings.TrimSpace(v)
+		qStr = strings.TrimSpace(v)
+	}
+	if qStr == "" {
+		return data.Query{}, errors.New("no query given")
 	}
 
-	if q == "" {
-		return data.Query{}, nil, errors.New("no query given")
+	// Languages not in path?
+	if fromLang == "" {
+		fromLang = q.FromLang
+	}
+	if toLang == "" {
+		toLang = q.ToLang
 	}
 
+	// Check languages.
 	if _, ok := app.data.Langs[fromLang]; !ok {
-		return data.Query{}, nil, errors.New("unknown `from` language")
+		return data.Query{}, errors.New("unknown `from` language")
 	}
-
 	if toLang == "*" {
 		toLang = ""
 	} else {
 		if _, ok := app.data.Langs[toLang]; !ok {
-			return data.Query{}, nil, errors.New("unknown `to` language")
+			return data.Query{}, errors.New("unknown `to` language")
 		}
 	}
 
-	// Search query.
-	query := data.Query{
-		FromLang: fromLang,
-		ToLang:   toLang,
-		Types:    qp["type"],
-		Tags:     qp["tag"],
-		Query:    q,
-		Status:   data.StatusEnabled,
-		Offset:   pg.Offset,
-		Limit:    pg.Limit,
+	// Check types.
+	for _, t := range q.Types {
+		if _, ok := app.data.Langs[fromLang].Types[t]; !ok {
+			return data.Query{}, fmt.Errorf("unknown type %s", t)
+		}
 	}
 
-	if err = validateSearchQuery(query, app.data.Langs); err != nil {
-		return query, out, err
+	// Final query.
+	q.Query = qStr
+	q.FromLang = fromLang
+	q.ToLang = toLang
+	q.Status = data.StatusEnabled
+
+	if q.Types == nil {
+		q.Types = []string{}
 	}
+	if q.Tags == nil {
+		q.Tags = []string{}
+	}
+
+	return q, nil
+}
+
+// doSearch takes a prepared query and performs the search, returning results.
+func doSearch(q data.Query, isAuthed bool, pgn *paginator.Paginator, app *App) (*results, error) {
+	// Pagination.
+	pg := pgn.New(q.Page, q.PerPage)
+	q.Offset = pg.Offset
+	q.Limit = pg.Limit
 
 	// Search and compose results.
-	out = &results{
-		Entries: []data.Entry{},
-	}
-	res, total, err := app.data.Search(query)
+	out := &results{Entries: []data.Entry{}}
+	res, total, err := app.data.Search(q)
 	if err != nil {
 		app.lo.Printf("error querying db: %v", err)
-		return query, nil, errors.New("error querying db")
+		return nil, errors.New("error querying db")
 	}
 
 	if len(res) == 0 {
-		return query, out, nil
+		out.Query = q
+
+		return out, nil
 	}
 
 	// Load relations into the matches.
-	if err := app.data.SearchAndLoadRelations(res, data.Query{
-		ToLang: toLang,
-		Offset: pg.Offset,
-		Limit:  pg.Limit,
-		Status: data.StatusEnabled,
-	}); err != nil {
-		app.lo.Printf("error querying db for defs: %v", err)
-		return query, nil, errors.New("error querying db for definitions")
+	if err := app.data.SearchAndLoadRelations(res, q); err != nil {
+		return nil, errors.New("error querying db for definitions")
 	}
 
 	// If this is an un-authenticated query, hide the numerical IDs.
@@ -256,28 +261,17 @@ func doSearch(c echo.Context, isAuthed bool) (data.Query, *results, error) {
 		}
 	}
 
+	// Calculate pagination.
 	pg.SetTotal(total)
 
-	out.Query.FromLang = fromLang
-	out.Query.ToLang = toLang
-	out.Query.Types = qp["type"]
-	out.Query.Tags = qp["tag"]
-	out.Query.Query = q
-
-	if out.Query.Types == nil {
-		out.Query.Types = []string{}
-	}
-	if out.Query.Tags == nil {
-		out.Query.Tags = []string{}
-	}
-
+	out.Query = q
 	out.Entries = res
 	out.Page = pg.Page
 	out.PerPage = pg.PerPage
 	out.TotalPages = pg.TotalPages
 	out.Total = total
 
-	return query, out, nil
+	return out, nil
 }
 
 // getGlossaryWords is a helper function that takes an HTTP query context,
