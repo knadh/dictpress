@@ -167,7 +167,6 @@ async function screenshotDOM(el, opts = {}) {
 }
 
 async function shareDOM(target, title, text, filename) {
-    alert(text)
     try {
         // Make a crisp image (PNG keeps transparency; use JPEG for smaller files)
         const blob = await screenshotDOM(target, {
