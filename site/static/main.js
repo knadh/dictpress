@@ -144,7 +144,7 @@ async function screenshotElement(element) {
       const filename = title.replace(/\s+/g, "_").toLowerCase();
 
       try {
-        await shareDOM(entryEl, `${title} meaning`, `${localStorage.from_lang} to ${localStorage.to_lang} meaning`, `${filename}.png`);
+        await shareDOM(entryEl, `${title} meaning`, `${localStorage.from_lang} to ${localStorage.to_lang} meaning\n\n${window.location.href}`, `${filename}.png`);
       } catch (err) {
         console.error("Error sharing entry:", err);
         alert(`Error sharing entry: ${err?.message || err}`);
