@@ -210,3 +210,44 @@
   })
 })();
 
+// Autocomplete.
+(() => {
+  if(!autocomp) {
+    return;
+  }
+
+  const elForm = document.querySelector("form.search-form");
+  const elQ = document.querySelector("#q");
+  let debounce;
+
+  autocomp(elQ, {
+    autoSelect: false,
+    onQuery: async (val) => {
+      const langCode = localStorage.from_lang;
+      clearTimeout(debounce);
+      return new Promise(resolve => {
+        debounce = setTimeout(async () => {
+          const response = await fetch(`${_ROOT_URL}/atl/${langCode}/${val.toLowerCase()}`);
+          const data = await response.json();
+
+          const a = data.greedy_tokenized.map(item => item.word).slice(0, 3).sort((a, b) => a.length - b.length);
+          const b = data.dictionary_suggestions.map(item => item.word).slice(0, 6).sort((a, b) => a.length - b.length);
+
+          debounce = null;
+          resolve([...new Set(a.concat(b))]);
+        }, 50);
+      });
+    },
+
+    onSelect: (val) => {
+      // autocomp search isn't complete. Use the user's input instead of autocomp selection.
+      if (debounce || !val) {
+        return elQ.value;
+      }
+
+      elQ.value = val;
+      elForm.dispatchEvent(new Event("submit", { cancelable: true }));
+      return val;
+    }
+  });
+})();
