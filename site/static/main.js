@@ -1,3 +1,15 @@
+async function screenshotElement(element) {
+  const canvas = await html2canvas(element);
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'screenshot.png';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
 (() => {
   const elForm = document.querySelector("form.search-form");
   const elQ = document.querySelector("#q");
@@ -113,6 +125,32 @@
   selectDict(dict);
   elQ.focus();
   elQ.select();
+})();
+
+// Screenshot sharing.
+(() => {
+  document.querySelectorAll("a.export").forEach((el) => {
+    el.onclick = async (e) => {
+      e.preventDefault();
+      const guid = el.dataset.guid;
+      const entryEl = document.querySelector(`.entry[data-guid='${guid}']`);
+      if (!entryEl) {
+        alert("Could not find entry to export");
+        return;
+      }
+
+      const title = entryEl.dataset.head;
+      // Make the filename by stripping spaces from the head word(s).
+      const filename = title.replace(/\s+/g, "_").toLowerCase();
+
+      try {
+        await shareDOM(entryEl, `${title} meaning`, `${localStorage.from_lang} to ${localStorage.to_lang} meaning`, `${filename}.png`);
+      } catch (err) {
+        console.error("Error sharing entry:", err);
+        alert(`Error sharing entry: ${err?.message || err}`);
+      }
+    };
+  });
 })();
 
 

@@ -5,14 +5,13 @@
     <div class="eight columns">
         <ol class="entries">
             {{- range $k, $r := (mustSlice .Data.Results.Entries 0 $numResults) -}}
-            <li class="entry" data-guid="{{ $r.GUID }}">
+            <li class="entry" data-guid="{{ $r.GUID }}" data-head="{{ $r.Content | join ", " }}">
                 <header class="head">
                     <div>
                         <h3 class="title">{{ $r.Content | join ", " }}
                             {{- if $.Consts.EnableSubmissions -}}
                                 <a href="#" data-from="{{ $r.GUID }}" class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" (index $r.Content 0) }}">✏️</a>
                             {{- end -}}
-
                         </h3>
 
 
@@ -22,13 +21,16 @@
 
                     </div>
 
-                    {{- if $r.Tags -}}
-                        <span class="tags">
-                            {{- range $tag := $r.Tags -}}
-                                <span class="tag" {{- if hasPrefix "src:" $tag }} title="{{ $.L.T "public.sourceTag" }}"{{- end }}>{{ $tag }}</span>
-                            {{- end -}}
-                        </span>
-                    {{- end -}}
+                    <div class="meta">
+                        {{- if $r.Tags -}}
+                            <span class="tags">
+                                {{- range $tag := $r.Tags -}}
+                                    <span class="tag" {{- if hasPrefix "src:" $tag }} title="{{ $.L.T "public.sourceTag" }}"{{- end }}>{{ $tag }}</span>
+                                {{- end -}}
+                            </span>
+                        {{- end -}}
+                        <a href="#" title="Share screenshot" class="export" data-guid="{{ $r.GUID }}"><img src="/static/export.svg?v={{ $.AssetVer }}" alt="Share screenshot"></a>
+                    </div>
                 </header>
 
                 {{- if $r.Relations -}}

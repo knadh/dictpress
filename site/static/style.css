@@ -323,6 +323,8 @@ button:hover,
   text-decoration: none;
   transform: translate(0, 3px);
   transition: transform 0.15s ease;
+  position: absolute;
+  margin: 0 5px;
 }
 
 .entries .more-toggle::before {
@@ -356,6 +358,7 @@ button:hover,
   color: var(--white);
   padding: 3px 10px;
   display: none;
+  position: absolute;
   text-decoration: none;
   z-index: 1000;
   line-height: 1;
@@ -380,6 +383,11 @@ button:hover,
   line-height: 1;
   padding: 2px 5px;
   color: var(--lighter);
+}
+.entries .meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .related .word {
@@ -641,6 +649,10 @@ button:hover,
 @media screen and (max-width: 500px) {
   .main {
     margin-top: 15px;
+  }
+
+  .header {
+    margin-bottom: 0;
   }
 
   .search-form>div {
