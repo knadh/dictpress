@@ -647,6 +647,30 @@ button:hover,
 }
 
 @media screen and (max-width: 500px) {
+  .search-form select {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .search-form .input-group {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .search-form input {
+    min-width: 0;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  .logo {
+    text-align: center;
+    margin-bottom: 5px;
+  }
+  .logo img {
+    max-height: 42px;
+  }
+
   .main {
     margin-top: 15px;
   }
@@ -654,7 +678,9 @@ button:hover,
   .header {
     margin-bottom: 0;
   }
+}
 
+@media screen and (max-width: 320px) {
   .search-form>div {
     flex-wrap: wrap;
   }
