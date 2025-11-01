@@ -66,6 +66,18 @@ async function screenshotDOM(el, opts = {}) {
     async function inlineEverything(srcNode, dstNode) {
         copyComputedStyle(srcNode, dstNode);
 
+        // Remove interactive states that may be captured on touch devices
+        if (dstNode instanceof Element) {
+            // Reset outline from :focus state
+            dstNode.style.setProperty('outline', 'none', 'important');
+            // Reset any pointer-events to ensure no hover states
+            const cs = window.getComputedStyle(srcNode);
+            // Only override cursor if it's pointer (indicating interactivity)
+            if (cs.cursor === 'pointer') {
+                dstNode.style.setProperty('cursor', 'default', 'important');
+            }
+        }
+
         if (srcNode instanceof HTMLTextAreaElement) {
             dstNode.textContent = srcNode.value;
         } else if (srcNode instanceof HTMLInputElement) {
@@ -87,6 +99,35 @@ async function screenshotDOM(el, opts = {}) {
                 dstNode.replaceWith(img);
                 dstNode = img;
             } catch { }
+        }
+
+        // Handle img elements to ensure they render properly
+        if (srcNode instanceof HTMLImageElement && dstNode instanceof HTMLImageElement) {
+            // Convert image to data URL for inlining
+            if (srcNode.complete && srcNode.naturalWidth > 0) {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = srcNode.naturalWidth;
+                    canvas.height = srcNode.naturalHeight;
+                    ctx.drawImage(srcNode, 0, 0);
+                    dstNode.src = canvas.toDataURL('image/png');
+                    // Also set width/height to ensure proper rendering
+                    const cs = window.getComputedStyle(srcNode);
+                    dstNode.style.width = cs.width;
+                    dstNode.style.height = cs.height;
+                    dstNode.style.objectFit = cs.objectFit;
+                } catch (err) {
+                    // If cross-origin or other error, keep original src
+                    console.log('Could not inline image:', err);
+                    dstNode.src = srcNode.src;
+                }
+            } else {
+                // Image not loaded or has no dimensions, use src as-is
+                dstNode.src = srcNode.src || srcNode.getAttribute('src') || '';
+            }
+            // Remove alt text from being rendered
+            dstNode.removeAttribute('alt');
         }
 
         materializePseudo(srcNode, dstNode, '::before');
@@ -168,6 +209,15 @@ async function screenshotDOM(el, opts = {}) {
 
 async function shareDOM(target, title, text, filename) {
     try {
+        // Remove any active/focus states before capturing
+        // This is especially important on touch devices (Android)
+        if (document.activeElement) {
+            document.activeElement.blur();
+        }
+
+        // Wait a brief moment for any :active states to clear
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // Make a crisp image (PNG keeps transparency; use JPEG for smaller files)
         const blob = await screenshotDOM(target, {
             scale: Math.max(2, window.devicePixelRatio || 2),
@@ -186,25 +236,19 @@ async function shareDOM(target, title, text, filename) {
             return;
         }
 
-        // Or share a blob URL (some browsers only accept url/text).
-        if (navigator.share) {
-            const url = URL.createObjectURL(blob);
-            try {
-                await navigator.share({ title, url });
-            } finally {
-                URL.revokeObjectURL(url);
-            }
-            return;
-        }
-
-        // Or a copy image to clipboard (desktop Chrome/Edge, some Android)/
+        // Copy image to clipboard (desktop Chrome/Edge, some Android)
         if (navigator.clipboard && window.ClipboardItem) {
-            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-            alert('Screenshot copied to clipboard');
-            return;
+            try {
+                await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+                alert('Screenshot copied to clipboard');
+                return;
+            } catch (clipErr) {
+                // Clipboard write failed (common on Android), fall through to download
+                console.log('Clipboard write not allowed, downloading instead:', clipErr);
+            }
         }
 
-        // Nothing worked, prompt a download.
+        // Fallback: prompt a download
         const dlUrl = URL.createObjectURL(blob);
         const a = Object.assign(document.createElement('a'), {
             href: dlUrl,
