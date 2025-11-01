@@ -166,6 +166,7 @@ button:hover,
 
 .home .container {
   max-width: 700px;
+  margin: auto;
 }
 
 .logo a {
@@ -592,12 +593,11 @@ button:hover,
 }
 
 /* Homepage */
-
 .home {
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 100%;
+  min-height: 100%;
+  padding: 15px 0;
 }
 
 .home .header {
@@ -632,6 +632,7 @@ button:hover,
   border-top: 0;
   box-shadow: 2px 2px 2px #eee;
   text-align: left;
+  z-index: 100;
 }
 
 .autocomp-item {
@@ -678,6 +679,15 @@ button:hover,
   .header {
     margin-bottom: 0;
   }
+
+  .footer a, .nav a {
+    display: block;
+    line-height: 1.4rem;
+  }
+
+  .footer a.icon {
+    display: inline-block;
+  }
 }
 
 @media screen and (max-width: 320px) {
@@ -712,13 +722,4 @@ button:hover,
   .entries .defs:not(:last-child) {
     margin-bottom: 15px;
   }
-
-  .footer a {
-    display: block;
-  }
-
-  .footer a.icon {
-    display: inline-block;
-  }
-
 }
