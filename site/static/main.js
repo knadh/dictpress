@@ -279,13 +279,12 @@ async function screenshotElement(element) {
 
     onSelect: (val) => {
       // autocomp search isn't complete. Use the user's input instead of autocomp selection.
-      if (debounce || !val) {
-        return elQ.value;
+      if (val) {
+        elQ.value = val;
       }
 
-      elQ.value = val;
       elForm.dispatchEvent(new Event("submit", { cancelable: true }));
-      return val;
+      return elQ.value;
     }
   });
 })();
