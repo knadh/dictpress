@@ -2,7 +2,6 @@ package indicphone
 
 import (
 	"errors"
-	"fmt"
 	"slices"
 	"strings"
 
@@ -97,8 +96,6 @@ func (ip *IndicPhone) ToQuery(s string, lang string) (string, error) {
 	if numKeys == 0 {
 		numKeys = 1
 	}
-
-	fmt.Println(numKeys)
 
 	// De-duplicate tokens.
 	tokens := slices.Compact([]string{key2, key1, key0})
