@@ -274,6 +274,22 @@ button:hover,
   margin: 0;
 }
 
+.entries .title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.entries .audio {
+  display: inline-block;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: ease-in-out 0.035s;
+}
+.entries .audio:hover {
+  transform: scale(1.1);
+}
+
 .entries .pronun {
   color: var(--light);
 }
@@ -356,10 +372,8 @@ button:hover,
 }
 
 .entry .edit {
-  color: var(--white);
-  padding: 3px 10px;
+  padding: 3px;
   display: none;
-  position: absolute;
   text-decoration: none;
   z-index: 1000;
   line-height: 1;

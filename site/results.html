@@ -8,12 +8,17 @@
             <li class="entry" data-guid="{{ $r.GUID }}" data-head="{{ $r.Content | join ", " }}">
                 <header class="head">
                     <div>
-                        <h3 class="title">{{ $r.Content | join ", " }}
+                        <div class="title-wrap">
+                            <h3 class="title">{{ $r.Content | join ", " }}</h3>
+
+                            {{- if $r.Meta.audio -}}
+                                <a href="{{ $r.Meta.audio }}" class="audio" data-audio><img src="/static/audio.svg?v={{ $.AssetVer }}" alt="{{ $.L.T "public.playAudio" }}"></a>
+                            {{- end -}}
+
                             {{- if $.Consts.EnableSubmissions -}}
                                 <a href="#" data-from="{{ $r.GUID }}" class="edit" title="{{ $.L.Ts "public.suggestEdit" "word" (index $r.Content 0) }}">✏️</a>
                             {{- end -}}
-                        </h3>
-
+                        </div>
 
                         {{- if $r.Phones -}}
                             <span class="pronun">♪ {{ $r.Phones | join "," }}</span>

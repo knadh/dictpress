@@ -153,6 +153,19 @@ async function screenshotElement(element) {
   });
 })();
 
+// Play audio.
+(() => {
+  document.querySelectorAll("a[data-audio]").forEach((el) => {
+    el.onclick = (e) => {
+      e.preventDefault();
+      const audio = new Audio(el.getAttribute("href"));
+      audio.play().catch((err) => {
+        console.error("error playing audio:", err);
+        alert("error playing audio");
+      });
+    };
+  });
+})();
 
 // Submission form.
 (() => {
