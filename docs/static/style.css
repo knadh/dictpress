@@ -1,7 +1,7 @@
 :root {
 	--primary: #b78900;
 	--bright: #ffcc00;
-	--secondary: #333;
+	--secondary: #222;
 	--light: #999;
 }
 
@@ -16,14 +16,14 @@ html, body {
 
 body {
 	background: #fff;
-	font-family: "Inter", sans-serif;
+	font-family: Inter, sans-serif;
 	font-size: 17px;
 	line-height: 29px;
 	color: var(--secondary);
 }
 
 h1, h2, h3, h4, h5 {
-	font-weight: 400;
+	font-weight: 600;
 	margin: 0 0 20px 0;
 }
 
@@ -82,17 +82,16 @@ p {
 }
 
 .button {
-	background: var(--bright);
-	color: var(--secondary);
+	background: var(--secondary);
+	color: #fff;
 	padding: 15px 40px;
 	border-radius: 5px;
-	border: 1px solid var(--secondary);
 	box-shadow: 2px 2px 0 #ecbd00;
 	display: inline-block;
 	font-size: 1.2rem;
 }
 	.button:hover {
-		opacity: 0.7;
+		color: var(--bright);
 	}
 	.button:active {
 		transform: translate(2px, 2px);
@@ -112,7 +111,7 @@ p {
 }
 
 .header {
-	background: #eee;
+	background: var(--bright);
 	padding: 60px 0;
 	margin-bottom: 60px;
 }
@@ -127,7 +126,11 @@ p {
 .nav a {
 	display: inline-block;
 	margin: 0 20px 0 0;
+	color: var(--secondary);
 }
+	.nav a:hover {
+		opacity: 0.8;
+	}
 	.hero {
 		margin-top: 90px;
 	}
