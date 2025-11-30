@@ -17,29 +17,21 @@ import (
 
 const isAuthed = "is_authed"
 
-// handleGetConfig returns the language configuration.
-func handleGetConfig(c echo.Context) error {
-	var (
-		app = c.Get("app").(*App)
-	)
-
+// HandleGetConfig returns the language configuration.
+func (a *App) HandleGetConfig(c echo.Context) error {
 	out := struct {
 		RootURL   string       `json:"root_url"`
 		Languages data.LangMap `json:"languages"`
 		Version   string       `json:"version"`
 		BuildStr  string       `json:"build"`
-	}{app.consts.RootURL, app.data.Langs, versionString, buildString}
+	}{a.consts.RootURL, a.data.Langs, versionString, buildString}
 
 	return c.JSON(http.StatusOK, okResp{out})
 }
 
-// handleGetStats returns DB statistics.
-func handleGetStats(c echo.Context) error {
-	var (
-		app = c.Get("app").(*App)
-	)
-
-	out, err := app.data.GetStats()
+// HandleGetStats returns DB statistics.
+func (a *App) HandleGetStats(c echo.Context) error {
+	out, err := a.data.GetStats()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -47,17 +39,15 @@ func handleGetStats(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{out})
 }
 
-// handleInsertEntry inserts a new dictionary entry.
-func handleInsertEntry(c echo.Context) error {
-	app := c.Get("app").(*App)
-
+// HandleInsertEntry inserts a new dictionary entry.
+func (a *App) HandleInsertEntry(c echo.Context) error {
 	var e data.Entry
 	if err := c.Bind(&e); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest,
 			fmt.Sprintf("error parsing request: %v", err))
 	}
 
-	e, err := validateEntry(e, app)
+	e, err := a.validateEntry(e)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -66,7 +56,7 @@ func handleInsertEntry(c echo.Context) error {
 		e.Meta = map[string]interface{}{}
 	}
 
-	id, err := app.data.InsertEntry(e)
+	id, err := a.data.InsertEntry(e)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error inserting entry: %v", err))
@@ -75,28 +65,24 @@ func handleInsertEntry(c echo.Context) error {
 	// Proxy to the get request to respond with the newly inserted entry.
 	c.SetParamNames("id")
 	c.SetParamValues(fmt.Sprintf("%d", id))
-	return handleGetEntry(c)
+	return a.HandleGetEntry(c)
 }
 
-// handleGetPendingEntries returns the pending entries for moderation.
-func handleGetPendingEntries(c echo.Context) error {
-	var (
-		app = c.Get("app").(*App)
-
-		pg = app.pgSite.NewFromURL(c.Request().URL.Query())
-	)
+// HandleGetPendingEntries returns the pending entries for moderation.
+func (a *App) HandleGetPendingEntries(c echo.Context) error {
+	pg := a.pgSite.NewFromURL(c.Request().URL.Query())
 
 	// Search and compose results.
 	out := &results{
 		Entries: []data.Entry{},
 	}
-	res, total, err := app.data.GetPendingEntries("", nil, pg.Offset, pg.Limit)
+	res, total, err := a.data.GetPendingEntries("", nil, pg.Offset, pg.Limit)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.JSON(http.StatusOK, okResp{out})
 		}
 
-		app.lo.Printf("error querying db: %v", err)
+		a.lo.Printf("error querying db: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -105,8 +91,8 @@ func handleGetPendingEntries(c echo.Context) error {
 	}
 
 	// Load relations into the matches.
-	if err := app.data.SearchAndLoadRelations(res, data.Query{}); err != nil {
-		app.lo.Printf("error querying db for defs: %v", err)
+	if err := a.data.SearchAndLoadRelations(res, data.Query{}); err != nil {
+		a.lo.Printf("error querying db for defs: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -121,14 +107,11 @@ func handleGetPendingEntries(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{out})
 }
 
-// handleGetEntry returns an entry by its guid.
-func handleGetEntry(c echo.Context) error {
-	var (
-		app   = c.Get("app").(*App)
-		id, _ = strconv.Atoi(c.Param("id"))
-	)
+// HandleGetEntry returns an entry by its guid.
+func (a *App) HandleGetEntry(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
 
-	e, err := app.data.GetEntry(id, "")
+	e, err := a.data.GetEntry(id, "")
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusBadRequest, "entry not found")
@@ -140,22 +123,19 @@ func handleGetEntry(c echo.Context) error {
 	e.Relations = make([]data.Entry, 0)
 
 	entries := []data.Entry{e}
-	if err := app.data.SearchAndLoadRelations(entries, data.Query{}); err != nil {
-		app.lo.Printf("error loading relations: %v", err)
+	if err := a.data.SearchAndLoadRelations(entries, data.Query{}); err != nil {
+		a.lo.Printf("error loading relations: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error loading relations")
 	}
 
 	return c.JSON(http.StatusOK, okResp{entries[0]})
 }
 
-// handleGetParentEntries returns the parent entries of an entry by its guid.
-func handleGetParentEntries(c echo.Context) error {
-	var (
-		app   = c.Get("app").(*App)
-		id, _ = strconv.Atoi(c.Param("id"))
-	)
+// HandleGetParentEntries returns the parent entries of an entry by its guid.
+func (a *App) HandleGetParentEntries(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
 
-	out, err := app.data.GetParentEntries(id)
+	out, err := a.data.GetParentEntries(id)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -167,12 +147,9 @@ func handleGetParentEntries(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{out})
 }
 
-// handleUpdateEntry updates a dictionary entry.
-func handleUpdateEntry(c echo.Context) error {
-	var (
-		app   = c.Get("app").(*App)
-		id, _ = strconv.Atoi(c.Param("id"))
-	)
+// HandleUpdateEntry updates a dictionary entry.
+func (a *App) HandleUpdateEntry(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
 
 	if id < 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
@@ -184,12 +161,12 @@ func handleUpdateEntry(c echo.Context) error {
 			fmt.Sprintf("error parsing request: %v", err))
 	}
 
-	e, err := validateEntry(e, app)
+	e, err := a.validateEntry(e)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err := app.data.UpdateEntry(id, e); err != nil {
+	if err := a.data.UpdateEntry(id, e); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error updating entry: %v", err))
 	}
@@ -197,21 +174,18 @@ func handleUpdateEntry(c echo.Context) error {
 	// Proxy to the get request to respond with the newly inserted entry.
 	c.SetParamNames("id")
 	c.SetParamValues(fmt.Sprintf("%d", id))
-	return handleGetEntry(c)
+	return a.HandleGetEntry(c)
 }
 
-// handleApproveSubmission updates a dictionary entry.
-func handleApproveSubmission(c echo.Context) error {
-	var (
-		app   = c.Get("app").(*App)
-		id, _ = strconv.Atoi(c.Param("id"))
-	)
+// HandleApproveSubmission updates a dictionary entry.
+func (a *App) HandleApproveSubmission(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
 
 	if id < 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
 	}
 
-	if err := app.data.ApproveSubmission(id); err != nil {
+	if err := a.data.ApproveSubmission(id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error approving submission: %v", err))
 	}
@@ -219,18 +193,15 @@ func handleApproveSubmission(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-// handleRejectSubmission updates a dictionary entry.
-func handleRejectSubmission(c echo.Context) error {
-	var (
-		app   = c.Get("app").(*App)
-		id, _ = strconv.Atoi(c.Param("id"))
-	)
+// HandleRejectSubmission updates a dictionary entry.
+func (a *App) HandleRejectSubmission(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
 
 	if id < 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
 	}
 
-	if err := app.data.RejectSubmission(id); err != nil {
+	if err := a.data.RejectSubmission(id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error rejecting submission: %v", err))
 	}
@@ -238,14 +209,11 @@ func handleRejectSubmission(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-// handleDeleteEntry deletes a dictionary entry.
-func handleDeleteEntry(c echo.Context) error {
-	var (
-		app   = c.Get("app").(*App)
-		id, _ = strconv.Atoi(c.Param("id"))
-	)
+// HandleDeleteEntry deletes a dictionary entry.
+func (a *App) HandleDeleteEntry(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
 
-	if err := app.data.DeleteEntry(id); err != nil {
+	if err := a.data.DeleteEntry(id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error deleting entry: %v", err))
 	}
@@ -253,13 +221,10 @@ func handleDeleteEntry(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-// handleAddRelation updates a relation's properties.
-func handleAddRelation(c echo.Context) error {
-	var (
-		app       = c.Get("app").(*App)
-		fromID, _ = strconv.Atoi(c.Param("fromID"))
-		toID, _   = strconv.Atoi(c.Param("toID"))
-	)
+// HandleAddRelation updates a relation's properties.
+func (a *App) HandleAddRelation(c echo.Context) error {
+	fromID, _ := strconv.Atoi(c.Param("fromID"))
+	toID, _ := strconv.Atoi(c.Param("toID"))
 
 	if fromID < 1 || toID < 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid IDs.")
@@ -271,7 +236,7 @@ func handleAddRelation(c echo.Context) error {
 			fmt.Sprintf("error parsing request: %v", err))
 	}
 
-	if _, err := app.data.InsertRelation(fromID, toID, rel); err != nil {
+	if _, err := a.data.InsertRelation(fromID, toID, rel); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error inserting relation: %v", err))
 	}
@@ -279,12 +244,9 @@ func handleAddRelation(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-// handleUpdateRelation updates a relation's properties.
-func handleUpdateRelation(c echo.Context) error {
-	var (
-		app      = c.Get("app").(*App)
-		relID, _ = strconv.Atoi(c.Param("relID"))
-	)
+// HandleUpdateRelation updates a relation's properties.
+func (a *App) HandleUpdateRelation(c echo.Context) error {
+	relID, _ := strconv.Atoi(c.Param("relID"))
 
 	if relID < 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
@@ -296,7 +258,7 @@ func handleUpdateRelation(c echo.Context) error {
 			fmt.Sprintf("error parsing request: %v", err))
 	}
 
-	if err := app.data.UpdateRelation(relID, rel); err != nil {
+	if err := a.data.UpdateRelation(relID, rel); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error updating relation: %v", err))
 	}
@@ -304,12 +266,8 @@ func handleUpdateRelation(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-// handleReorderRelations reorders the weights of the relation IDs in the given order.
-func handleReorderRelations(c echo.Context) error {
-	var (
-		app = c.Get("app").(*App)
-	)
-
+// HandleReorderRelations reorders the weights of the relation IDs in the given order.
+func (a *App) HandleReorderRelations(c echo.Context) error {
 	req := struct {
 		IDs []int `json:"ids"`
 	}{}
@@ -319,7 +277,7 @@ func handleReorderRelations(c echo.Context) error {
 			fmt.Sprintf("error parsing request: %v", err))
 	}
 
-	if err := app.data.ReorderRelations(req.IDs); err != nil {
+	if err := a.data.ReorderRelations(req.IDs); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error updating relation: %v", err))
 	}
@@ -327,19 +285,16 @@ func handleReorderRelations(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-// handleDeleteRelation deletes a relation between two entres.
-func handleDeleteRelation(c echo.Context) error {
-	var (
-		app       = c.Get("app").(*App)
-		fromID, _ = strconv.Atoi(c.Param("fromID"))
-		relID, _  = strconv.Atoi(c.Param("relID"))
-	)
+// HandleDeleteRelation deletes a relation between two entres.
+func (a *App) HandleDeleteRelation(c echo.Context) error {
+	fromID, _ := strconv.Atoi(c.Param("fromID"))
+	relID, _ := strconv.Atoi(c.Param("relID"))
 
 	if fromID < 1 || relID < 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid IDs.")
 	}
 
-	if err := app.data.DeleteRelation(fromID, relID); err != nil {
+	if err := a.data.DeleteRelation(fromID, relID); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error deleting relation: %v", err))
 	}
@@ -347,12 +302,8 @@ func handleDeleteRelation(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-func handleGetComments(c echo.Context) error {
-	var (
-		app = c.Get("app").(*App)
-	)
-
-	out, err := app.data.GetComments()
+func (a *App) HandleGetComments(c echo.Context) error {
+	out, err := a.data.GetComments()
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error deleting relation: %v", err))
@@ -365,17 +316,14 @@ func handleGetComments(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{out})
 }
 
-func handleDeletecomments(c echo.Context) error {
-	var (
-		app   = c.Get("app").(*App)
-		id, _ = strconv.Atoi(c.Param("commentID"))
-	)
+func (a *App) HandleDeleteComments(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("commentID"))
 
 	if id < 1 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid `id`.")
 	}
 
-	if err := app.data.DeleteComments(id); err != nil {
+	if err := a.data.DeleteComments(id); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error deleting comments: %v", err))
 	}
@@ -383,12 +331,8 @@ func handleDeletecomments(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-func handleDeletePending(c echo.Context) error {
-	var (
-		app = c.Get("app").(*App)
-	)
-
-	if err := app.data.DeleteAllPending(); err != nil {
+func (a *App) HandleDeletePending(c echo.Context) error {
+	if err := a.data.DeleteAllPending(); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("error deleting pending entries: %v", err))
 	}
@@ -396,7 +340,7 @@ func handleDeletePending(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{true})
 }
 
-func validateEntry(e data.Entry, app *App) (data.Entry, error) {
+func (a *App) validateEntry(e data.Entry) (data.Entry, error) {
 	for i, v := range e.Content {
 		e.Content[i] = strings.TrimSpace(v)
 	}
@@ -409,18 +353,16 @@ func validateEntry(e data.Entry, app *App) (data.Entry, error) {
 		return data.Entry{}, errors.New("invalid `initial`")
 	}
 
-	if _, ok := app.data.Langs[e.Lang]; !ok {
+	if _, ok := a.data.Langs[e.Lang]; !ok {
 		return data.Entry{}, errors.New("unknown `lang`")
 	}
 
 	return e, nil
 }
 
-// handleAdminPage is the root handler that renders the Javascript admin frontend.
-func adminPage(tpl string) func(c echo.Context) error {
+// adminPage is the root handler that renders the Javascript admin frontend.
+func (a *App) adminPage(tpl string) func(c echo.Context) error {
 	return func(c echo.Context) error {
-		app := c.Get("app").(*App)
-
 		title := ""
 		switch tpl {
 		case "search":
@@ -441,11 +383,11 @@ func adminPage(tpl string) func(c echo.Context) error {
 		}
 
 		b := &bytes.Buffer{}
-		err := app.adminTpl.ExecuteTemplate(b, tpl, struct {
+		err := a.adminTpl.ExecuteTemplate(b, tpl, struct {
 			Title    string
 			AssetVer string
 			Consts   Consts
-		}{title, assetVer, app.consts})
+		}{title, assetVer, a.consts})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError,
 				fmt.Sprintf("error compiling template: %v", err))
@@ -456,11 +398,9 @@ func adminPage(tpl string) func(c echo.Context) error {
 }
 
 // basicAuth middleware does an HTTP BasicAuth authentication for admin handlers.
-func basicAuth(username, password string, c echo.Context) (bool, error) {
-	app := c.Get("app").(*App)
-
-	if subtle.ConstantTimeCompare([]byte(username), app.consts.AdminUsername) == 1 &&
-		subtle.ConstantTimeCompare([]byte(password), app.consts.AdminPassword) == 1 {
+func (a *App) basicAuth(username, password string, c echo.Context) (bool, error) {
+	if subtle.ConstantTimeCompare([]byte(username), a.consts.AdminUsername) == 1 &&
+		subtle.ConstantTimeCompare([]byte(password), a.consts.AdminPassword) == 1 {
 		c.Set(isAuthed, true)
 		return true, nil
 	}

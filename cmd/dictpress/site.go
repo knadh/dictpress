@@ -62,6 +62,7 @@ type tplData struct {
 
 // tplRenderer wraps a template.tplRenderer for echo.
 type tplRenderer struct {
+	app  *App
 	tpls *template.Template
 }
 
@@ -75,19 +76,15 @@ func init() {
 }
 
 // handleIndexPage renders the homepage.
-func handleIndexPage(c echo.Context) error {
+func (a *App) handleIndexPage(c echo.Context) error {
 	return c.Render(http.StatusOK, "index", pageTpl{
 		PageType: pageIndex,
 	})
 }
 
 // handleSearchPage renders the search results page.
-func handleSearchPage(c echo.Context) error {
-	var (
-		app = c.Get("app").(*App)
-	)
-
-	q, err := prepareQuery(c)
+func (a *App) handleSearchPage(c echo.Context) error {
+	q, err := a.prepareQuery(c)
 	if err != nil {
 		return c.Render(http.StatusInternalServerError, "message", pageTpl{
 			Title: "Error", Heading: "Error", Description: err.Error(),
@@ -95,10 +92,10 @@ func handleSearchPage(c echo.Context) error {
 	}
 
 	// Apply search query limits on relations and content items.
-	q.MaxRelations = app.consts.SiteMaxEntryRelationsPerType
-	q.MaxContentItems = app.consts.SiteMaxEntryContentItems
+	q.MaxRelations = a.consts.SiteMaxEntryRelationsPerType
+	q.MaxContentItems = a.consts.SiteMaxEntryContentItems
 
-	res, err := doSearch(q, false, app.pgSite, app)
+	res, err := a.doSearch(q, false, a.pgSite)
 	if err != nil {
 		return c.Render(http.StatusInternalServerError, "message", pageTpl{
 			Title: "Error", Heading: "Error", Description: err.Error(),
@@ -112,10 +109,10 @@ func handleSearchPage(c echo.Context) error {
 	})
 }
 
-// handleSubmissionPage renders the new entry submission page.
-func handleSubmissionPage(c echo.Context) error {
+// HandleSubmissionPage renders the new entry submission page.
+func (a *App) HandleSubmissionPage(c echo.Context) error {
 	if c.Request().Method == http.MethodPost {
-		if err := handleNewSubmission(c); err != nil {
+		if err := a.HandleNewSubmission(c); err != nil {
 			e := err.(*echo.HTTPError)
 			return c.Render(e.Code, "message", pageTpl{
 				Title:       "Error",
@@ -137,19 +134,18 @@ func handleSubmissionPage(c echo.Context) error {
 }
 
 // handleGlossaryPage renders the alphabet glossary page.
-func handleGlossaryPage(c echo.Context) error {
+func (a *App) handleGlossaryPage(c echo.Context) error {
 	var (
-		app      = c.Get("app").(*App)
 		fromLang = c.Param("fromLang")
 		toLang   = c.Param("toLang")
 		initial  = c.Param("initial")
-		pg       = app.glossaryPg.NewFromURL(c.Request().URL.Query())
+		pg       = a.glossaryPg.NewFromURL(c.Request().URL.Query())
 	)
 
 	// Get the alphabets.
-	initials, err := app.data.GetInitials(fromLang)
+	initials, err := a.data.GetInitials(fromLang)
 	if err != nil {
-		app.lo.Printf("error getting initials: %v", err)
+		a.lo.Printf("error getting initials: %v", err)
 		return c.Render(http.StatusInternalServerError, "message", pageTpl{
 			Title:       "Error",
 			Heading:     "Error",
@@ -176,9 +172,9 @@ func handleGlossaryPage(c echo.Context) error {
 	}
 
 	// Get words.
-	gloss, err := getGlossaryWords(fromLang, initial, pg, app)
+	gloss, err := a.getGlossaryWords(fromLang, initial, pg)
 	if err != nil {
-		app.lo.Printf("error getting glossary words: %v", err)
+		a.lo.Printf("error getting glossary words: %v", err)
 		return c.Render(http.StatusInternalServerError, "message", pageTpl{
 			Title:       "Error",
 			Heading:     "Error",
@@ -202,13 +198,10 @@ func handleGlossaryPage(c echo.Context) error {
 }
 
 // handleStaticPage renders an arbitrary static page.
-func handleStaticPage(c echo.Context) error {
-	var (
-		app = c.Get("app").(*App)
-		id  = strings.TrimRight(c.Param("page"), "/")
-	)
+func (a *App) handleStaticPage(c echo.Context) error {
+	id := strings.TrimRight(c.Param("page"), "/")
 
-	tpl, ok := app.sitePageTpls[id]
+	tpl, ok := a.sitePageTpls[id]
 	if !ok {
 		return c.Render(http.StatusNotFound, "message", pageTpl{
 			Title:   "404",
@@ -222,10 +215,10 @@ func handleStaticPage(c echo.Context) error {
 	if err := tpl.ExecuteTemplate(&b, "page-"+id, tplData{
 		Path:     c.Path(),
 		AssetVer: assetVer,
-		Consts:   app.consts,
-		Langs:    app.data.Langs,
-		Dicts:    app.data.Dicts,
-		L:        app.i18n,
+		Consts:   a.consts,
+		Langs:    a.data.Langs,
+		Dicts:    a.data.Dicts,
+		L:        a.i18n,
 		Data: pageTpl{
 			PageType: pageStatic,
 			PageID:   id,
@@ -301,15 +294,13 @@ func loadSite(rootPath string, loadPages bool) (*template.Template, map[string]*
 
 // Render executes and renders a template for echo.
 func (t *tplRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	app := c.Get("app").(*App)
-
 	return t.tpls.ExecuteTemplate(w, name, tplData{
 		Path:     c.Path(),
 		AssetVer: assetVer,
-		Consts:   app.consts,
-		Langs:    app.data.Langs,
-		Dicts:    app.data.Dicts,
-		L:        app.i18n,
+		Consts:   t.app.consts,
+		Langs:    t.app.data.Langs,
+		Dicts:    t.app.data.Dicts,
+		L:        t.app.i18n,
 		Data:     data,
 	})
 }

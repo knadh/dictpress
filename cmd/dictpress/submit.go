@@ -31,11 +31,9 @@ type changeSubmission struct {
 	Comments string `json:"comments"`
 }
 
-// handleNewSubmission inserts a new dictionary entry suggestion from the public
+// HandleNewSubmission inserts a new dictionary entry suggestion from the public
 // in the `pending` state for review.
-func handleNewSubmission(c echo.Context) error {
-	app := c.Get("app").(*App)
-
+func (a *App) HandleNewSubmission(c echo.Context) error {
 	var s newSubmission
 	if err := c.Bind(&s); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest,
@@ -54,11 +52,11 @@ func handleNewSubmission(c echo.Context) error {
 	}
 
 	// Validate language and type enums.
-	if _, ok := app.data.Langs[s.EntryLang]; !ok {
+	if _, ok := a.data.Langs[s.EntryLang]; !ok {
 		return echo.NewHTTPError(http.StatusBadRequest, "Unknown `entry_lang`.")
 	}
 	for i := range s.RelationLang {
-		lang, ok := app.data.Langs[s.RelationLang[i]]
+		lang, ok := a.data.Langs[s.RelationLang[i]]
 		if !ok {
 			return echo.NewHTTPError(http.StatusBadRequest, "Unknown `relation_lang`.")
 		}
@@ -95,9 +93,9 @@ func handleNewSubmission(c echo.Context) error {
 	}
 
 	// Save the main entry.
-	fromID, err := app.data.InsertSubmissionEntry(e)
+	fromID, err := a.data.InsertSubmissionEntry(e)
 	if err != nil {
-		app.lo.Printf("error inserting submission entry: %v", err)
+		a.lo.Printf("error inserting submission entry: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error saving entry.")
 	}
 
@@ -111,7 +109,7 @@ func handleNewSubmission(c echo.Context) error {
 			}
 		}
 
-		toID, err := app.data.InsertSubmissionEntry(data.Entry{
+		toID, err := a.data.InsertSubmissionEntry(data.Entry{
 			Lang:    s.RelationLang[i],
 			Initial: strings.ToUpper(string(s.RelationContent[i][0])),
 			Content: pq.StringArray([]string{s.RelationContent[i]}),
@@ -120,7 +118,7 @@ func handleNewSubmission(c echo.Context) error {
 			Status:  data.StatusPending,
 		})
 		if err != nil {
-			app.lo.Printf("error inserting submission definition: %v", err)
+			a.lo.Printf("error inserting submission definition: %v", err)
 			return echo.NewHTTPError(http.StatusInternalServerError,
 				fmt.Sprintf("Error saving definition: %v", err))
 		}
@@ -130,8 +128,8 @@ func handleNewSubmission(c echo.Context) error {
 			Tags:   pq.StringArray{},
 			Status: data.StatusPending,
 		}
-		if _, err := app.data.InsertSubmissionRelation(fromID, toID, rel); err != nil {
-			app.lo.Printf("error inserting submission relation: %v", err)
+		if _, err := a.data.InsertSubmissionRelation(fromID, toID, rel); err != nil {
+			a.lo.Printf("error inserting submission relation: %v", err)
 			return echo.NewHTTPError(http.StatusInternalServerError,
 				fmt.Sprintf("Error saving relation.%v", err))
 		}
@@ -140,12 +138,10 @@ func handleNewSubmission(c echo.Context) error {
 	return nil
 }
 
-// handleNewComments records a suggestion for change from the public in the changes table.
+// HandleNewComments records a suggestion for change from the public in the changes table.
 // These suggestions are reviewed in the admin and any change involves manually incorporating
 // them to the linked entries.
-func handleNewComments(c echo.Context) error {
-	app := c.Get("app").(*App)
-
+func (a *App) HandleNewComments(c echo.Context) error {
 	var s changeSubmission
 	if err := c.Bind(&s); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest,
@@ -160,8 +156,8 @@ func handleNewComments(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Comments are too big.")
 	}
 
-	if err := app.data.InsertComments(s.FromGUID, s.ToGUID, s.Comments); err != nil {
-		app.lo.Printf("error inserting change submission: %v", err)
+	if err := a.data.InsertComments(s.FromGUID, s.ToGUID, s.Comments); err != nil {
+		a.lo.Printf("error inserting change submission: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError,
 			fmt.Sprintf("Error saving submission: %v", err))
 	}

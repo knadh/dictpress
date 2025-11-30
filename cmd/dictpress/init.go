@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/jmoiron/sqlx"
@@ -15,8 +13,6 @@ import (
 	goyesqlx "github.com/knadh/goyesql/sqlx"
 	"github.com/knadh/koanf/v2"
 	"github.com/knadh/stuffbin"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
 func initConstants(ko *koanf.Koanf) Consts {
@@ -134,116 +130,6 @@ func initTokenizers(ko *koanf.Koanf) map[string]data.Tokenizer {
 	return map[string]data.Tokenizer{
 		"indicphone": indicphone.New(cfg),
 	}
-}
-
-func initHTTPServer(app *App, ko *koanf.Koanf) *echo.Echo {
-	srv := echo.New()
-	srv.Debug = true
-	srv.HideBanner = true
-
-	// Register app (*App) to be injected into all HTTP handlers.
-	srv.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			c.Set("app", app)
-			return next(c)
-		}
-	})
-
-	var (
-		// Public handlers with no auth.
-		p = srv.Group("")
-
-		// Admin handlers with auth.
-		a = srv.Group("", middleware.BasicAuth(basicAuth))
-	)
-
-	// Dictionary site HTML views.
-	if app.consts.Site != "" {
-		p.GET("/", handleIndexPage)
-		p.GET("/dictionary/:fromLang/:toLang/:q", handleSearchPage)
-		p.GET("/dictionary/:fromLang/:toLang", handleSearchPage)
-		p.GET("/p/:page", handleStaticPage)
-
-		if app.consts.EnableGlossary {
-			p.GET("/glossary/:fromLang/:toLang/:initial", handleGlossaryPage)
-		}
-
-		// Static files with custom bundle handling
-		srv.GET("/static/*", func(c echo.Context) error {
-			staticDir := filepath.Join(app.consts.Site, "static")
-
-			switch c.Param("*") {
-			case "_bundle.js":
-				return handleServeBundle(c, "js", staticDir)
-			case "_bundle.css":
-				return handleServeBundle(c, "css", staticDir)
-			default:
-				// Normal static file serving
-				fs := http.StripPrefix("/static", http.FileServer(http.Dir(staticDir)))
-				return echo.WrapHandler(fs)(c)
-			}
-		})
-
-	} else {
-		// API greeting if there's no site.
-		p.GET("/", func(c echo.Context) error {
-			return c.JSON(http.StatusOK, okResp{"welcome"})
-		})
-	}
-
-	// Public APIs.
-	p.GET("/api/config", handleGetConfig)
-	p.GET("/api/dictionary/:fromLang/:toLang/:q", handleSearch)
-	p.GET("/api/dictionary/entries/:guid", handleGetEntryPublic)
-
-	// Public user submission APIs.
-	if ko.Bool("app.enable_submissions") {
-		p.POST("/api/submissions", handleNewSubmission)
-		p.POST("/api/submissions/comments", handleNewComments)
-
-		if app.consts.Site != "" {
-			p.GET("/submit", handleSubmissionPage)
-			p.POST("/submit", handleSubmissionPage)
-		}
-	}
-
-	// Admin handlers and APIs.
-	a.GET("/api/entries/:fromLang/:toLang", handleSearch)
-	a.GET("/api/entries/:fromLang/:toLang/:q", handleSearch)
-	a.GET("/admin/static/*", echo.WrapHandler(app.fs.FileServer()))
-	a.GET("/admin", adminPage("index"))
-	a.GET("/admin/search", adminPage("search"))
-	a.GET("/admin/pending", adminPage("pending"))
-
-	a.GET("/api/stats", handleGetStats)
-	a.GET("/api/entries/pending", handleGetPendingEntries)
-	a.GET("/api/entries/comments", handleGetComments)
-	a.DELETE("/api/entries/comments/:commentID", handleDeletecomments)
-	a.DELETE("/api/entries/pending", handleDeletePending)
-	a.GET("/api/entries/:id", handleGetEntry)
-	a.GET("/api/entries/:id/parents", handleGetParentEntries)
-	a.POST("/api/entries", handleInsertEntry)
-	a.PUT("/api/entries/:id", handleUpdateEntry)
-	a.DELETE("/api/entries/:id", handleDeleteEntry)
-	a.DELETE("/api/entries/:fromID/relations/:relID", handleDeleteRelation)
-	a.POST("/api/entries/:fromID/relations/:toID", handleAddRelation)
-	a.PUT("/api/entries/:id/relations/weights", handleReorderRelations)
-	a.PUT("/api/entries/:id/relations/:relID", handleUpdateRelation)
-	a.PUT("/api/entries/:id/submission", handleApproveSubmission)
-	a.DELETE("/api/entries/:id/submission", handleRejectSubmission)
-
-	// 404 pages.
-	srv.RouteNotFound("/api/*", func(c echo.Context) error {
-		return echo.NewHTTPError(http.StatusNotFound, "Unknown endpoint")
-	})
-	srv.RouteNotFound("/*", func(c echo.Context) error {
-		return c.Render(http.StatusNotFound, "message", pageTpl{
-			Title:   "404 Page not found",
-			Heading: "404 Page not found",
-		})
-	})
-
-	return srv
 }
 
 // initLangs loads language configuration into a given *App instance.

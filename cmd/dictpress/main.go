@@ -256,7 +256,7 @@ func runServer(c *cli.Context) error {
 		// Attach HTML template renderer.
 		app.siteTpl = theme
 		app.sitePageTpls = pages
-		srv.Renderer = &tplRenderer{tpls: theme}
+		srv.Renderer = &tplRenderer{app: app, tpls: theme}
 	}
 
 	lo.Printf("starting server on %s", ko.MustString("app.address"))

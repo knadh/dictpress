@@ -12,8 +12,10 @@ import (
 	"strings"
 
 	"github.com/knadh/dictpress/internal/data"
+	"github.com/knadh/koanf/v2"
 	"github.com/knadh/paginator"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 // results represents a set of results.
@@ -41,20 +43,119 @@ type okResp struct {
 	Data any `json:"data"`
 }
 
-// handleSearch performs a search and responds with JSON results.
-func handleSearch(c echo.Context) error {
+func initHTTPServer(a *App, ko *koanf.Koanf) *echo.Echo {
+	srv := echo.New()
+	srv.Debug = true
+	srv.HideBanner = true
+
 	var (
-		app      = c.Get("app").(*App)
-		isAuthed = c.Get(isAuthed) != nil
+		// Public handlers with no auth.
+		pb = srv.Group("")
+
+		// Admin handlers with auth.
+		ad = srv.Group("", middleware.BasicAuth(a.basicAuth))
 	)
 
+	// Dictionary site HTML views.
+	if a.consts.Site != "" {
+		pb.GET("/", a.handleIndexPage)
+		pb.GET("/dictionary/:fromLang/:toLang/:q", a.handleSearchPage)
+		pb.GET("/dictionary/:fromLang/:toLang", a.handleSearchPage)
+		pb.GET("/p/:page", a.handleStaticPage)
+
+		if a.consts.EnableGlossary {
+			pb.GET("/glossary/:fromLang/:toLang/:initial", a.handleGlossaryPage)
+		}
+
+		// Static files with custom bundle handling
+		srv.GET("/static/*", func(c echo.Context) error {
+			staticDir := filepath.Join(a.consts.Site, "static")
+
+			switch c.Param("*") {
+			case "_bundle.js":
+				return handleServeBundle(c, "js", staticDir)
+			case "_bundle.css":
+				return handleServeBundle(c, "css", staticDir)
+			default:
+				// Normal static file serving
+				fs := http.StripPrefix("/static", http.FileServer(http.Dir(staticDir)))
+				return echo.WrapHandler(fs)(c)
+			}
+		})
+
+	} else {
+		// API greeting if there's no site.
+		pb.GET("/", func(c echo.Context) error {
+			return c.JSON(http.StatusOK, okResp{"welcome"})
+		})
+	}
+
+	// Public APIs.
+	pb.GET("/api/config", a.HandleGetConfig)
+	pb.GET("/api/dictionary/:fromLang/:toLang/:q", a.HandleSearch)
+	pb.GET("/api/dictionary/entries/:guid", a.HandleGetEntryPublic)
+
+	// Public user submission APIs.
+	if ko.Bool("app.enable_submissions") {
+		pb.POST("/api/submissions", a.HandleNewSubmission)
+		pb.POST("/api/submissions/comments", a.HandleNewComments)
+
+		if a.consts.Site != "" {
+			pb.GET("/submit", a.HandleSubmissionPage)
+			pb.POST("/submit", a.HandleSubmissionPage)
+		}
+	}
+
+	// Admin handlers and APIs.
+	ad.GET("/api/entries/:fromLang/:toLang", a.HandleSearch)
+	ad.GET("/api/entries/:fromLang/:toLang/:q", a.HandleSearch)
+	ad.GET("/admin/static/*", echo.WrapHandler(a.fs.FileServer()))
+	ad.GET("/admin", a.adminPage("index"))
+	ad.GET("/admin/search", a.adminPage("search"))
+	ad.GET("/admin/pending", a.adminPage("pending"))
+
+	ad.GET("/api/stats", a.HandleGetStats)
+	ad.GET("/api/entries/pending", a.HandleGetPendingEntries)
+	ad.GET("/api/entries/comments", a.HandleGetComments)
+	ad.DELETE("/api/entries/comments/:commentID", a.HandleDeleteComments)
+	ad.DELETE("/api/entries/pending", a.HandleDeletePending)
+	ad.GET("/api/entries/:id", a.HandleGetEntry)
+	ad.GET("/api/entries/:id/parents", a.HandleGetParentEntries)
+	ad.POST("/api/entries", a.HandleInsertEntry)
+	ad.PUT("/api/entries/:id", a.HandleUpdateEntry)
+	ad.DELETE("/api/entries/:id", a.HandleDeleteEntry)
+	ad.DELETE("/api/entries/:fromID/relations/:relID", a.HandleDeleteRelation)
+	ad.POST("/api/entries/:fromID/relations/:toID", a.HandleAddRelation)
+	ad.PUT("/api/entries/:id/relations/weights", a.HandleReorderRelations)
+	ad.PUT("/api/entries/:id/relations/:relID", a.HandleUpdateRelation)
+	ad.PUT("/api/entries/:id/submission", a.HandleApproveSubmission)
+	ad.DELETE("/api/entries/:id/submission", a.HandleRejectSubmission)
+
+	// 404 pages.
+	srv.RouteNotFound("/api/*", func(c echo.Context) error {
+		return echo.NewHTTPError(http.StatusNotFound, "Unknown endpoint")
+	})
+	srv.RouteNotFound("/*", func(c echo.Context) error {
+		return c.Render(http.StatusNotFound, "message", pageTpl{
+			Title:   "404 Page not found",
+			Heading: "404 Page not found",
+		})
+	})
+
+	return srv
+}
+
+// HandleSearch performs a search and responds with JSON results.
+func (a *App) HandleSearch(c echo.Context) error {
+	isAuthed := c.Get(isAuthed) != nil
+
 	// Prepare the query.
-	query, err := prepareQuery(c)
+	query, err := a.prepareQuery(c)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	out, err := doSearch(query, isAuthed, app.pgAPI, app)
+	out, err := a.doSearch(query, isAuthed, a.pgAPI)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -62,14 +163,11 @@ func handleSearch(c echo.Context) error {
 	return c.JSON(http.StatusOK, okResp{out})
 }
 
-// handleGetEntryPublic returns an entry by its guid.
-func handleGetEntryPublic(c echo.Context) error {
-	var (
-		app  = c.Get("app").(*App)
-		guid = c.Param("guid")
-	)
+// HandleGetEntryPublic returns an entry by its guid.
+func (a *App) HandleGetEntryPublic(c echo.Context) error {
+	guid := c.Param("guid")
 
-	e, err := app.data.GetEntry(0, guid)
+	e, err := a.data.GetEntry(0, guid)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return echo.NewHTTPError(http.StatusBadRequest, "entry not found")
@@ -81,8 +179,8 @@ func handleGetEntryPublic(c echo.Context) error {
 	e.Relations = make([]data.Entry, 0)
 
 	out := []data.Entry{e}
-	if err := app.data.SearchAndLoadRelations(out, data.Query{}); err != nil {
-		app.lo.Printf("error loading relations: %v", err)
+	if err := a.data.SearchAndLoadRelations(out, data.Query{}); err != nil {
+		a.lo.Printf("error loading relations: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error loading relations")
 	}
 
@@ -148,10 +246,8 @@ func handleServeBundle(c echo.Context, bundleType string, staticDir string) erro
 
 // prepareQuery extracts and validates search parameters from the HTTP context.
 // Returns a filled data.Query struct ready for searching.
-func prepareQuery(c echo.Context) (data.Query, error) {
+func (a *App) prepareQuery(c echo.Context) (data.Query, error) {
 	var (
-		app = c.Get("app").(*App)
-
 		fromLang = c.Param("fromLang")
 		toLang   = c.Param("toLang")
 		qStr     = strings.TrimSpace(c.Param("q"))
@@ -189,20 +285,20 @@ func prepareQuery(c echo.Context) (data.Query, error) {
 	}
 
 	// Check languages.
-	if _, ok := app.data.Langs[fromLang]; !ok {
+	if _, ok := a.data.Langs[fromLang]; !ok {
 		return data.Query{}, errors.New("unknown `from` language")
 	}
 	if toLang == "*" {
 		toLang = ""
 	} else {
-		if _, ok := app.data.Langs[toLang]; !ok {
+		if _, ok := a.data.Langs[toLang]; !ok {
 			return data.Query{}, errors.New("unknown `to` language")
 		}
 	}
 
 	// Check types.
 	for _, t := range q.Types {
-		if _, ok := app.data.Langs[fromLang].Types[t]; !ok {
+		if _, ok := a.data.Langs[fromLang].Types[t]; !ok {
 			return data.Query{}, fmt.Errorf("unknown type %s", t)
 		}
 	}
@@ -224,7 +320,7 @@ func prepareQuery(c echo.Context) (data.Query, error) {
 }
 
 // doSearch takes a prepared query and performs the search, returning results.
-func doSearch(q data.Query, isAuthed bool, pgn *paginator.Paginator, app *App) (*results, error) {
+func (a *App) doSearch(q data.Query, isAuthed bool, pgn *paginator.Paginator) (*results, error) {
 	// Pagination.
 	pg := pgn.New(q.Page, q.PerPage)
 	q.Offset = pg.Offset
@@ -232,9 +328,9 @@ func doSearch(q data.Query, isAuthed bool, pgn *paginator.Paginator, app *App) (
 
 	// Search and compose results.
 	out := &results{Entries: []data.Entry{}}
-	res, total, err := app.data.Search(q)
+	res, total, err := a.data.Search(q)
 	if err != nil {
-		app.lo.Printf("error querying db: %v", err)
+		a.lo.Printf("error querying db: %v", err)
 		return nil, errors.New("error querying db")
 	}
 
@@ -245,7 +341,7 @@ func doSearch(q data.Query, isAuthed bool, pgn *paginator.Paginator, app *App) (
 	}
 
 	// Load relations into the matches.
-	if err := app.data.SearchAndLoadRelations(res, q); err != nil {
+	if err := a.data.SearchAndLoadRelations(res, q); err != nil {
 		return nil, errors.New("error querying db for definitions")
 	}
 
@@ -276,16 +372,16 @@ func doSearch(q data.Query, isAuthed bool, pgn *paginator.Paginator, app *App) (
 
 // getGlossaryWords is a helper function that takes an HTTP query context,
 // gets params from it and returns a glossary of words for a language.
-func getGlossaryWords(lang, initial string, pg paginator.Set, app *App) (*glossary, error) {
+func (a *App) getGlossaryWords(lang, initial string, pg paginator.Set) (*glossary, error) {
 	// HTTP response.
 	out := &glossary{
 		Words: []data.GlossaryWord{},
 	}
 
 	// Get glossary words.
-	res, total, err := app.data.GetGlossaryWords(lang, initial, pg.Offset, pg.Limit)
+	res, total, err := a.data.GetGlossaryWords(lang, initial, pg.Offset, pg.Limit)
 	if err != nil {
-		app.lo.Printf("error querying db: %v", err)
+		a.lo.Printf("error querying db: %v", err)
 		return nil, errors.New("error querying db")
 	}
 
