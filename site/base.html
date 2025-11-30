@@ -57,7 +57,7 @@
               </select>
               <div class="input-group">
                 <input autofocus autocomplete="off" required placeholder="" aria-label="Search word"
-                  type="text" id="q" name="q" value="{{ if .Data.Query }}{{ .Data.Query.Query }}{{ end }}" />
+                  type="text" id="q" name="q" value="{{ if .Data.Query }}{{ .Data.Query.Query }}{{ end }}" data-autocomp-autoselect="false" />
                 <button type="submit" aria-label="Search"><img src="/static/search.svg?v={{ .AssetVer }}" alt="{{- .L.T "global.btnSearch" -}}" /></button>
               </div>
             </div>

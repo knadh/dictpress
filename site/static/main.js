@@ -272,7 +272,7 @@ async function screenshotElement(element) {
   let debounce;
 
   autocomp(elQ, {
-    autoSelect: false,
+    autoSelect: elQ.dataset.autocompAutoselect === "true",
     onQuery: async (val) => {
       const fromLang = localStorage.from_lang;
 
