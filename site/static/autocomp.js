@@ -1,4 +1,4 @@
-function autocomp(el, options = {}) {
+export function autocomp(el, options = {}) {
 	const opt = {
 		onQuery: null, onNavigate: null, onSelect: null, onRender: null, debounce: 100, autoSelect: true,...options
 	};
@@ -122,7 +122,7 @@ function autocomp(el, options = {}) {
 			return;
 		}
 
-		val = opt.onSelect(items[idx]);
+		val = opt.onSelect(items[idx], items);
 		el.value = val || items[idx];
 	}
 
@@ -135,3 +135,5 @@ function autocomp(el, options = {}) {
 		}
 	}
 }
+
+export default autocomp;
