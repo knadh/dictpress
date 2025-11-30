@@ -38,7 +38,7 @@ type pageTpl struct {
 
 	Query    *data.Query
 	Results  *results
-	Glossary *glossary
+	Glossary glossary
 	Initial  string
 	Initials []string
 	Pg       *paginator.Set

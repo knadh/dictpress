@@ -7,6 +7,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/jmoiron/sqlx"
+	"github.com/knadh/dictpress/internal/cache"
 	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/dictpress/tokenizers/indicphone"
 	"github.com/knadh/goyesql"
@@ -165,6 +166,23 @@ func initLangs(ko *koanf.Koanf) data.LangMap {
 	}
 
 	return out
+}
+
+// initCache initializes the Badger result cache.
+func initCache(ko *koanf.Koanf) *cache.Cache {
+	cfg := cache.Config{
+		TTL:       ko.MustDuration("cache.ttl"),
+		Mode:      ko.MustString("cache.mode"),
+		CacheDir:  ko.MustString("cache.dir"),
+		MaxMemory: ko.MustInt64("cache.max_memory"),
+	}
+
+	c, err := cache.New(cfg, lo)
+	if err != nil {
+		lo.Fatalf("error initializing cache: %v", err)
+	}
+
+	return c
 }
 
 // initDicts loads language->language dictionary map.

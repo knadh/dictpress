@@ -13,6 +13,7 @@ import (
 	"unicode"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/knadh/dictpress/internal/cache"
 	"github.com/knadh/dictpress/internal/data"
 	"github.com/knadh/dictpress/internal/importer"
 	"github.com/knadh/go-i18n"
@@ -57,6 +58,7 @@ type App struct {
 	db         *sqlx.DB
 	queries    *data.Queries
 	data       *data.Data
+	cache      *cache.Cache
 	i18n       *i18n.I18n
 	fs         stuffbin.FileSystem
 	pgSite     *paginator.Paginator
@@ -119,7 +121,7 @@ func runNewConfig(ctx *cli.Context) error {
 		}
 	}
 
-	b = bytes.Replace(b, []byte("dictpress_admin_password"), pwd, -1)
+	b = bytes.ReplaceAll(b, []byte("dictpress_admin_password"), pwd)
 	if err := os.WriteFile("config.toml", b, 0644); err != nil {
 		return err
 	}
@@ -199,6 +201,14 @@ func runServer(c *cli.Context) error {
 	checkUpgrade(db)
 	queries := initQueries(fs, db)
 
+	// Initialize Badger cache if enabled.
+	var ca *cache.Cache
+	if ko.Bool("cache.enabled") {
+		ca = initCache(ko)
+		defer ca.Close()
+		lo.Println("cache enabled")
+	}
+
 	// Initialize the global app context for the server.
 	app := &App{
 		consts:  consts,
@@ -206,6 +216,7 @@ func runServer(c *cli.Context) error {
 		fs:      fs,
 		queries: queries,
 		data:    dt,
+		cache:   ca,
 		lo:      lo,
 
 		pgSite: paginator.New(paginator.Opt{

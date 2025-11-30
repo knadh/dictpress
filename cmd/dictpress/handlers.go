@@ -2,13 +2,17 @@ package main
 
 import (
 	"bytes"
+	"crypto/md5"
 	"database/sql"
+	"encoding/gob"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/knadh/dictpress/internal/data"
@@ -326,8 +330,22 @@ func (a *App) doSearch(q data.Query, isAuthed bool, pgn *paginator.Paginator) (*
 	q.Offset = pg.Offset
 	q.Limit = pg.Limit
 
-	// Search and compose results.
+	// Results container.
 	out := &results{Entries: []data.Entry{}}
+
+	// Is result caching enabled (for public, unauthenticated requests)?
+	cacheKey := ""
+	if a.cache != nil && !isAuthed {
+		cacheKey = makeQueryCacheKey(q)
+		if cached, _ := a.cache.Get(cacheKey); cached != nil {
+			var out results
+			if gobDecode(cached, &out) == nil {
+				return &out, nil
+			}
+		}
+	}
+
+	// Search and compose results.
 	res, total, err := a.data.Search(q)
 	if err != nil {
 		a.lo.Printf("error querying db: %v", err)
@@ -367,22 +385,40 @@ func (a *App) doSearch(q data.Query, isAuthed bool, pgn *paginator.Paginator) (*
 	out.TotalPages = pg.TotalPages
 	out.Total = total
 
+	// Cache public results.
+	if a.cache != nil && !isAuthed {
+		if b, err := gobEncode(out); err == nil {
+			a.cache.Put(cacheKey, b, nil)
+		}
+	}
+
 	return out, nil
 }
 
 // getGlossaryWords is a helper function that takes an HTTP query context,
 // gets params from it and returns a glossary of words for a language.
-func (a *App) getGlossaryWords(lang, initial string, pg paginator.Set) (*glossary, error) {
+func (a *App) getGlossaryWords(lang, initial string, pg paginator.Set) (glossary, error) {
 	// HTTP response.
-	out := &glossary{
+	out := glossary{
 		Words: []data.GlossaryWord{},
+	}
+
+	// Is result caching enabled?
+	cacheKey := ""
+	if a.cache != nil {
+		cacheKey = makeGlossaryCacheKey(lang, initial, pg.Offset, pg.Limit)
+		if cached, _ := a.cache.Get(cacheKey); cached != nil {
+			if gobDecode(cached, &out) == nil {
+				return out, nil
+			}
+		}
 	}
 
 	// Get glossary words.
 	res, total, err := a.data.GetGlossaryWords(lang, initial, pg.Offset, pg.Limit)
 	if err != nil {
 		a.lo.Printf("error querying db: %v", err)
-		return nil, errors.New("error querying db")
+		return out, errors.New("error querying db")
 	}
 
 	if len(res) == 0 {
@@ -397,5 +433,61 @@ func (a *App) getGlossaryWords(lang, initial string, pg paginator.Set) (*glossar
 	out.TotalPages = pg.TotalPages
 	out.Total = total
 
+	// Cache results.
+	if a.cache != nil {
+		if b, err := gobEncode(out); err == nil {
+			a.cache.Put(cacheKey, b, nil)
+		}
+	}
+
 	return out, nil
+}
+
+// makeQueryCacheKey creates a deterministic cache key from a Query.
+// Normalizes and sorts fields in the query to generate consistent keys.
+func makeQueryCacheKey(q data.Query) string {
+	// Sort slices for deterministic ordering.
+	types := make([]string, len(q.Types))
+	copy(types, q.Types)
+	sort.Strings(types)
+
+	tags := make([]string, len(q.Tags))
+	copy(tags, q.Tags)
+	sort.Strings(tags)
+
+	// Build key string with all the fields.
+	key := fmt.Sprintf("s:%s:%s:%s:%s:%s:%s:%d:%d",
+		q.FromLang,
+		q.ToLang,
+		strings.ToLower(strings.TrimSpace(q.Query)),
+		strings.Join(types, ","),
+		strings.Join(tags, ","),
+		q.Status,
+		q.Page,
+		q.PerPage,
+	)
+
+	h := md5.Sum([]byte(key))
+	return "s:" + hex.EncodeToString(h[:])
+}
+
+// makeGlossaryCacheKey creates a deterministic key for glossary queries.
+func makeGlossaryCacheKey(lang, initial string, offset, limit int) string {
+	key := fmt.Sprintf("g:%s:%s:%d:%d", lang, initial, offset, limit)
+	h := md5.Sum([]byte(key))
+	return "g:" + hex.EncodeToString(h[:])
+}
+
+// gobEncode encodes a given object using gob.
+func gobEncode(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(v); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// gobDecode decodes gob-encoded data into the provided value.
+func gobDecode(data []byte, v any) error {
+	return gob.NewDecoder(bytes.NewReader(data)).Decode(v)
 }

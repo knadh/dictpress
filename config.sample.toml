@@ -77,6 +77,32 @@ db = "dbname"
 user = "username"
 password = "password"
 
+
+[cache]
+# Cache public search results to speed up repeated queries. On large dictionary
+# databases that get a lot of public traffic, enabling caching can significantly
+# reduce the load to the Postgres database and speed up response times. This uses
+# BadgerDB as the underlying cache engine.
+
+enabled = false
+
+# How long cached entries should live.
+ttl = "72h"
+
+# cache mode: "memory" (RAM only) or "hybrid" (RAM + disk persistence).
+mode = "hybrid"
+
+# Maximum memory (in MB) for the cache. This controls Badger's internal
+# memory tables and block cache.
+max_memory = 500
+
+# Directory for persistent storage (only used in hybrid mode).
+dir = "/tmp/dictpress-cache"
+
+
+################################################################################
+
+
 # Tokenizer specific config. IndicPhone generates a phone based index for Indian languages.
 # Every input word generates 3 keys, key0 being the broadest phonetic match and key2 being the closest.
 # The broadest key when used as a search token generally returns a lot of false positives.
