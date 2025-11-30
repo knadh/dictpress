@@ -274,7 +274,16 @@ async function screenshotElement(element) {
   autocomp(elQ, {
     autoSelect: false,
     onQuery: async (val) => {
-      const langCode = localStorage.from_lang;
+      const fromLang = localStorage.from_lang;
+
+      if (!fromLang) {
+        return;
+      }
+
+      // If there's a global language map defined somewhere (on window.*), use the language code from that.
+      // dictpress uses full language names (eg: malayalam) while govarnam uses codes such as 'ml'.
+      const langCode = autoCompLangCodes?.[fromLang] ?? fromLang;
+
       clearTimeout(debounce);
       return new Promise(resolve => {
         debounce = setTimeout(async () => {
