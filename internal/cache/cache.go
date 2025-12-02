@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
+	"github.com/dgraph-io/badger/v4/options"
 )
 
 const (
@@ -27,8 +28,9 @@ type Config struct {
 type Cache struct {
 	defaultTTL time.Duration
 
-	db *badger.DB
-	lo *log.Logger
+	db     *badger.DB
+	lo     *log.Logger
+	stopGC chan struct{}
 }
 
 // New creates and returns a new Cache instance.
@@ -48,15 +50,15 @@ func New(cfg Config, lo *log.Logger) (*Cache, error) {
 	if cfg.MaxMemory > 0 {
 		maxBytes := cfg.MaxMemory << 20 // Convert MB to bytes
 
-		// Distribute memory to 50% block cache, 25% memtables, and 25% index cache.
+		// Distribute memory to 50% memtables, and 50% index cache.
 		// Opinionated!
-		opts.BlockCacheSize = maxBytes / 2
-		opts.IndexCacheSize = maxBytes / 4
+		opts.Compression = options.None
+		opts.BlockCacheSize = 0
+		opts.IndexCacheSize = maxBytes / 2
 
-		// MemTableSize * NumMemtables should fit in remaining ~25%.
-		// Use smaller memtables with fewer of them.
-		opts.MemTableSize = maxBytes / 8
-		opts.NumMemtables = 2
+		// MemTableSize * NumMemtables should fit in remaining memory.
+		opts.NumMemtables = 3
+		opts.MemTableSize = (maxBytes / 2) / int64(opts.NumMemtables)
 	}
 
 	db, err := badger.Open(opts)
@@ -64,11 +66,19 @@ func New(cfg Config, lo *log.Logger) (*Cache, error) {
 		return nil, err
 	}
 
-	return &Cache{
+	c := &Cache{
 		defaultTTL: cfg.TTL,
 		db:         db,
 		lo:         lo,
-	}, nil
+	}
+
+	// Start background GC for hybrid mode (in-memory mode doesn't need it).
+	if cfg.Mode != CacheTypeMemory {
+		c.stopGC = make(chan struct{})
+		go c.runGC()
+	}
+
+	return c, nil
 }
 
 // Get retrieves a value by key. Doesn't return an error if key is not found.
@@ -120,5 +130,29 @@ func (c *Cache) Purge() error {
 
 // Close closes the underlying Badger database.
 func (c *Cache) Close() error {
+	if c.stopGC != nil {
+		close(c.stopGC)
+	}
 	return c.db.Close()
+}
+
+// runGC periodically runs Badger's value log garbage collection.
+func (c *Cache) runGC() {
+	ticker := time.NewTicker(60 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			// Run value log GC until nothing left to collect.
+			// 0.5 threshold means GC runs if 50%+ of a vlog file is garbage.
+			for {
+				if err := c.db.RunValueLogGC(0.5); err != nil {
+					break
+				}
+			}
+		case <-c.stopGC:
+			return
+		}
+	}
 }
