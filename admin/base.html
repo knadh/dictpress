@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>{{ title }}{% if title %} |{% endif %} DictPress</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="/admin/static/grid.css?v={{ asset_ver }}">
+	<link rel="stylesheet" type="text/css" href="/admin/static/style.css?v={{ asset_ver }}">
+	<link rel="shortcut icon" href="/admin/static/favicon.png?v={{ asset_ver }}" type="image/x-icon" />
+
+	<script>window._ROOT_URL = "";</script>
+	<script defer src="/admin/static/main.js?v={{ asset_ver }}"></script>
+	<script defer src="/admin/static/alpine.js?v={{ asset_ver }}"></script>
+
+	{# Additional admin assets would be loaded here #}
+</head>
+<body x-init="onLoad()" x-data="globalComponent()">
+<template x-if="ready">
+	<div class="container wrap">
+		<header class="header">
+			<div class="row">
+				<div class="three columns logo">
+					<a href="/admin"><img src="/admin/static/logo.svg?v={{ asset_ver }}" alt="logo" /></a>
+					<template x-if="Object.keys(loading).length > 0"><span class="loading"></span></template>
+				</div>
+				<nav class="eight columns nav">
+					<a href="" @click.prevent="onNewEntry">Add new</a>
+					<a href="/admin/pending">Pending</a>
+				</nav>
+			</div>
+		</header>
+
+		<form class="search" action="/admin/search" x-data="searchFormComponent()" @submit="onSearch">
+			<fieldset class="row">
+				<div class="column four">
+	    			<select name="from_lang" x-model="fromLang">
+	    				<option value="*id">*ID</option>
+					    <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
+					      <option :value="id" x-text="l.name" x-bind:selected="id === fromLang"></option>
+					    </template>
+	    			</select>
+	    		</div>
+				<div class="column six">
+	    			<input type="text" name="query" x-model="query" placeholder="Search" required autofocus="true" />
+	    		</div>
+				<div class="column two">
+	    			<button class="button" type="submit" x-bind:disabled="loading['entries.search'] === true">Search</button>
+	    		</div>
+			</fieldset>
+		</form>
+
+		{% block content %}{% endblock %}
+
+		{% include "admin/entry.html" %}
+	</div>
+</template>
+<footer class="footer">
+	<a href="https://dict.press">
+		DictPress <span x-text="config.version"></span>
+	</a>
+</footer>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  {% block meta %}
+    <title>
+      {%- if page_type == "/" %} {{ i18n.global_siteName | default(value="Dictionary") }}
+      {%- elif page_type == "glossary" %}{{ i18n.public_glossaryTitle | default(value="Glossary") }}
+      {%- elif page_type == "search" %}{{ i18n.public_searchTitle | default(value="Search") | replace(from="{query}", to=query) }}
+      {%- elif title %}{{ title }}
+      {%- endif -%}
+    </title>
+    <meta name="description" value="
+      {%- if page_type == "/" %}Dictionary website
+      {%- elif page_type == "glossary" %}Glossary of words.
+      {%- elif page_type == "search" %}{{ query }} meaning.
+      {%- elif description %}{{ description }}
+      {%- else %}{% block description %}{% endblock %}
+      {%- endif -%}" />
+  {% endblock %}
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <script>
+    window._ROOT_URL = "";
+    window._MAX_CONTENT_ITEMS = {{ consts.site_max_content_items }};
+  </script>
+  <link rel="shortcut icon" href="/static/favicon.png?v={{ asset_ver }}" type="image/x-icon" />
+  <link href="/static/flexit.css?v={{ asset_ver }}" rel="stylesheet" type="text/css" />
+  <link href="/static/style.css?v={{ asset_ver }}" rel="stylesheet" type="text/css" />
+</head>
+<body class="{% if page_type == "/" %}home{% endif %}">
+<div class="container">
+  <section class="main">
+    <header class="header">
+      <div class="row">
+        <div class="logo four columns">
+          <a href="/"><img src="/static/logo.svg?v={{ asset_ver }}" alt="Dictionary logo" /></a>
+          <h3 class="intro">
+            {{ i18n.public_subTitle | default(value="Dictionary") }}
+          </h3>
+        </div><!-- logo col -->
+
+        <div class="search eight columns">
+          <form class="search-form" method="get" action="">
+            <div>
+              <select name="lang" aria-label="Select dictionary">
+                {% for d in dicts %}
+                  {% set from = d.0 %}
+                  {% set to = d.1 %}
+                  <option value="{{ from.id }}/{{ to.id }}">
+                    {{ from.name }} - {{ to.name }}
+                  </option>
+                {% endfor %}
+              </select>
+              <div class="input-group">
+                <input autofocus autocomplete="off" required placeholder="" aria-label="Search word"
+                  type="text" id="q" name="q" value="{{ query | default(value="") }}" />
+                <button type="submit" aria-label="Search"><img src="/static/search.svg?v={{ asset_ver }}" alt="{{ i18n.global_btnSearch | default(value="Search") }}" /></button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <nav class="nav">
+      {% if consts.enable_submissions %}
+        <a href="{{ consts.root_url }}/submit">{{ i18n.public_submitEntry | default(value="Suggest new entry") }}</a>
+      {% endif %}
+      {% if consts.enable_glossary %}
+        {% for d in dicts %}
+          {% set from = d.0 %}
+          {% set to = d.1 %}
+          <a href="{{ consts.root_url }}/glossary/{{ from.id }}/{{ to.id }}/*" class="tab">
+            {{ i18n.public_glossary | default(value="{lang} glossary") | replace(from="{lang}", to=from.name) }}
+          </a>
+        {% endfor %}
+      {% endif %}
+    </nav>
+  </section>
+
+  <footer class="footer">
+    <a href="https://dict.press">Powered by dictpress</a>
+  </footer>
+</div><!-- container -->
+
+<form class="box form-comments" data-success="{{ i18n.public_suggestSubmitted | default(value="Submitted") }}">
+<div>
+  <h4>{{ i18n.public_submitTitle | default(value="Comments") }}</h4>
+  <textarea name="comments" autofocus maxlength="500"></textarea>
+  <p>
+    <button type="submit">{{ i18n.public_suggestSubmitBtn | default(value="Submit") }}</button>
+    <button class="button-outline close">{{ i18n.global_btnClose | default(value="Close") }}</button>
+  </p>
+</div>
+</form>
+
+<script type="module" src="/static/_bundle.js?f=autocomp.js&f=share.js&f=main.js&v={{ asset_ver }}"></script>
+</body>
+</html>

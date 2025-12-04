@@ -1,0 +1,564 @@
+use std::{collections::HashMap, path::Path, sync::Arc};
+
+use sqlx::{sqlite::SqlitePool, Row};
+
+use crate::{
+    models::{
+        q, Comment, Dicts, Entry, GlossaryWord, LangMap, Relation, SearchQuery, Stats,
+        STATUS_ENABLED,
+    },
+    tokenizer::{self, Tokenizer, TokenizerMap},
+};
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("database error: {0}")]
+    Db(#[from] sqlx::Error),
+    #[error("tokenizer error: {0}")]
+    Tokenizer(#[from] tokenizer::TokenizerError),
+    #[error("unknown language: {0}")]
+    UnknownLang(String),
+    #[error("not found")]
+    NotFound,
+    #[error("{0}")]
+    Validation(String),
+}
+
+pub struct ManagerConfig {
+    pub tokenizers_dir: String,
+}
+
+/// Manager handles all database operations and business logic.
+pub struct Manager {
+    db: SqlitePool,
+    tokenizers: TokenizerMap,
+    pub langs: LangMap,
+    pub dicts: Dicts,
+}
+
+impl Manager {
+    pub async fn new(
+        db: SqlitePool,
+        cfg: ManagerConfig,
+        langs: LangMap,
+        dicts: Dicts,
+    ) -> Result<Self, Error> {
+        // Load tokenizers.
+        let tokenizers = tokenizer::load_tokenizers(Path::new(&cfg.tokenizers_dir))?;
+
+        Ok(Self {
+            db,
+            tokenizers,
+            langs,
+            dicts,
+        })
+    }
+
+    /// Get tokenizer for a language.
+    fn get_tokenizer(&self, lang_id: &str) -> Option<Arc<dyn Tokenizer>> {
+        let lang = self.langs.get(lang_id)?;
+        self.tokenizers.get(&lang.tokenizer).cloned()
+    }
+
+    /// Tokenize content for a given language.
+    pub fn tokenize(&self, content: &[String], lang_id: &str) -> Result<String, Error> {
+        let text = content.join(" ");
+        if let Some(tk) = self.get_tokenizer(lang_id) {
+            let tokens = tk.tokenize(&text, lang_id)?;
+            Ok(tokens.join(" "))
+        } else {
+            // Fallback to simple whitespace tokenization.
+            Ok(text.to_lowercase())
+        }
+    }
+
+    /// Convert search query to FTS5 query string.
+    pub fn to_fts_query(&self, query: &str, lang_id: &str) -> Result<String, Error> {
+        if let Some(tk) = self.get_tokenizer(lang_id) {
+            Ok(tk.to_query(query, lang_id)?)
+        } else {
+            Ok(query.to_lowercase())
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Search
+    // -------------------------------------------------------------------------
+
+    pub async fn search(
+        &self,
+        sq: &SearchQuery,
+        offset: i32,
+        limit: i32,
+    ) -> Result<(Vec<Entry>, i64), Error> {
+        if !self.langs.contains_key(&sq.from_lang) {
+            return Err(Error::UnknownLang(sq.from_lang.clone()));
+        }
+
+        // Generate FTS query.
+        let fts_query = self.to_fts_query(&sq.query, &sq.from_lang)?;
+
+        let status = if sq.status.is_empty() {
+            STATUS_ENABLED.to_string()
+        } else {
+            sq.status.clone()
+        };
+
+        let results: Vec<Entry> = sqlx::query_as(&q.search.query)
+            .bind(&sq.from_lang)
+            .bind(&sq.query)
+            .bind(&fts_query)
+            .bind(&status)
+            .bind(offset)
+            .bind(limit)
+            .fetch_all(&self.db)
+            .await?;
+
+        let total = results.first().map(|e| e.total).unwrap_or(0);
+        Ok((results, total))
+    }
+
+    /// Load relations for a set of entries.
+    pub async fn load_relations(
+        &self,
+        entries: &mut [Entry],
+        to_lang: &str,
+        types: &[String],
+        tags: &[String],
+        status: &str,
+    ) -> Result<(), Error> {
+        if entries.is_empty() {
+            return Ok(());
+        }
+
+        // Build ID list and index map.
+        let ids: Vec<i64> = entries.iter().map(|e| e.id).collect();
+        let id_json = serde_json::to_string(&ids).unwrap_or_default();
+
+        let mut id_map: HashMap<i64, usize> = HashMap::new();
+        for (i, e) in entries.iter_mut().enumerate() {
+            e.relations = Vec::new();
+            id_map.insert(e.id, i);
+        }
+
+        let types_json = serde_json::to_string(types).unwrap_or_else(|_| "[]".to_string());
+        let tags_json = serde_json::to_string(tags).unwrap_or_else(|_| "[]".to_string());
+
+        let rel_entries: Vec<Entry> = sqlx::query_as(&q.search_relations.query)
+            .bind(&id_json)
+            .bind(to_lang)
+            .bind(&types_json)
+            .bind(&tags_json)
+            .bind(status)
+            .bind(0i32) // max per type (0 = unlimited)
+            .fetch_all(&self.db)
+            .await?;
+
+        // Attach relations to their parent entries.
+        for mut r in rel_entries {
+            // Build Relation struct from flat fields.
+            r.relation = Some(Relation {
+                id: r.relation_id,
+                types: std::mem::take(&mut r.relation_types),
+                tags: std::mem::take(&mut r.relation_tags),
+                notes: std::mem::take(&mut r.relation_notes),
+                weight: r.relation_weight,
+                status: std::mem::take(&mut r.relation_status),
+                created_at: r.relation_created_at.take(),
+                updated_at: r.relation_updated_at.take(),
+            });
+
+            if let Some(idx) = id_map.get(&r.from_id) {
+                entries[*idx].relations.push(r);
+            }
+        }
+
+        // Set total_relations count.
+        for e in entries.iter_mut() {
+            e.total_relations = e.relations.len() as i32;
+        }
+
+        Ok(())
+    }
+
+    // -------------------------------------------------------------------------
+    // Entry CRUD
+    // -------------------------------------------------------------------------
+
+    pub async fn get_entry(&self, id: i64, guid: &str) -> Result<Entry, Error> {
+        let entry: Entry = sqlx::query_as(&q.get_entry.query)
+            .bind(id)
+            .bind(guid)
+            .fetch_optional(&self.db)
+            .await?
+            .ok_or(Error::NotFound)?;
+        Ok(entry)
+    }
+
+    pub async fn get_parent_entries(&self, id: i64) -> Result<Vec<Entry>, Error> {
+        let entries: Vec<Entry> = sqlx::query_as(&q.get_parent_relations.query)
+            .bind(id)
+            .fetch_all(&self.db)
+            .await?;
+        Ok(entries)
+    }
+
+    pub async fn insert_entry(&self, e: &Entry) -> Result<i64, Error> {
+        if !self.langs.contains_key(&e.lang) {
+            return Err(Error::UnknownLang(e.lang.clone()));
+        }
+
+        // Generate tokens if not provided.
+        let tokens = if e.tokens.is_empty() {
+            self.tokenize(&e.content.0, &e.lang)?
+        } else {
+            e.tokens.clone()
+        };
+
+        let guid = if e.guid.is_empty() {
+            uuid::Uuid::new_v4().to_string()
+        } else {
+            e.guid.clone()
+        };
+
+        let status = if e.status.is_empty() {
+            STATUS_ENABLED.to_string()
+        } else {
+            e.status.clone()
+        };
+
+        let content_json = serde_json::to_string(&e.content.0).unwrap_or_else(|_| "[]".to_string());
+        let tags_json = serde_json::to_string(&e.tags.0).unwrap_or_else(|_| "[]".to_string());
+        let phones_json = serde_json::to_string(&e.phones.0).unwrap_or_else(|_| "[]".to_string());
+        let meta_json = serde_json::to_string(&e.meta).unwrap_or_else(|_| "{}".to_string());
+
+        let row = sqlx::query(&q.insert_entry.query)
+            .bind(&guid)
+            .bind(&content_json)
+            .bind(&e.initial)
+            .bind(e.weight)
+            .bind(&tokens)
+            .bind(&e.lang)
+            .bind(&tags_json)
+            .bind(&phones_json)
+            .bind(&e.notes)
+            .bind(&meta_json)
+            .bind(&status)
+            .fetch_one(&self.db)
+            .await?;
+
+        Ok(row.get(0))
+    }
+
+    pub async fn update_entry(&self, id: i64, e: &Entry) -> Result<(), Error> {
+        // Regenerate tokens if content changed.
+        let tokens = if !e.content.is_empty() && e.tokens.is_empty() {
+            self.tokenize(&e.content.0, &e.lang)?
+        } else {
+            e.tokens.clone()
+        };
+
+        let content_json = serde_json::to_string(&e.content.0).unwrap_or_else(|_| "[]".to_string());
+        let tags_json = serde_json::to_string(&e.tags.0).unwrap_or_else(|_| "[]".to_string());
+        let phones_json = serde_json::to_string(&e.phones.0).unwrap_or_else(|_| "[]".to_string());
+        let meta_json = serde_json::to_string(&e.meta).unwrap_or_else(|_| "{}".to_string());
+
+        sqlx::query(&q.update_entry.query)
+            .bind(id)
+            .bind(&content_json)
+            .bind(&e.initial)
+            .bind(e.weight)
+            .bind(&tokens)
+            .bind(&e.lang)
+            .bind(&tags_json)
+            .bind(&phones_json)
+            .bind(&e.notes)
+            .bind(&meta_json)
+            .bind(&e.status)
+            .execute(&self.db)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_entry(&self, id: i64) -> Result<(), Error> {
+        sqlx::query(&q.delete_entry.query)
+            .bind(id)
+            .execute(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    // -------------------------------------------------------------------------
+    // Relation CRUD
+    // -------------------------------------------------------------------------
+
+    pub async fn insert_relation(
+        &self,
+        from_id: i64,
+        to_id: i64,
+        r: &Relation,
+    ) -> Result<i64, Error> {
+        let types_json = serde_json::to_string(&r.types.0).unwrap_or_else(|_| "[]".to_string());
+        let tags_json = serde_json::to_string(&r.tags.0).unwrap_or_else(|_| "[]".to_string());
+
+        let status = if r.status.is_empty() {
+            STATUS_ENABLED.to_string()
+        } else {
+            r.status.clone()
+        };
+
+        let row = sqlx::query(&q.insert_relation.query)
+            .bind(from_id)
+            .bind(to_id)
+            .bind(&types_json)
+            .bind(&tags_json)
+            .bind(&r.notes)
+            .bind(r.weight)
+            .bind(&status)
+            .fetch_one(&self.db)
+            .await?;
+
+        Ok(row.get(0))
+    }
+
+    pub async fn update_relation(&self, id: i64, r: &Relation) -> Result<(), Error> {
+        let types_json = serde_json::to_string(&r.types.0).unwrap_or_else(|_| "[]".to_string());
+        let tags_json = serde_json::to_string(&r.tags.0).unwrap_or_else(|_| "[]".to_string());
+
+        sqlx::query(&q.update_relation.query)
+            .bind(id)
+            .bind(&types_json)
+            .bind(&tags_json)
+            .bind(&r.notes)
+            .bind(r.weight)
+            .bind(&r.status)
+            .execute(&self.db)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_relation(&self, id: i64) -> Result<(), Error> {
+        sqlx::query(&q.delete_relation.query)
+            .bind(id)
+            .execute(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn reorder_relations(&self, ids: &[i64]) -> Result<(), Error> {
+        let ids_json = serde_json::to_string(ids).unwrap_or_else(|_| "[]".to_string());
+        sqlx::query(&q.reorder_relations.query)
+            .bind(&ids_json)
+            .execute(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    // -------------------------------------------------------------------------
+    // Glossary
+    // -------------------------------------------------------------------------
+
+    pub async fn get_initials(&self, lang: &str) -> Result<Vec<String>, Error> {
+        let rows: Vec<(String,)> = sqlx::query_as(&q.get_initials.query)
+            .bind(lang)
+            .fetch_all(&self.db)
+            .await?;
+        Ok(rows.into_iter().map(|(s,)| s).collect())
+    }
+
+    pub async fn get_glossary_words(
+        &self,
+        lang: &str,
+        initial: &str,
+        offset: i32,
+        limit: i32,
+    ) -> Result<(Vec<GlossaryWord>, i64), Error> {
+        let words: Vec<GlossaryWord> = sqlx::query_as(&q.get_glossary_words.query)
+            .bind(lang)
+            .bind(initial)
+            .bind(offset)
+            .bind(limit)
+            .fetch_all(&self.db)
+            .await?;
+
+        let total = words.first().map(|w| w.total).unwrap_or(0);
+        Ok((words, total))
+    }
+
+    // -------------------------------------------------------------------------
+    // Stats
+    // -------------------------------------------------------------------------
+
+    pub async fn get_stats(&self) -> Result<Stats, Error> {
+        let row: (String,) = sqlx::query_as(&q.get_stats.query)
+            .fetch_one(&self.db)
+            .await?;
+        let stats: Stats = serde_json::from_str(&row.0).unwrap_or_default();
+        Ok(stats)
+    }
+
+    // -------------------------------------------------------------------------
+    // Submissions
+    // -------------------------------------------------------------------------
+
+    pub async fn get_pending_entries(
+        &self,
+        lang: &str,
+        offset: i32,
+        limit: i32,
+    ) -> Result<(Vec<Entry>, i64), Error> {
+        let entries: Vec<Entry> = sqlx::query_as(&q.get_pending_entries.query)
+            .bind(lang)
+            .bind(offset)
+            .bind(limit)
+            .fetch_all(&self.db)
+            .await?;
+
+        let total = entries.first().map(|e| e.total).unwrap_or(0);
+        Ok((entries, total))
+    }
+
+    pub async fn insert_submission_entry(&self, e: &Entry) -> Result<Option<i64>, Error> {
+        if !self.langs.contains_key(&e.lang) {
+            return Err(Error::UnknownLang(e.lang.clone()));
+        }
+
+        let tokens = if e.tokens.is_empty() {
+            self.tokenize(&e.content.0, &e.lang)?
+        } else {
+            e.tokens.clone()
+        };
+
+        let guid = if e.guid.is_empty() {
+            uuid::Uuid::new_v4().to_string()
+        } else {
+            e.guid.clone()
+        };
+
+        let content_json = serde_json::to_string(&e.content.0).unwrap_or_else(|_| "[]".to_string());
+        let tags_json = serde_json::to_string(&e.tags.0).unwrap_or_else(|_| "[]".to_string());
+        let phones_json = serde_json::to_string(&e.phones.0).unwrap_or_else(|_| "[]".to_string());
+        let meta_json = serde_json::to_string(&e.meta).unwrap_or_else(|_| "{}".to_string());
+
+        let row: Option<(i64,)> = sqlx::query_as(&q.insert_submission_entry.query)
+            .bind(&guid)
+            .bind(&content_json)
+            .bind(&e.initial)
+            .bind(e.weight)
+            .bind(&tokens)
+            .bind(&e.lang)
+            .bind(&tags_json)
+            .bind(&phones_json)
+            .bind(&e.notes)
+            .bind(&meta_json)
+            .bind(&e.status)
+            .fetch_optional(&self.db)
+            .await?;
+
+        Ok(row.map(|(id,)| id))
+    }
+
+    pub async fn insert_submission_relation(
+        &self,
+        from_id: i64,
+        to_id: i64,
+        r: &Relation,
+    ) -> Result<Option<i64>, Error> {
+        let types_json = serde_json::to_string(&r.types.0).unwrap_or_else(|_| "[]".to_string());
+        let tags_json = serde_json::to_string(&r.tags.0).unwrap_or_else(|_| "[]".to_string());
+
+        let row: Option<(i64,)> = sqlx::query_as(&q.insert_submission_relation.query)
+            .bind(from_id)
+            .bind(to_id)
+            .bind(&types_json)
+            .bind(&tags_json)
+            .bind(&r.notes)
+            .bind(r.weight)
+            .bind(&r.status)
+            .fetch_optional(&self.db)
+            .await?;
+
+        Ok(row.map(|(id,)| id))
+    }
+
+    pub async fn approve_submission(&self, id: i64) -> Result<(), Error> {
+        sqlx::query(&q.approve_submission.query)
+            .bind(id)
+            .execute(&self.db)
+            .await?;
+        sqlx::query(&q.approve_submission_relations.query)
+            .bind(id)
+            .execute(&self.db)
+            .await?;
+        sqlx::query(&q.approve_submission_to_entries.query)
+            .bind(id)
+            .execute(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn reject_submission(&self, id: i64) -> Result<(), Error> {
+        sqlx::query(&q.reject_submission_to_entries.query)
+            .bind(id)
+            .execute(&self.db)
+            .await?;
+        sqlx::query(&q.reject_submission_relations.query)
+            .bind(id)
+            .execute(&self.db)
+            .await?;
+        sqlx::query(&q.reject_submission.query)
+            .bind(id)
+            .execute(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    // -------------------------------------------------------------------------
+    // Comments
+    // -------------------------------------------------------------------------
+
+    pub async fn insert_comment(
+        &self,
+        from_guid: &str,
+        to_guid: &str,
+        comments: &str,
+    ) -> Result<(), Error> {
+        sqlx::query(&q.insert_comment.query)
+            .bind(from_guid)
+            .bind(to_guid)
+            .bind(comments)
+            .execute(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn get_comments(&self) -> Result<Vec<Comment>, Error> {
+        let comments: Vec<Comment> = sqlx::query_as(&q.get_comments.query)
+            .fetch_all(&self.db)
+            .await?;
+        Ok(comments)
+    }
+
+    pub async fn delete_comment(&self, id: i64) -> Result<(), Error> {
+        sqlx::query(&q.delete_comment.query)
+            .bind(id)
+            .execute(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn delete_all_pending(&self) -> Result<(), Error> {
+        sqlx::query(&q.delete_all_pending_relations.query)
+            .execute(&self.db)
+            .await?;
+        sqlx::query(&q.delete_all_pending.query)
+            .execute(&self.db)
+            .await?;
+        sqlx::query(&q.delete_all_comments.query)
+            .execute(&self.db)
+            .await?;
+        Ok(())
+    }
+}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="content glossary">
+    {% if not initials or initials | length == 0 %}
+        <h2>{{ i18n.public_glossaryTitle | default(value="Glossary") }}</h2>
+        <p>{{ i18n.public_noResults | default(value="No results were found.") }}</p>
+    {% else %}
+        <nav class="index">
+            {% for a in initials %}
+            <a href="{{ consts.root_url }}/glossary/{{ glossary.from_lang }}/{{ glossary.to_lang }}/{{ a | urlencode }}"{% if a == initial %} class="sel"{% endif %}>{{ a }}</a>
+            {% endfor %}
+        </nav>
+
+        <nav class="pagination top">{{ pg_bar | safe }}</nav>
+        {% include "glossary-words.html" %}
+        <nav class="pagination bottom">{{ pg_bar | safe }}</nav>
+    {% endif %}
+</section>
+{% endblock %}

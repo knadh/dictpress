@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{ i18n.public_submitEntryTitle | default(value="Suggest new entry") }}</h2>
+<hr />
+<form method="post" action="" class="form-submit">
+    <div>
+        <div class="row">
+            <fieldset class="columns three">
+                <label for="entry-lang">{{ i18n.public_suggestEntryLang | default(value="Entry language") }}</label>
+                <select name="entry_lang" for="entry-lang">
+                {% for id, l in langs %}
+                    <option value="{{ id }}">{{ l.name }}</option>
+                {% endfor %}
+                </select>
+            </fieldset>
+            <fieldset class="columns one"></fieldset>
+            <fieldset class="columns eight">
+                <label for="entry-content">{{ i18n.public_suggestContent | default(value="Content") }}</label>
+                <textarea name="entry_content" id="entry-content" required minlength="3"></textarea>
+            </fieldset>
+        </div>
+        <fieldset>
+            <label>{{ i18n.public_suggestPhones | default(value="Phonetic notations") }}</label>
+            <input type="text" name="phones" placeholder="{{ i18n.public_suggestPhonesPlaceholder | default(value="eg: pɛts, pɛt") }}" />
+        </fieldset>
+
+        <br />
+        <h3>{{ i18n.public_suggestDefsTitle | default(value="Definitions") }}</h3>
+        <ol class="add-relations box">
+            <li class="row">
+                <fieldset class="columns three">
+                    <label>{{ i18n.public_suggestDefLang | default(value="Definition language") }}</label>
+                    <select name="relation_lang">
+                    {% for id, l in langs %}
+                        <option value="{{ id }}">{{ l.name }}</option>
+                    {% endfor %}
+                    </select>
+
+                    <select name="relation_type">
+                    {% for lid, l in langs %}
+                        {% for tid, t in l.types %}
+                            <option data-lang="{{ lid }}" value="{{ tid }}">{{ t }}</option>
+                        {% endfor %}
+                    {% endfor %}
+                    </select>
+
+                    <br />
+                    <a href="#" class="btn-remove-relation">{{ i18n.global_btnDelete | default(value="Delete") }}</a>
+                </fieldset>
+                <fieldset class="columns one"></fieldset>
+                <fieldset class="columns eight">
+                    <label for="definition-content">{{ i18n.public_suggestContent | default(value="Content") }}</label>
+                    <textarea name="relation_content" required minlength="3"></textarea>
+                </fieldset>
+            </li>
+        </ol>
+        <p class="text-right">
+            <a href="#" class="btn-add-relation">+ {{ i18n.public_suggestAddDefBtn | default(value="Add another definition") }}</a>
+        </p>
+
+        <br />
+        <p>
+            <button type="submit">{{ i18n.public_suggestSubmitBtn | default(value="Submit for review") }}</button>
+        </p>
+    </div>
+</form>
+
+<script>
+    (() => { window.setTimeout(() => { document.querySelector('#entry-content').focus() }, 10); })();
+</script>
+{% endblock %}

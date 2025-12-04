@@ -1,0 +1,88 @@
+{% set max_content_items = consts.site_max_content_items %}
+{% set num_results = results.entries | length %}
+{% if num_results > 10 %}{% set num_results = 10 %}{% endif %}
+
+<div class="row">
+    <div class="eight columns">
+        <ol class="entries">
+            {% for r in results.entries | slice(end=num_results) %}
+            <li class="entry" data-guid="{{ r.guid }}" data-head="{{ r.content | join(sep=", ") }}">
+                <header class="head">
+                    <div>
+                        <h3 class="title">{{ r.content | join(sep=", ") }}
+                            {% if consts.enable_submissions %}
+                                <a href="#" data-from="{{ r.guid }}" class="edit" title="{{ i18n.public_suggestEdit | default(value="Suggest edit") }}">&#9998;</a>
+                            {% endif %}
+                        </h3>
+
+                        {% if r.phones and r.phones | length > 0 %}
+                            <span class="pronun">&#9834; {{ r.phones | join(sep=",") }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="meta">
+                        {% if r.tags and r.tags | length > 0 %}
+                            <span class="tags">
+                                {% for tag in r.tags %}
+                                    <span class="tag" {% if tag is starting_with("src:") %} title="{{ i18n.public_sourceTag | default(value="Source") }}"{% endif %}>{{ tag }}</span>
+                                {% endfor %}
+                            </span>
+                        {% endif %}
+                        <a href="#" title="Share screenshot" class="export" data-guid="{{ r.guid }}"><img src="/static/export.svg?v={{ asset_ver }}" alt="Share screenshot"></a>
+                    </div>
+                </header>
+
+                {% if r.relations and r.relations | length > 0 %}
+                    {% set last_type = "" %}
+                    {% for d in r.relations %}
+                        {% set types = d.relation_types | default(value=[]) | join(sep=", ") %}
+
+                        {% if last_type != types or loop.first %}
+                            {% if not loop.first %}</ol>{% endif %}
+                            <ol class="defs">
+                                <li class="types">
+                                    {% for t in d.relation_types | default(value=[]) %}
+                                        {% if t != "" %}
+                                        <span>
+                                            {% if langs[r.lang] and langs[r.lang].types[t] %}{{ langs[r.lang].types[t] }} {% endif %}
+                                            {% if langs[d.lang] and langs[d.lang].types[t] %}({{ langs[d.lang].types[t] }}){% endif %}
+                                        </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </li>
+                        {% endif %}
+
+                        <li><div data-guid="{{ d.guid }}" class="def">
+                            {{ d.content | join(sep=", ") }}
+                            {% if d.content | length > max_content_items or d.meta.synonyms %}
+                                <a href="#" class="more-toggle" data-id="{{ r.guid }}-{{ d.guid }}" title="{{ i18n.public_viewMore | default(value="View more") }}"
+                                    data-entry-guid="{{ d.guid }}" data-from-lang="{{ r.lang }}" data-to-lang="{{ d.lang }}"
+                                    role="button" aria-expanded="false" aria-controls="{{ r.guid }}-{{ d.guid }}">
+                                </a>
+                            {% endif %}
+                            {% if consts.enable_submissions %}
+                                <a href="#" data-from="{{ r.guid }}" data-to="{{ d.guid }}" class="edit" title="{{ i18n.public_suggestEdit | default(value="Suggest edit") }}">&#9998;</a>
+                            {% endif %}
+
+                            <!-- This is dynamically populated by JS when the "more" link is clicked -->
+                            <div class="more" id="{{ r.guid }}-{{ d.guid }}" role="region" aria-hidden="true"></div>
+
+                        </div></li>
+                        {% set_global last_type = types %}
+                    {% endfor %}
+                    </ol>
+                {% endif %}
+
+            </li>
+            {% endfor %}
+        </ol>
+    </div>
+    <nav class="three columns col-offset-1 related">
+        {% if results.entries | length > num_results %}
+            <h3>{{ i18n.public_similarTitle | default(value="Similar words") }}</h3>
+            {% for r in results.entries | slice(start=num_results) %}
+                <a href="{{ consts.root_url }}/dictionary/{{ r.lang }}/{{ r.lang }}/{{ r.content.0 | urlencode }}" class="word">{{ r.content.0 }}</a>
+            {% endfor %}
+        {% endif %}
+    </nav>
+</div>

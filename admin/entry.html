@@ -1,0 +1,130 @@
+<section x-data="entryComponent()"
+    @open-entry-form.window="onOpen"
+    @keyup.escape.window="onClose"
+    @close-entry-form.window="onClose">
+    <template x-if="isVisible">
+        <div class="panel entry-form">
+            <h3 x-text="isNew ? 'New entry' : 'Edit entry'"></h3>
+            <form @submit.prevent="onSave">
+                <fieldset class="box">
+                    <div class="row">
+                        <div class="column nine">
+                            <label>Content</label>
+                            <template x-for="(item, idx) in entry.content" :key="idx">
+                                <div style="margin-bottom: 0.5rem;">
+                                    <textarea required x-model="entry.content[idx]" x-ref="contentInput" :autofocus="idx === 0"></textarea>
+                                    <a href="#" @click.prevent="onDeleteContentItem(idx)" x-show="entry.content.length > 1" class="text-xsmall float-right">Delete</a>
+                                </div>
+                            </template>
+                            <a href="#" @click.prevent="onAddContentItem">+ Add</a>
+                        </div>
+                        <div class="column three">
+                            <label>Initial</label>
+                            <input required type="text" name="initial" x-model="entry.initial" @focus="onFocusInitial" />
+                            <span class="help">First letter</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Language</label>
+                        <select name="lang" x-model="entry.lang" required>
+                            <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
+                              <option :value="id" x-text="l.name" x-bind:selected="id === entry.lang"></option>
+                            </template>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <p>
+                    <a href="" @click.prevent="onToggleOptions">
+                        <span x-text="!isFormOpen ? 'More options +' : 'Hide options -'"></span>
+                    </a>
+                </p>
+                <template x-if="isFormOpen">
+                    <div class="box">
+                        <fieldset class="row">
+                            <div class="column six">
+                                <label>Status</label>
+                                <select name="status" x-model="entry.status" required>
+                                    <option value="enabled">Enabled</option>
+                                    <option value="disabled">Disabled</option>
+                                </select>
+                            </div>
+                            <div class="column six">
+                                <label>Weight</label>
+                                <input type="number" step="0.01" x-model="entry.weight" />
+                                <span class="help">Sort order. Enter 0 to automatically set.</span>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="row">
+                            <div class="column four">
+                                <label>Phonetic notations</label>
+                                <textarea name="phones" x-model="entry.phones" cols="10"></textarea>
+                                <span class="help">One per line</span>
+                            </div>
+                            <div class="column four">
+                                <label>Tags</label>
+                                <textarea name="tags" x-model="entry.tags"></textarea>
+                                <span class="help">One per line</span>
+                            </div>
+                            <div class="column four">
+                                <label>Search tokens</label>
+                                <textarea name="tokens" x-model="entry.tokens"></textarea>
+                                <span class="help">FTS tokens. One per line. Leave empty to auto-generate.</span>
+                            </div>
+                        </fieldset>
+
+                        <fieldset>
+                            <label>Notes</label>
+                            <textarea name="notes" x-model="entry.notes"></textarea>
+                        </fieldset>
+
+                        <fieldset>
+                            <label>Meta</label>
+                            <textarea name="meta" x-model="entry.meta_str"></textarea>
+                        </fieldset>
+                    </div>
+                </template>
+                <br />
+                <fieldset class="buttons">
+                    <button class="button button-outline float-right" @click.prevent="onDeleteEntry"
+                        x-bind:disabled="loading['entries.delete'] === true">Delete</button>
+                    <button type="submit" class="button"
+                        x-bind:disabled="loading['entries.update'] === true || loading['entries.create'] === true">Save</button>
+                    <button class="button button-outline" @click.prevent="onClose">Close</button>
+                </fieldset>
+            </form>
+
+            <template x-if="!isNew">
+                <ul class="no meta">
+                    <li><label>ID</label> <span x-text="entry.id"></span></li>
+                    <li><label>GUID</label> <span x-text="entry.guid"></span></li>
+                    <li><label>Created</label> <span x-text="entry.created_at.slice(0, 16).replace('T', ' ')"></span></li>
+                    <li><label>Updated</label> <span x-text="entry.updated_at.slice(0, 16).replace('T', ' ')"></span></li>
+                </ul>
+            </template>
+
+            <template x-if="!isNew && parentEntries.length > 0">
+                <div class="parents">
+                    <h3>Parent entries (<span x-text="parentEntries.length"></span>)</h3>
+                    <ol class="relations">
+                        <template x-for="r in parentEntries" :key="r.id">
+                            <li class="rel">
+                                <p>
+                                    <a x-bind:href="makeURL({'id': r.id})" class="content">
+                                        <template x-for="(item, idx) in r.content" :key="idx">
+                                            <span><span x-text="item"></span><span x-show="idx < r.content.length - 1">, </span></span>
+                                        </template>
+                                    </a>
+                                    <template x-if="r.phones.length > 0">
+                                        <span class="phones" x-text="r.phones.join(', ')"></span>
+                                    </template>
+                                </p>
+                            </li>
+                        </template>
+                    </ol>
+                </div>
+            </template>
+        </div>
+    </template>
+</section>

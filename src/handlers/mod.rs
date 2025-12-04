@@ -1,0 +1,166 @@
+pub mod admin;
+pub mod entries;
+pub mod relations;
+pub mod search;
+pub mod site;
+pub mod submissions;
+
+use std::{collections::HashMap, sync::Arc};
+
+use axum::{
+    body::Bytes,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
+use serde::Serialize;
+use tera::Tera;
+
+use crate::{
+    manager::Manager,
+    models::{Dicts, LangMap},
+};
+
+pub type I18n = HashMap<String, String>;
+
+/// Application context passed to all handlers.
+pub struct Ctx {
+    pub mgr: Arc<Manager>,
+    pub langs: LangMap,
+    pub dicts: Dicts,
+
+    /// Admin templates (always loaded, embedded in binary).
+    pub admin_tpl: Arc<Tera>,
+    /// Site templates (optional, loaded from --site directory).
+    pub site_tpl: Option<Arc<Tera>>,
+    pub site_path: Option<std::path::PathBuf>,
+    pub i18n: I18n,
+    /// Preloaded static files (JS & CSS) for bundling.
+    pub static_files: HashMap<String, Bytes>,
+
+    pub consts: Consts,
+    pub asset_ver: String,
+}
+
+/// Application constants.
+#[derive(Clone, serde::Serialize)]
+pub struct Consts {
+    pub root_url: String,
+    pub enable_submissions: bool,
+    pub enable_glossary: bool,
+    #[serde(skip)]
+    pub admin_username: String,
+    #[serde(skip)]
+    pub admin_password: String,
+    pub default_per_page: i32,
+    pub max_per_page: i32,
+    pub site_max_content_items: i32,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub admin_assets: Vec<String>,
+}
+
+impl Default for Consts {
+    fn default() -> Self {
+        Self {
+            root_url: String::new(),
+            enable_submissions: false,
+            enable_glossary: true,
+            admin_username: String::new(),
+            admin_password: String::new(),
+            default_per_page: 20,
+            max_per_page: 100,
+            site_max_content_items: 5,
+            admin_assets: Vec::new(),
+        }
+    }
+}
+
+/// API response wrapper.
+#[derive(Serialize)]
+pub struct ApiResp<T> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    pub data: Option<T>,
+}
+
+impl<T: Serialize> IntoResponse for ApiResp<T> {
+    fn into_response(self) -> Response {
+        (StatusCode::OK, Json(self)).into_response()
+    }
+}
+
+pub fn json<T: Serialize>(data: T) -> ApiResp<T> {
+    ApiResp {
+        data: Some(data),
+        message: None,
+    }
+}
+
+/// API error type.
+#[derive(Debug)]
+pub struct ApiErr {
+    pub message: String,
+    pub status: StatusCode,
+}
+
+impl ApiErr {
+    pub fn new(message: impl Into<String>, status: StatusCode) -> Self {
+        Self {
+            message: message.into(),
+            status,
+        }
+    }
+
+    pub fn bad_request(message: impl Into<String>) -> Self {
+        Self::new(message, StatusCode::BAD_REQUEST)
+    }
+
+    pub fn not_found(message: impl Into<String>) -> Self {
+        Self::new(message, StatusCode::NOT_FOUND)
+    }
+
+    pub fn internal(message: impl Into<String>) -> Self {
+        Self::new(message, StatusCode::INTERNAL_SERVER_ERROR)
+    }
+}
+
+impl<E: std::fmt::Display> From<E> for ApiErr {
+    fn from(err: E) -> Self {
+        Self::new(err.to_string(), StatusCode::INTERNAL_SERVER_ERROR)
+    }
+}
+
+impl IntoResponse for ApiErr {
+    fn into_response(self) -> Response {
+        let json = Json(ApiResp::<()> {
+            data: None,
+            message: Some(self.message),
+        });
+        (self.status, json).into_response()
+    }
+}
+
+pub type Result<T> = std::result::Result<T, ApiErr>;
+
+/// Pagination helper.
+pub fn paginate(
+    page: i32,
+    per_page: i32,
+    max_per_page: i32,
+    default_per_page: i32,
+) -> (i32, i32, i32) {
+    let page = if page < 1 { 1 } else { page };
+    let per_page = if per_page < 1 {
+        default_per_page
+    } else if per_page > max_per_page {
+        max_per_page
+    } else {
+        per_page
+    };
+    let offset = (page - 1) * per_page;
+    (page, per_page, offset)
+}
+
+pub fn total_pages(total: i64, per_page: i32) -> i32 {
+    ((total as f64) / (per_page as f64)).ceil() as i32
+}

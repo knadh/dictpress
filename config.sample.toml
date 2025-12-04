@@ -1,0 +1,46 @@
+[app]
+# Network address for the server to listen on.
+address = "127.0.0.1:9000"
+
+# Admin dashboard and API credentials.
+admin_username = "admin"
+admin_password = "admin123"
+
+# The website URL to be used on the frontend pages.
+root_url = "http://localhost:9000"
+
+# Enable API endpoints for accepting public user submissions.
+enable_submissions = false
+
+# Directory containing Lua tokenizer scripts.
+tokenizers_dir = "tokenizers"
+
+# Available dictionary pairs. [from_lang, to_lang] pairs.
+dicts = [["english", "english"]]
+
+
+[db]
+# SQLite database path.
+path = "data.db"
+
+# Maximum connections.
+max_conns = 10
+
+
+# Tokenizer-specific configuration.
+# Passed to Lua tokenizers as `config` table.
+[tokenizer.indicphone]
+kn_num_keys = 2
+ml_num_keys = 2
+
+
+[lang.english]
+name = "English"
+tokenizer = "simple"
+tokenizer_type = "lua"
+
+[lang.english.types]
+noun = "Noun"
+verb = "Verb"
+adj = "Adjective"
+adv = "Adverb"

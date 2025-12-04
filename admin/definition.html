@@ -1,0 +1,67 @@
+<section x-data="definitionComponent()"
+    @open-definition-form.window="onOpen"
+    @keyup.escape.window="onClose"
+    @close-definition-form.window="onClose">
+    <template x-if="isVisible">
+        <div class="panel relation-form">
+            <h3>Add definition</h3>
+            <form @submit.prevent="onSave">
+                <div>
+                    <template x-for="(item, idx) in parent.content" :key="idx">
+                        <span x-text="item" style="display: block;"></span>
+                    </template>
+                </div>
+                <div>&darr;</div>
+                <div>
+                    <label>Definition</label>
+                    <template x-for="(item, idx) in def.content" :key="idx">
+                        <div style="margin-bottom: 0.5rem;">
+                            <textarea required x-model="def.content[idx]" x-ref="contentInput" :autofocus="idx === 0" style="width: calc(100% - 60px); display: inline-block;"></textarea>
+                            <a href="#" @click.prevent="onDeleteDefContentItem(idx)" x-show="def.content.length > 1" style="margin-left: 0.5rem;">Delete</a>
+                        </div>
+                    </template>
+                    <a href="#" @click.prevent="onAddDefContentItem">+ Add</a>
+                </div>
+                <br />
+                <template x-if="Object.keys(config.languages[parent.lang].types).length > 0">
+                    <fieldset class="row">
+                        <div class="column four">
+                            <label>Language</label>
+                            <select name="lang" x-model="def.lang">
+                                <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
+                                  <option :value="id" x-text="l.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div class="column four">
+                            <label>Relation types</label>
+                            <select name="lang" x-model="def.types" multiple required>
+                                <template x-for="[id, typ] in Object.entries(config.languages[def.lang].types)" :key="id">
+                                  <option :value="id" x-text="typ"></option>
+                                </template>
+                            </select>
+                            <span class="help">Ctrl+click to select multiple values</span>
+                        </div>
+
+                        <div class="column four">
+                            <label>Relation tags</label>
+                            <textarea name="tags" x-model="def.tags"></textarea>
+                            <span class="help">One per line</span>
+                        </div>
+                    </fieldset>
+                </template>
+
+                <fieldset>
+                    <label>Notes</label>
+                    <textarea name="notes" x-model="def.notes"></textarea>
+                </fieldset>
+
+                <fieldset class="buttons">
+                    <button type="submit" class="button">Save</button>
+                    <button type="button" class="button button-outline" @click.prevent="onClose">Close</button>
+                </fieldset>
+            </form>
+        </div>
+    </template>
+</section>

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="content results">
+    {% if not results.entries or results.entries | length == 0 %}
+        <h2>{{ i18n.public_noResultsTitle | default(value="No results") }}</h2>
+        <p>
+            {{ i18n.public_noResults | default(value="No results were found for the query.") }}
+        </p>
+    {% else %}
+        {% include "results.html" %}
+    {% endif %}
+</section>
+{% endblock %}
