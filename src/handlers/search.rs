@@ -1,8 +1,11 @@
 use std::sync::Arc;
 
-use axum::extract::{Path, Query, State};
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+};
 
-use super::{json, paginate, total_pages, ApiResp, Ctx, Result};
+use super::{json, paginate, total_pages, ApiErr, ApiResp, Ctx, Result};
 use crate::models::{GlossaryResults, SearchQuery, SearchResults, STATUS_ENABLED};
 
 /// GET /api/dictionary/:fromLang/:toLang/:q - Search dictionary.
@@ -60,19 +63,19 @@ async fn do_search(
     is_admin: bool,
 ) -> Result<ApiResp<SearchResults>> {
     if query.query.is_empty() {
-        return Err(super::ApiErr::bad_request("query is required"));
+        return Err(ApiErr::new("query is required", StatusCode::BAD_REQUEST));
     }
 
     // Validate languages.
     if !ctx.langs.contains_key(&query.from_lang) {
-        return Err(super::ApiErr::bad_request("unknown from_lang"));
+        return Err(ApiErr::new("unknown from_lang", StatusCode::BAD_REQUEST));
     }
 
     let to_lang = if query.to_lang == "*" {
         String::new()
     } else {
         if !query.to_lang.is_empty() && !ctx.langs.contains_key(&query.to_lang) {
-            return Err(super::ApiErr::bad_request("unknown to_lang"));
+            return Err(ApiErr::new("unknown to_lang", StatusCode::BAD_REQUEST));
         }
         query.to_lang.clone()
     };
@@ -125,7 +128,7 @@ pub async fn get_initials(
     Path(lang): Path<String>,
 ) -> Result<ApiResp<Vec<String>>> {
     if !ctx.langs.contains_key(&lang) {
-        return Err(super::ApiErr::bad_request("unknown language"));
+        return Err(ApiErr::new("unknown language", StatusCode::BAD_REQUEST));
     }
 
     let initials = ctx.mgr.get_initials(&lang).await?;
@@ -148,7 +151,7 @@ pub async fn get_glossary_words(
     Query(query): Query<GlossaryQuery>,
 ) -> Result<ApiResp<GlossaryResults>> {
     if !ctx.langs.contains_key(&lang) {
-        return Err(super::ApiErr::bad_request("unknown language"));
+        return Err(ApiErr::new("unknown language", StatusCode::BAD_REQUEST));
     }
 
     let (page, per_page, offset) = paginate(

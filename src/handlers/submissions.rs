@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, Query, State},
+    http::StatusCode,
     Json,
 };
 
@@ -42,14 +43,14 @@ pub async fn create_submission(
     Json(req): Json<SubmissionReq>,
 ) -> Result<ApiResp<bool>> {
     if !ctx.consts.enable_submissions {
-        return Err(ApiErr::bad_request("submissions are disabled"));
+        return Err(ApiErr::new("submissions are disabled", StatusCode::BAD_REQUEST));
     }
 
     if req.content.is_empty() {
-        return Err(ApiErr::bad_request("content is required"));
+        return Err(ApiErr::new("content is required", StatusCode::BAD_REQUEST));
     }
     if req.lang.is_empty() {
-        return Err(ApiErr::bad_request("lang is required"));
+        return Err(ApiErr::new("lang is required", StatusCode::BAD_REQUEST));
     }
 
     // Create main entry.
@@ -68,7 +69,7 @@ pub async fn create_submission(
         .mgr
         .insert_submission_entry(&entry)
         .await?
-        .ok_or_else(|| ApiErr::bad_request("entry already exists"))?;
+        .ok_or_else(|| ApiErr::new("entry already exists", StatusCode::BAD_REQUEST))?;
 
     // Create relation entry if provided.
     if !req.relation_content.is_empty() {
@@ -116,14 +117,14 @@ pub async fn create_comment(
     Json(req): Json<CommentReq>,
 ) -> Result<ApiResp<bool>> {
     if !ctx.consts.enable_submissions {
-        return Err(ApiErr::bad_request("submissions are disabled"));
+        return Err(ApiErr::new("submissions are disabled", StatusCode::BAD_REQUEST));
     }
 
     if req.from_guid.is_empty() {
-        return Err(ApiErr::bad_request("from_guid is required"));
+        return Err(ApiErr::new("from_guid is required", StatusCode::BAD_REQUEST));
     }
     if req.comments.is_empty() {
-        return Err(ApiErr::bad_request("comments is required"));
+        return Err(ApiErr::new("comments is required", StatusCode::BAD_REQUEST));
     }
 
     ctx.mgr

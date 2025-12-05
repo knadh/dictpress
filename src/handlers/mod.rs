@@ -110,18 +110,6 @@ impl ApiErr {
             status,
         }
     }
-
-    pub fn bad_request(message: impl Into<String>) -> Self {
-        Self::new(message, StatusCode::BAD_REQUEST)
-    }
-
-    pub fn not_found(message: impl Into<String>) -> Self {
-        Self::new(message, StatusCode::NOT_FOUND)
-    }
-
-    pub fn internal(message: impl Into<String>) -> Self {
-        Self::new(message, StatusCode::INTERNAL_SERVER_ERROR)
-    }
 }
 
 impl<E: std::fmt::Display> From<E> for ApiErr {

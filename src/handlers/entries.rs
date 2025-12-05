@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, State},
+    http::StatusCode,
     Json,
 };
 
@@ -12,9 +13,9 @@ use crate::models::Entry;
 pub async fn get_entry(State(ctx): State<Arc<Ctx>>, Path(id): Path<i64>) -> Result<ApiResp<Entry>> {
     let mut entry = ctx.mgr.get_entry(id, "").await.map_err(|e| {
         if matches!(e, crate::manager::Error::NotFound) {
-            ApiErr::not_found("entry not found")
+            ApiErr::new("entry not found", StatusCode::NOT_FOUND)
         } else {
-            ApiErr::internal(e.to_string())
+            ApiErr::new(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)
         }
     })?;
 
@@ -35,9 +36,9 @@ pub async fn get_entry_by_guid(
 ) -> Result<ApiResp<Entry>> {
     let mut entry = ctx.mgr.get_entry(0, &guid).await.map_err(|e| {
         if matches!(e, crate::manager::Error::NotFound) {
-            ApiErr::not_found("entry not found")
+            ApiErr::new("entry not found", StatusCode::NOT_FOUND)
         } else {
-            ApiErr::internal(e.to_string())
+            ApiErr::new(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)
         }
     })?;
 
@@ -117,10 +118,10 @@ pub async fn create_entry(
     Json(req): Json<EntryReq>,
 ) -> Result<ApiResp<Entry>> {
     if req.content.is_empty() {
-        return Err(ApiErr::bad_request("content is required"));
+        return Err(ApiErr::new("content is required", StatusCode::BAD_REQUEST));
     }
     if req.lang.is_empty() {
-        return Err(ApiErr::bad_request("lang is required"));
+        return Err(ApiErr::new("lang is required", StatusCode::BAD_REQUEST));
     }
 
     let entry: Entry = req.into();

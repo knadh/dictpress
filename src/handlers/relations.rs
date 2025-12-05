@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, State},
+    http::StatusCode,
     Json,
 };
 
@@ -43,7 +44,10 @@ pub async fn create_relation(
     Json(req): Json<RelationReq>,
 ) -> Result<ApiResp<i64>> {
     if from_id == to_id {
-        return Err(ApiErr::bad_request("from_id and to_id cannot be the same"));
+        return Err(ApiErr::new(
+            "from_id and to_id cannot be the same",
+            StatusCode::BAD_REQUEST,
+        ));
     }
 
     let relation: Relation = req.into();
