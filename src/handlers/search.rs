@@ -8,7 +8,7 @@ use axum::{
 use super::{json, paginate, total_pages, ApiErr, ApiResp, Ctx, Result};
 use crate::models::{GlossaryResults, SearchQuery, SearchResults, STATUS_ENABLED};
 
-/// GET /api/dictionary/:fromLang/:toLang/:q - Search dictionary.
+/// Search dictionary.
 pub async fn search(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang, q)): Path<(String, String, String)>,
@@ -21,7 +21,7 @@ pub async fn search(
     do_search(ctx, query, false).await
 }
 
-/// GET /api/dictionary/:fromLang/:toLang - Search without query in path (uses query param).
+/// Search without query in path (uses query param).
 pub async fn search_no_query(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang)): Path<(String, String)>,
@@ -122,7 +122,7 @@ async fn do_search(
     }))
 }
 
-/// GET /api/glossary/:lang/initials - Get unique initials for a language.
+/// Get unique initials for a language.
 pub async fn get_initials(
     State(ctx): State<Arc<Ctx>>,
     Path(lang): Path<String>,
@@ -144,7 +144,7 @@ pub struct GlossaryQuery {
     pub per_page: i32,
 }
 
-/// GET /api/glossary/:lang/:initial - Get glossary words.
+/// Get glossary words.
 pub async fn get_glossary_words(
     State(ctx): State<Arc<Ctx>>,
     Path((lang, initial)): Path<(String, String)>,

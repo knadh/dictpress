@@ -9,13 +9,13 @@ use axum::{
 use super::{json, ApiResp, Ctx, Result};
 use crate::models::Stats;
 
-/// GET /api/stats - Get database stats.
+/// Get database stats.
 pub async fn get_stats(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<Stats>> {
     let stats = ctx.mgr.get_stats().await?;
     Ok(json(stats))
 }
 
-/// GET /api/config - Get public config (languages, dicts).
+/// Get public config (languages, dicts).
 pub async fn get_config(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<ConfigResp>> {
     let resp = ConfigResp {
         langs: ctx
@@ -72,17 +72,17 @@ fn render_admin(
         })
 }
 
-/// GET /admin - Admin index.
+/// Admin index.
 pub async fn admin_index(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
     render_admin(&ctx, "admin/index.html", "")
 }
 
-/// GET /admin/search - Admin search page.
+/// Admin search page.
 pub async fn admin_search(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
     render_admin(&ctx, "admin/search.html", "Search")
 }
 
-/// GET /admin/pending - Admin pending page.
+/// Admin pending page.
 pub async fn admin_pending(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
     render_admin(&ctx, "admin/pending.html", "Pending")
 }

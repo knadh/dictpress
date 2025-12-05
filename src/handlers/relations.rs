@@ -37,7 +37,7 @@ impl From<RelationReq> for Relation {
     }
 }
 
-/// POST /api/relations/:fromId/:toId - Create relation.
+/// Create relation.
 pub async fn create_relation(
     State(ctx): State<Arc<Ctx>>,
     Path((from_id, to_id)): Path<(i64, i64)>,
@@ -56,7 +56,7 @@ pub async fn create_relation(
     Ok(json(id))
 }
 
-/// PUT /api/relations/:relId - Update relation.
+/// Update relation.
 pub async fn update_relation(
     State(ctx): State<Arc<Ctx>>,
     Path(rel_id): Path<i64>,
@@ -68,7 +68,7 @@ pub async fn update_relation(
     Ok(json(true))
 }
 
-/// DELETE /api/relations/:relId - Delete relation.
+/// Delete relation.
 pub async fn delete_relation(
     State(ctx): State<Arc<Ctx>>,
     Path(rel_id): Path<i64>,
@@ -83,7 +83,7 @@ pub struct ReorderReq {
     pub ids: Vec<i64>,
 }
 
-/// PUT /api/entries/:id/relations/weights - Reorder relations.
+/// Reorder relations.
 pub async fn reorder_relations(
     State(ctx): State<Arc<Ctx>>,
     Path(_entry_id): Path<i64>,

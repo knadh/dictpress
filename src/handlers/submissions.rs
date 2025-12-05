@@ -37,7 +37,7 @@ pub struct SubmissionReq {
     pub relation_notes: String,
 }
 
-/// POST /api/submissions - Submit new entry+relation.
+/// Submit new entry+relation.
 pub async fn create_submission(
     State(ctx): State<Arc<Ctx>>,
     Json(req): Json<SubmissionReq>,
@@ -111,7 +111,7 @@ pub struct CommentReq {
     pub comments: String,
 }
 
-/// POST /api/submissions/comments - Submit comment.
+/// Submit comment.
 pub async fn create_comment(
     State(ctx): State<Arc<Ctx>>,
     Json(req): Json<CommentReq>,
@@ -134,7 +134,7 @@ pub async fn create_comment(
     Ok(json(true))
 }
 
-/// GET /api/entries/pending - Get pending entries.
+/// Get pending entries.
 pub async fn get_pending_entries(
     State(ctx): State<Arc<Ctx>>,
     Query(query): Query<GlossaryQuery>,
@@ -157,13 +157,13 @@ pub async fn get_pending_entries(
     }))
 }
 
-/// GET /api/entries/comments - Get all comments.
+/// Get all comments.
 pub async fn get_comments(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<Vec<Comment>>> {
     let comments = ctx.mgr.get_comments().await?;
     Ok(json(comments))
 }
 
-/// DELETE /api/entries/comments/:id - Delete comment.
+/// Delete comment.
 pub async fn delete_comment(
     State(ctx): State<Arc<Ctx>>,
     Path(id): Path<i64>,
@@ -172,13 +172,13 @@ pub async fn delete_comment(
     Ok(json(true))
 }
 
-/// DELETE /api/entries/pending - Delete all pending.
+/// Delete all pending.
 pub async fn delete_all_pending(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<bool>> {
     ctx.mgr.delete_all_pending().await?;
     Ok(json(true))
 }
 
-/// PUT /api/entries/:id/submission - Approve submission.
+/// Approve submission.
 pub async fn approve_submission(
     State(ctx): State<Arc<Ctx>>,
     Path(id): Path<i64>,
@@ -187,7 +187,7 @@ pub async fn approve_submission(
     Ok(json(true))
 }
 
-/// DELETE /api/entries/:id/submission - Reject submission.
+/// Reject submission.
 pub async fn reject_submission(
     State(ctx): State<Arc<Ctx>>,
     Path(id): Path<i64>,

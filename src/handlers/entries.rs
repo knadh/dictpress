@@ -9,7 +9,7 @@ use axum::{
 use super::{json, ApiErr, ApiResp, Ctx, Result};
 use crate::models::Entry;
 
-/// GET /api/entries/:id - Get entry by ID.
+/// Get entry by ID.
 pub async fn get_entry(State(ctx): State<Arc<Ctx>>, Path(id): Path<i64>) -> Result<ApiResp<Entry>> {
     let mut entry = ctx.mgr.get_entry(id, "").await.map_err(|e| {
         if matches!(e, crate::manager::Error::NotFound) {
@@ -20,16 +20,14 @@ pub async fn get_entry(State(ctx): State<Arc<Ctx>>, Path(id): Path<i64>) -> Resu
     })?;
 
     // Load relations.
-    let mut entries = vec![entry];
-    ctx.mgr
-        .load_relations(&mut entries, "", &[], &[], "")
-        .await?;
-    entry = entries.remove(0);
+    let mut out = vec![entry];
+    ctx.mgr.load_relations(&mut out, "", &[], &[], "").await?;
+    entry = out.remove(0);
 
     Ok(json(entry))
 }
 
-/// GET /api/entries/guid/:guid - Get entry by GUID (public).
+/// Get entry by GUID (public).
 pub async fn get_entry_by_guid(
     State(ctx): State<Arc<Ctx>>,
     Path(guid): Path<String>,
@@ -43,11 +41,9 @@ pub async fn get_entry_by_guid(
     })?;
 
     // Load relations.
-    let mut entries = vec![entry];
-    ctx.mgr
-        .load_relations(&mut entries, "", &[], &[], "")
-        .await?;
-    entry = entries.remove(0);
+    let mut out = vec![entry];
+    ctx.mgr.load_relations(&mut out, "", &[], &[], "").await?;
+    entry = out.remove(0);
 
     // Hide internal IDs.
     entry.id = 0;
@@ -61,7 +57,7 @@ pub async fn get_entry_by_guid(
     Ok(json(entry))
 }
 
-/// GET /api/entries/:id/parents - Get parent entries.
+/// Get parent entries.
 pub async fn get_parent_entries(
     State(ctx): State<Arc<Ctx>>,
     Path(id): Path<i64>,
@@ -112,7 +108,7 @@ impl From<EntryReq> for Entry {
     }
 }
 
-/// POST /api/entries - Create entry.
+/// Create entry.
 pub async fn create_entry(
     State(ctx): State<Arc<Ctx>>,
     Json(req): Json<EntryReq>,
@@ -131,7 +127,7 @@ pub async fn create_entry(
     Ok(json(entry))
 }
 
-/// PUT /api/entries/:id - Update entry.
+/// Update entry.
 pub async fn update_entry(
     State(ctx): State<Arc<Ctx>>,
     Path(id): Path<i64>,
@@ -144,7 +140,7 @@ pub async fn update_entry(
     Ok(json(entry))
 }
 
-/// DELETE /api/entries/:id - Delete entry.
+/// Delete entry.
 pub async fn delete_entry(
     State(ctx): State<Arc<Ctx>>,
     Path(id): Path<i64>,

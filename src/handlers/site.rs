@@ -43,14 +43,14 @@ fn render(
     }
 }
 
-/// GET / - Site index.
+/// Site index.
 pub async fn index(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
     let mut context = base_context(&ctx);
     context.insert("page_type", "/");
     render(&ctx, "index.html", &context)
 }
 
-/// GET /dictionary/:from/:to/:q - Search page.
+/// Search page.
 pub async fn search(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang, query)): Path<(String, String, String)>,
@@ -105,7 +105,7 @@ pub async fn search(
     render(&ctx, "search.html", &context)
 }
 
-/// GET /glossary/:from/:to/:initial - Glossary page.
+/// Glossary page.
 pub async fn glossary(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang, initial)): Path<(String, String, String)>,
@@ -170,7 +170,7 @@ struct GlossaryData {
     to_lang: String,
 }
 
-/// GET /submit - Submit new entry page.
+/// Submit new entry page.
 pub async fn submit_form(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
     if !ctx.consts.enable_submissions {
         return (StatusCode::NOT_FOUND, "submissions disabled").into_response();
@@ -183,7 +183,7 @@ pub async fn submit_form(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
     }
 }
 
-/// GET /:page - Custom pages.
+/// Custom pages.
 pub async fn custom_page(
     State(ctx): State<Arc<Ctx>>,
     Path(page): Path<String>,
@@ -208,7 +208,7 @@ pub async fn custom_page(
     }
 }
 
-/// GET /message - Generic message page.
+/// Generic message page.
 pub async fn message(
     State(ctx): State<Arc<Ctx>>,
     Query(params): Query<MessageParams>,
