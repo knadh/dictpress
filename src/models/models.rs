@@ -262,7 +262,7 @@ pub struct Config {
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct AppConfig {
-    #[serde(default = "default_address")]
+    #[serde(default)]
     pub address: String,
     #[serde(default)]
     pub admin_username: String,
@@ -280,24 +280,12 @@ pub struct AppConfig {
     pub tokenizers_dir: String,
 }
 
-fn default_address() -> String {
-    "127.0.0.1:9000".to_string()
-}
-
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct DbConfig {
-    #[serde(default = "default_db_path")]
+    #[serde(default)]
     pub path: String,
-    #[serde(default = "default_max_conns")]
+    #[serde(default)]
     pub max_conns: u32,
-}
-
-fn default_db_path() -> String {
-    "data.db".to_string()
-}
-
-fn default_max_conns() -> u32 {
-    10
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]

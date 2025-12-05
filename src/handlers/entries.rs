@@ -62,8 +62,8 @@ pub async fn get_parent_entries(
     State(ctx): State<Arc<Ctx>>,
     Path(id): Path<i64>,
 ) -> Result<ApiResp<Vec<Entry>>> {
-    let entries = ctx.mgr.get_parent_entries(id).await?;
-    Ok(json(entries))
+    let out = ctx.mgr.get_parent_entries(id).await?;
+    Ok(json(out))
 }
 
 /// Entry creation/update request.
@@ -122,9 +122,9 @@ pub async fn create_entry(
 
     let entry: Entry = req.into();
     let id = ctx.mgr.insert_entry(&entry).await?;
-    let entry = ctx.mgr.get_entry(id, "").await?;
+    let out = ctx.mgr.get_entry(id, "").await?;
 
-    Ok(json(entry))
+    Ok(json(out))
 }
 
 /// Update entry.
@@ -135,9 +135,9 @@ pub async fn update_entry(
 ) -> Result<ApiResp<Entry>> {
     let entry: Entry = req.into();
     ctx.mgr.update_entry(id, &entry).await?;
-    let entry = ctx.mgr.get_entry(id, "").await?;
+    let out = ctx.mgr.get_entry(id, "").await?;
 
-    Ok(json(entry))
+    Ok(json(out))
 }
 
 /// Delete entry.

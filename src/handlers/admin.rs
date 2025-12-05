@@ -17,7 +17,7 @@ pub async fn get_stats(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<Stats>> {
 
 /// Get public config (languages, dicts).
 pub async fn get_config(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<ConfigResp>> {
-    let resp = ConfigResp {
+    let out = ConfigResp {
         langs: ctx
             .langs
             .iter()
@@ -33,7 +33,7 @@ pub async fn get_config(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<ConfigRes
             .map(|(from, to)| [from.id.clone(), to.id.clone()])
             .collect(),
     };
-    Ok(json(resp))
+    Ok(json(out))
 }
 
 #[derive(serde::Serialize)]
@@ -55,21 +55,18 @@ fn render_admin(
     template: &str,
     title: &str,
 ) -> std::result::Result<Html<String>, impl IntoResponse> {
-    let mut context = tera::Context::new();
-    context.insert("title", title);
-    context.insert("asset_ver", &ctx.asset_ver);
-    context.insert("consts", &ctx.consts);
+    let mut c = tera::Context::new();
+    c.insert("title", title);
+    c.insert("asset_ver", &ctx.asset_ver);
+    c.insert("consts", &ctx.consts);
 
-    ctx.admin_tpl
-        .render(template, &context)
-        .map(Html)
-        .map_err(|e| {
-            log::error!("template error: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("template error: {}", e),
-            )
-        })
+    ctx.admin_tpl.render(template, &c).map(Html).map_err(|e| {
+        log::error!("template error: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("template error: {}", e),
+        )
+    })
 }
 
 /// Admin index.

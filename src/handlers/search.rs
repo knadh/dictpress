@@ -8,7 +8,7 @@ use axum::{
 use super::{json, paginate, total_pages, ApiErr, ApiResp, Ctx, Result};
 use crate::models::{GlossaryResults, SearchQuery, SearchResults, STATUS_ENABLED};
 
-/// Search dictionary.
+/// Search a dictionary with query in path.
 pub async fn search(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang, q)): Path<(String, String, String)>,
@@ -33,7 +33,7 @@ pub async fn search_no_query(
     do_search(ctx, query, false).await
 }
 
-/// Admin search - includes internal IDs.
+/// Admin search (response includes internal IDs also).
 pub async fn search_admin(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang)): Path<(String, String)>,
@@ -45,6 +45,7 @@ pub async fn search_admin(
     do_search(ctx, query, true).await
 }
 
+/// Admin search with query (response includes internal IDs also).
 pub async fn search_admin_with_query(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang, q)): Path<(String, String, String)>,
@@ -68,18 +69,19 @@ async fn do_search(
 
     // Validate languages.
     if !ctx.langs.contains_key(&query.from_lang) {
-        return Err(ApiErr::new("unknown from_lang", StatusCode::BAD_REQUEST));
+        return Err(ApiErr::new("unknown `from_lang`", StatusCode::BAD_REQUEST));
     }
 
     let to_lang = if query.to_lang == "*" {
         String::new()
     } else {
         if !query.to_lang.is_empty() && !ctx.langs.contains_key(&query.to_lang) {
-            return Err(ApiErr::new("unknown to_lang", StatusCode::BAD_REQUEST));
+            return Err(ApiErr::new("unknown `to_lang`", StatusCode::BAD_REQUEST));
         }
         query.to_lang.clone()
     };
 
+    // Figure out pagination.
     let (page, per_page, offset) = paginate(
         query.page,
         query.per_page,
@@ -87,10 +89,10 @@ async fn do_search(
         ctx.consts.default_per_page,
     );
 
-    // Search entries.
+    // Search entries in the DB.
     let (mut entries, total) = ctx.mgr.search(&query, offset, per_page).await?;
 
-    // Load relations.
+    // Load relations for results.
     let status = if query.status.is_empty() {
         STATUS_ENABLED
     } else {
