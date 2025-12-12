@@ -5,6 +5,7 @@ mod importer;
 mod init;
 mod manager;
 mod models;
+mod sitemaps;
 mod tokenizer;
 
 use std::{path::PathBuf, sync::Arc};
@@ -14,7 +15,6 @@ use clap::Parser;
 use cli::Commands;
 use handlers::{Consts, Ctx};
 use manager::{Manager, ManagerConfig};
-use models::schema;
 
 #[tokio::main]
 async fn main() {
@@ -100,7 +100,7 @@ async fn main() {
                 check_db(&cli.db);
 
                 let config = init::init_config(&cli.config);
-                if let Err(e) = init::generate_sitemaps(
+                if let Err(e) = sitemaps::generate_sitemaps(
                     &db_path,
                     &from_lang,
                     &to_lang,

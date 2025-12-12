@@ -65,7 +65,7 @@ pub fn init_config(paths: &[PathBuf]) -> models::Config {
     })
 }
 
-/// Load configuration from TOML file.
+/// Load configuration from a given TOML file.
 fn read_config(path: &Path) -> Result<Config, Box<dyn std::error::Error>> {
     let content = std::fs::read_to_string(path)?;
     let cfg: Config = toml::from_str(&content)?;
@@ -308,7 +308,7 @@ pub async fn check_upgrade(db: &SqlitePool) -> Result<(), Box<dyn std::error::Er
     let last_ver = get_last_migration_version(db).await?;
 
     // Compare versions.
-    if version_compare(&last_ver, CURRENT_VERSION) < 0 {
+    if compare_semver(&last_ver, CURRENT_VERSION) < 0 {
         return Err(format!(
             "database version ({}) is older than binary ({}). Backup the database and run 'upgrade'",
             last_ver, CURRENT_VERSION
@@ -339,7 +339,7 @@ pub async fn upgrade_schema(db_path: &str, prompt: bool) -> Result<(), Box<dyn s
 
     let last_ver = get_last_migration_version(&db).await?;
 
-    if version_compare(&last_ver, CURRENT_VERSION) >= 0 {
+    if compare_semver(&last_ver, CURRENT_VERSION) >= 0 {
         log::info!("no upgrades to run. Database is up to date.");
         return Ok(());
     }
@@ -373,7 +373,7 @@ pub async fn init_db(
 }
 
 /// Simple semver comparison (-1 = a < b, 0 = a == b, 1 = a > b).
-fn version_compare(a: &str, b: &str) -> i32 {
+fn compare_semver(a: &str, b: &str) -> i32 {
     let parse = |s: &str| -> Vec<u32> {
         s.trim_start_matches('v')
             .split('.')
@@ -395,117 +395,4 @@ fn version_compare(a: &str, b: &str) -> i32 {
         }
     }
     0
-}
-
-/// Generate sitemap files.
-pub async fn generate_sitemaps(
-    db_path: &str,
-    from_lang: &str,
-    to_lang: &str,
-    root_url: &str,
-    max_rows: usize,
-    output_prefix: &str,
-    output_dir: &Path,
-    generate_robots: bool,
-    sitemap_url: Option<&str>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    use regex::Regex;
-    use std::fs;
-
-    // Create output directory.
-    fs::create_dir_all(output_dir)?;
-
-    // Connect to database (read-only).
-    let db = init_db(db_path, 1, true).await?;
-
-    // Get all entries for the from_lang.
-    let rows: Vec<(String,)> = sqlx::query_as(
-        "SELECT json_extract(content, '$[0]') FROM entries WHERE lang = ? AND status = 'enabled' ORDER BY weight"
-    )
-    .bind(from_lang)
-    .fetch_all(&db)
-    .await?;
-
-    let re_spaces = Regex::new(r"\s+")?;
-    let mut urls: Vec<String> = Vec::new();
-    let mut n = 0;
-    let mut file_index = 1;
-
-    log::info!("generating sitemaps for {} -> {}", from_lang, to_lang);
-
-    for (word,) in rows {
-        let word = word.to_lowercase().trim().to_string();
-        let word = re_spaces.replace_all(&word, "+").to_string();
-
-        let url = format!("{}/dictionary/{}/{}/{}", root_url, from_lang, to_lang, word);
-        urls.push(url);
-
-        if urls.len() >= max_rows {
-            write_sitemap(&urls, file_index, output_prefix, output_dir)?;
-            urls.clear();
-            file_index += 1;
-        }
-        n += 1;
-    }
-
-    // Write remaining URLs.
-    if !urls.is_empty() {
-        write_sitemap(&urls, file_index, output_prefix, output_dir)?;
-    }
-
-    log::info!("generated {} URLs in {} sitemap files", n, file_index);
-
-    // Generate robots.txt.
-    if generate_robots {
-        if let Some(url) = sitemap_url {
-            generate_robots_txt(url, output_dir)?;
-        }
-    }
-
-    Ok(())
-}
-
-fn write_sitemap(
-    urls: &[String],
-    index: usize,
-    output_prefix: &str,
-    output_dir: &Path,
-) -> Result<(), Box<dyn std::error::Error>> {
-    use std::fs::File;
-
-    let filepath = output_dir.join(format!("{}{}.txt", output_prefix, index));
-    log::info!("writing to {}", filepath.display());
-
-    let mut file = File::create(&filepath)?;
-    for url in urls {
-        writeln!(file, "{}", url)?;
-    }
-    Ok(())
-}
-
-fn generate_robots_txt(
-    sitemap_url: &str,
-    output_dir: &Path,
-) -> Result<(), Box<dyn std::error::Error>> {
-    use std::fs::{self, File};
-
-    let robots_path = output_dir.join("robots.txt");
-    log::info!("writing to {}", robots_path.display());
-
-    let mut file = File::create(&robots_path)?;
-    writeln!(file, "User-agent: *")?;
-    writeln!(file, "Disallow:")?;
-    writeln!(file, "Allow: /")?;
-    writeln!(file)?;
-
-    // Add sitemap references.
-    for entry in fs::read_dir(output_dir)? {
-        let entry = entry?;
-        let name = entry.file_name().to_string_lossy().to_string();
-        if name != "robots.txt" && name.ends_with(".txt") {
-            writeln!(file, "Sitemap: {}/{}", sitemap_url, name)?;
-        }
-    }
-
-    Ok(())
 }
