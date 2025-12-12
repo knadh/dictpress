@@ -37,6 +37,12 @@ impl From<RelationReq> for Relation {
     }
 }
 
+/// Reorder relations request.
+#[derive(Debug, serde::Deserialize)]
+pub struct ReorderReq {
+    pub ids: Vec<i64>,
+}
+
 /// Create relation.
 pub async fn create_relation(
     State(ctx): State<Arc<Ctx>>,
@@ -75,12 +81,6 @@ pub async fn delete_relation(
 ) -> Result<ApiResp<bool>> {
     ctx.mgr.delete_relation(rel_id).await?;
     Ok(json(true))
-}
-
-/// Reorder relations request.
-#[derive(Debug, serde::Deserialize)]
-pub struct ReorderReq {
-    pub ids: Vec<i64>,
 }
 
 /// Reorder relations.

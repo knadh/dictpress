@@ -8,6 +8,15 @@ use axum::{
 use super::{json, paginate, total_pages, ApiErr, ApiResp, Ctx, Result};
 use crate::models::{GlossaryResults, SearchQuery, SearchResults, STATUS_ENABLED};
 
+/// Glossary query params.
+#[derive(Debug, serde::Deserialize, Default)]
+pub struct GlossaryQuery {
+    #[serde(default)]
+    pub page: i32,
+    #[serde(default)]
+    pub per_page: i32,
+}
+
 /// Search a dictionary with query in path.
 pub async fn search(
     State(ctx): State<Arc<Ctx>>,
@@ -135,15 +144,6 @@ pub async fn get_initials(
 
     let initials = ctx.mgr.get_initials(&lang).await?;
     Ok(json(initials))
-}
-
-/// Glossary query params.
-#[derive(Debug, serde::Deserialize, Default)]
-pub struct GlossaryQuery {
-    #[serde(default)]
-    pub page: i32,
-    #[serde(default)]
-    pub per_page: i32,
 }
 
 /// Get glossary words.

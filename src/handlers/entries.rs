@@ -9,6 +9,48 @@ use axum::{
 use super::{json, ApiErr, ApiResp, Ctx, Result};
 use crate::models::Entry;
 
+/// Entry creation/update request.
+#[derive(Debug, serde::Deserialize)]
+pub struct EntryReq {
+    #[serde(default)]
+    pub content: Vec<String>,
+    #[serde(default)]
+    pub initial: String,
+    #[serde(default)]
+    pub weight: f64,
+    #[serde(default)]
+    pub tokens: String,
+    pub lang: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub phones: Vec<String>,
+    #[serde(default)]
+    pub notes: String,
+    #[serde(default)]
+    pub meta: serde_json::Value,
+    #[serde(default)]
+    pub status: String,
+}
+
+impl From<EntryReq> for Entry {
+    fn from(req: EntryReq) -> Self {
+        Entry {
+            content: req.content.into(),
+            initial: req.initial,
+            weight: req.weight,
+            tokens: req.tokens,
+            lang: req.lang,
+            tags: req.tags.into(),
+            phones: req.phones.into(),
+            notes: req.notes,
+            meta: req.meta,
+            status: req.status,
+            ..Default::default()
+        }
+    }
+}
+
 /// Get entry by ID.
 pub async fn get_entry(State(ctx): State<Arc<Ctx>>, Path(id): Path<i64>) -> Result<ApiResp<Entry>> {
     let mut entry = ctx.mgr.get_entry(id, "").await.map_err(|e| {
@@ -64,48 +106,6 @@ pub async fn get_parent_entries(
 ) -> Result<ApiResp<Vec<Entry>>> {
     let out = ctx.mgr.get_parent_entries(id).await?;
     Ok(json(out))
-}
-
-/// Entry creation/update request.
-#[derive(Debug, serde::Deserialize)]
-pub struct EntryReq {
-    #[serde(default)]
-    pub content: Vec<String>,
-    #[serde(default)]
-    pub initial: String,
-    #[serde(default)]
-    pub weight: f64,
-    #[serde(default)]
-    pub tokens: String,
-    pub lang: String,
-    #[serde(default)]
-    pub tags: Vec<String>,
-    #[serde(default)]
-    pub phones: Vec<String>,
-    #[serde(default)]
-    pub notes: String,
-    #[serde(default)]
-    pub meta: serde_json::Value,
-    #[serde(default)]
-    pub status: String,
-}
-
-impl From<EntryReq> for Entry {
-    fn from(req: EntryReq) -> Self {
-        Entry {
-            content: req.content.into(),
-            initial: req.initial,
-            weight: req.weight,
-            tokens: req.tokens,
-            lang: req.lang,
-            tags: req.tags.into(),
-            phones: req.phones.into(),
-            notes: req.notes,
-            meta: req.meta,
-            status: req.status,
-            ..Default::default()
-        }
-    }
 }
 
 /// Create entry.

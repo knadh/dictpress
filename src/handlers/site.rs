@@ -9,6 +9,25 @@ use axum::{
 use super::Ctx;
 use crate::models::{SearchQuery, STATUS_ENABLED};
 
+#[derive(serde::Deserialize)]
+pub struct GlossaryParams {
+    page: Option<i32>,
+    per_page: Option<i32>,
+}
+
+#[derive(serde::Serialize)]
+struct GlossaryData {
+    words: Vec<crate::models::GlossaryWord>,
+    from_lang: String,
+    to_lang: String,
+}
+
+#[derive(serde::Deserialize)]
+pub struct MessageParams {
+    title: Option<String>,
+    message: Option<String>,
+}
+
 /// Build common template context.
 fn base_context(ctx: &Ctx) -> tera::Context {
     let mut context = tera::Context::new();
@@ -157,19 +176,6 @@ pub async fn glossary(
     render(&ctx, "glossary.html", &context)
 }
 
-#[derive(serde::Deserialize)]
-pub struct GlossaryParams {
-    page: Option<i32>,
-    per_page: Option<i32>,
-}
-
-#[derive(serde::Serialize)]
-struct GlossaryData {
-    words: Vec<crate::models::GlossaryWord>,
-    from_lang: String,
-    to_lang: String,
-}
-
 /// Submit new entry page.
 pub async fn submit_form(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
     if !ctx.consts.enable_submissions {
@@ -218,10 +224,4 @@ pub async fn message(
     context.insert("title", &params.title.unwrap_or_default());
     context.insert("description", &params.message.unwrap_or_default());
     render(&ctx, "message.html", &context)
-}
-
-#[derive(serde::Deserialize)]
-pub struct MessageParams {
-    title: Option<String>,
-    message: Option<String>,
 }

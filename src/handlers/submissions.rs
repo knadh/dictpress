@@ -37,13 +37,25 @@ pub struct SubmissionReq {
     pub relation_notes: String,
 }
 
+/// Comment submission request.
+#[derive(Debug, serde::Deserialize)]
+pub struct CommentReq {
+    pub from_guid: String,
+    #[serde(default)]
+    pub to_guid: String,
+    pub comments: String,
+}
+
 /// Submit new entry+relation.
 pub async fn create_submission(
     State(ctx): State<Arc<Ctx>>,
     Json(req): Json<SubmissionReq>,
 ) -> Result<ApiResp<bool>> {
     if !ctx.consts.enable_submissions {
-        return Err(ApiErr::new("submissions are disabled", StatusCode::BAD_REQUEST));
+        return Err(ApiErr::new(
+            "submissions are disabled",
+            StatusCode::BAD_REQUEST,
+        ));
     }
 
     if req.content.is_empty() {
@@ -102,26 +114,23 @@ pub async fn create_submission(
     Ok(json(true))
 }
 
-/// Comment submission request.
-#[derive(Debug, serde::Deserialize)]
-pub struct CommentReq {
-    pub from_guid: String,
-    #[serde(default)]
-    pub to_guid: String,
-    pub comments: String,
-}
-
 /// Submit comment.
 pub async fn create_comment(
     State(ctx): State<Arc<Ctx>>,
     Json(req): Json<CommentReq>,
 ) -> Result<ApiResp<bool>> {
     if !ctx.consts.enable_submissions {
-        return Err(ApiErr::new("submissions are disabled", StatusCode::BAD_REQUEST));
+        return Err(ApiErr::new(
+            "submissions are disabled",
+            StatusCode::BAD_REQUEST,
+        ));
     }
 
     if req.from_guid.is_empty() {
-        return Err(ApiErr::new("from_guid is required", StatusCode::BAD_REQUEST));
+        return Err(ApiErr::new(
+            "from_guid is required",
+            StatusCode::BAD_REQUEST,
+        ));
     }
     if req.comments.is_empty() {
         return Err(ApiErr::new("comments is required", StatusCode::BAD_REQUEST));

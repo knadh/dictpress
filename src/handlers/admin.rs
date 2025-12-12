@@ -9,13 +9,26 @@ use axum::{
 use super::{json, ApiResp, Ctx, Result};
 use crate::models::Stats;
 
+#[derive(serde::Serialize)]
+pub struct ConfigResp {
+    pub langs: Vec<LangResp>,
+    pub dicts: Vec<[String; 2]>,
+}
+
+#[derive(serde::Serialize)]
+pub struct LangResp {
+    pub id: String,
+    pub name: String,
+    pub types: std::collections::HashMap<String, String>,
+}
+
 /// Get database stats.
 pub async fn get_stats(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<Stats>> {
     let stats = ctx.mgr.get_stats().await?;
     Ok(json(stats))
 }
 
-/// Get public config (languages, dicts).
+/// Get public config.
 pub async fn get_config(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<ConfigResp>> {
     let out = ConfigResp {
         langs: ctx
@@ -34,19 +47,6 @@ pub async fn get_config(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<ConfigRes
             .collect(),
     };
     Ok(json(out))
-}
-
-#[derive(serde::Serialize)]
-pub struct ConfigResp {
-    pub langs: Vec<LangResp>,
-    pub dicts: Vec<[String; 2]>,
-}
-
-#[derive(serde::Serialize)]
-pub struct LangResp {
-    pub id: String,
-    pub name: String,
-    pub types: std::collections::HashMap<String, String>,
 }
 
 /// Render admin page with Tera (using embedded admin templates).
