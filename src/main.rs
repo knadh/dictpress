@@ -1,4 +1,5 @@
 mod cli;
+mod config;
 mod handlers;
 mod http;
 mod importer;
@@ -30,7 +31,7 @@ async fn main() {
         match cmd {
             // Generate a new config file.
             Commands::NewConfig { path } => {
-                match init::generate_config(&path) {
+                match config::generate_sample(&path) {
                     Ok(_) => {
                         log::info!("config file generated: {}", path.display());
                     }
@@ -70,7 +71,7 @@ async fn main() {
             Commands::Import { file } => {
                 check_db(&cli.db);
 
-                let config = init::init_config(&cli.config);
+                let config = config::load_all(&cli.config);
                 let langs = init::init_langs(&config);
 
                 let tokenizers_dir = if config.app.tokenizers_dir.is_empty() {
@@ -99,7 +100,7 @@ async fn main() {
             } => {
                 check_db(&cli.db);
 
-                let config = init::init_config(&cli.config);
+                let config = config::load_all(&cli.config);
                 if let Err(e) = sitemaps::generate_sitemaps(
                     &db_path,
                     &from_lang,
@@ -125,7 +126,7 @@ async fn main() {
     check_db(&cli.db);
 
     // Load config.
-    let config = init::init_config(&cli.config);
+    let config = config::load_all(&cli.config);
 
     // Initialize languages and dicts config.
     let langs = init::init_langs(&config);
