@@ -109,7 +109,7 @@ pub async fn get_parent_entries(
 }
 
 /// Create entry.
-pub async fn create_entry(
+pub async fn insert_entry(
     State(ctx): State<Arc<Ctx>>,
     Json(req): Json<EntryReq>,
 ) -> Result<ApiResp<Entry>> {

@@ -33,10 +33,6 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
             get(search::search),
         )
         .route(
-            "/api/dictionary/{fromLang}/{toLang}",
-            get(search::search_no_query),
-        )
-        .route(
             "/api/dictionary/entries/{guid}",
             get(entries::get_entry_by_guid),
         )
@@ -48,10 +44,10 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
 
     // Public submission routes (if enabled).
     let submissions_routes = Router::new()
-        .route("/api/submissions", post(submissions::create_submission))
+        .route("/api/submissions", post(submissions::insert_submission))
         .route(
             "/api/submissions/comments",
-            post(submissions::create_comment),
+            post(submissions::insert_comment),
         );
 
     // Admin static (no auth required).
@@ -60,18 +56,14 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
     // Admin (requires auth).
     let admin = Router::new()
         // Admin pages.
-        .route("/admin", get(admin::admin_index))
-        .route("/admin/search", get(admin::admin_search))
-        .route("/admin/pending", get(admin::admin_pending))
+        .route("/admin", get(admin::render_index_page))
+        .route("/admin/search", get(admin::render_search_page))
+        .route("/admin/pending", get(admin::render_pending_page))
         // Admin API.
         .route("/api/stats", get(admin::get_stats))
         .route(
             "/api/entries/{fromLang}/{toLang}",
             get(search::search_admin),
-        )
-        .route(
-            "/api/entries/{fromLang}/{toLang}/{q}",
-            get(search::search_admin_with_query),
         )
         .route(
             "/api/entries/pending",
@@ -91,13 +83,13 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
             "/api/entries/{id}/parents",
             get(entries::get_parent_entries),
         )
-        .route("/api/entries", post(entries::create_entry))
+        .route("/api/entries", post(entries::insert_entry))
         .route("/api/entries/{id}", put(entries::update_entry))
         .route("/api/entries/{id}", delete(entries::delete_entry))
         // Relation routes with separate path to avoid conflicts.
         .route(
             "/api/relations/{fromId}/{toId}",
-            post(relations::create_relation),
+            post(relations::insert_relation),
         )
         .route("/api/relations/{relId}", put(relations::update_relation))
         .route("/api/relations/{relId}", delete(relations::delete_relation))

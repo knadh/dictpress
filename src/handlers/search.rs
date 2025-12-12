@@ -30,37 +30,12 @@ pub async fn search(
     do_search(ctx, query, false).await
 }
 
-/// Search without query in path (uses query param).
-pub async fn search_no_query(
-    State(ctx): State<Arc<Ctx>>,
-    Path((from_lang, to_lang)): Path<(String, String)>,
-    Query(mut query): Query<SearchQuery>,
-) -> Result<ApiResp<SearchResults>> {
-    query.from_lang = from_lang;
-    query.to_lang = to_lang.clone();
-
-    do_search(ctx, query, false).await
-}
-
 /// Admin search (response includes internal IDs also).
 pub async fn search_admin(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang)): Path<(String, String)>,
     Query(mut query): Query<SearchQuery>,
 ) -> Result<ApiResp<SearchResults>> {
-    query.from_lang = from_lang;
-    query.to_lang = to_lang.clone();
-
-    do_search(ctx, query, true).await
-}
-
-/// Admin search with query (response includes internal IDs also).
-pub async fn search_admin_with_query(
-    State(ctx): State<Arc<Ctx>>,
-    Path((from_lang, to_lang, q)): Path<(String, String, String)>,
-    Query(mut query): Query<SearchQuery>,
-) -> Result<ApiResp<SearchResults>> {
-    query.query = q;
     query.from_lang = from_lang;
     query.to_lang = to_lang.clone();
 

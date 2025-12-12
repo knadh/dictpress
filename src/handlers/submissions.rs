@@ -47,7 +47,7 @@ pub struct CommentReq {
 }
 
 /// Submit new entry+relation.
-pub async fn create_submission(
+pub async fn insert_submission(
     State(ctx): State<Arc<Ctx>>,
     Json(req): Json<SubmissionReq>,
 ) -> Result<ApiResp<bool>> {
@@ -115,7 +115,7 @@ pub async fn create_submission(
 }
 
 /// Submit comment.
-pub async fn create_comment(
+pub async fn insert_comment(
     State(ctx): State<Arc<Ctx>>,
     Json(req): Json<CommentReq>,
 ) -> Result<ApiResp<bool>> {

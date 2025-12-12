@@ -44,7 +44,7 @@ pub struct ReorderReq {
 }
 
 /// Create relation.
-pub async fn create_relation(
+pub async fn insert_relation(
     State(ctx): State<Arc<Ctx>>,
     Path((from_id, to_id)): Path<(i64, i64)>,
     Json(req): Json<RelationReq>,

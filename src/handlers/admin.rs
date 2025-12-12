@@ -49,6 +49,21 @@ pub async fn get_config(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<ConfigRes
     Ok(json(out))
 }
 
+/// Admin index.
+pub async fn render_index_page(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
+    render_admin(&ctx, "admin/index.html", "")
+}
+
+/// Admin search page.
+pub async fn render_search_page(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
+    render_admin(&ctx, "admin/search.html", "Search")
+}
+
+/// Admin pending page.
+pub async fn render_pending_page(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
+    render_admin(&ctx, "admin/pending.html", "Pending")
+}
+
 /// Render admin page with Tera (using embedded admin templates).
 fn render_admin(
     ctx: &Ctx,
@@ -67,19 +82,4 @@ fn render_admin(
             format!("template error: {}", e),
         )
     })
-}
-
-/// Admin index.
-pub async fn admin_index(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
-    render_admin(&ctx, "admin/index.html", "")
-}
-
-/// Admin search page.
-pub async fn admin_search(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
-    render_admin(&ctx, "admin/search.html", "Search")
-}
-
-/// Admin pending page.
-pub async fn admin_pending(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
-    render_admin(&ctx, "admin/pending.html", "Pending")
 }

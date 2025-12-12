@@ -84,6 +84,7 @@ impl Manager {
     // #########################
     // Search
 
+    /// Search entries based on a search query.
     pub async fn search(
         &self,
         sq: &SearchQuery,
@@ -183,6 +184,7 @@ impl Manager {
     // #########################
     // Entry CRUD
 
+    /// Get an entry by ID or GUID.
     pub async fn get_entry(&self, id: i64, guid: &str) -> Result<Entry, Error> {
         let entry: Entry = sqlx::query_as(&q.get_entry.query)
             .bind(id)
@@ -193,6 +195,7 @@ impl Manager {
         Ok(entry)
     }
 
+    /// Get parent entries for a given entry ID.
     pub async fn get_parent_entries(&self, id: i64) -> Result<Vec<Entry>, Error> {
         let entries: Vec<Entry> = sqlx::query_as(&q.get_parent_relations.query)
             .bind(id)
@@ -201,6 +204,7 @@ impl Manager {
         Ok(entries)
     }
 
+    /// Insert a new entry into the database.
     pub async fn insert_entry(&self, e: &Entry) -> Result<i64, Error> {
         if !self.langs.contains_key(&e.lang) {
             return Err(Error::UnknownLang(e.lang.clone()));
@@ -248,6 +252,7 @@ impl Manager {
         Ok(row.get(0))
     }
 
+    /// Update an existing entry in the database.
     pub async fn update_entry(&self, id: i64, e: &Entry) -> Result<(), Error> {
         // Regenerate tokens if content changed.
         let tokens = if !e.content.is_empty() && e.tokens.is_empty() {
@@ -288,8 +293,9 @@ impl Manager {
     }
 
     // #########################
-    // Relation CRUD
+    // Relations.
 
+    /// Insert a new relation into the database.
     pub async fn insert_relation(
         &self,
         from_id: i64,
@@ -319,6 +325,7 @@ impl Manager {
         Ok(row.get(0))
     }
 
+    /// Update an existing relation.
     pub async fn update_relation(&self, id: i64, r: &Relation) -> Result<(), Error> {
         let types_json = serde_json::to_string(&r.types.0).unwrap_or_else(|_| "[]".to_string());
         let tags_json = serde_json::to_string(&r.tags.0).unwrap_or_else(|_| "[]".to_string());
@@ -336,6 +343,7 @@ impl Manager {
         Ok(())
     }
 
+    /// Delete a relation.
     pub async fn delete_relation(&self, id: i64) -> Result<(), Error> {
         sqlx::query(&q.delete_relation.query)
             .bind(id)
@@ -344,6 +352,7 @@ impl Manager {
         Ok(())
     }
 
+    /// Reorder relations based on provided IDs.
     pub async fn reorder_relations(&self, ids: &[i64]) -> Result<(), Error> {
         let ids_json = serde_json::to_string(ids).unwrap_or_else(|_| "[]".to_string());
         sqlx::query(&q.reorder_relations.query)
@@ -356,6 +365,7 @@ impl Manager {
     // #########################
     // Glossary
 
+    /// Get initials for glossary words for a given language.
     pub async fn get_initials(&self, lang: &str) -> Result<Vec<String>, Error> {
         let rows: Vec<(String,)> = sqlx::query_as(&q.get_initials.query)
             .bind(lang)
@@ -364,6 +374,7 @@ impl Manager {
         Ok(rows.into_iter().map(|(s,)| s).collect())
     }
 
+    /// Get glossary words for a given language and initial.
     pub async fn get_glossary_words(
         &self,
         lang: &str,
@@ -386,6 +397,7 @@ impl Manager {
     // #########################
     // Submissions
 
+    /// Get pending entries for a given language (with pagination).
     pub async fn get_pending_entries(
         &self,
         lang: &str,
@@ -403,6 +415,7 @@ impl Manager {
         Ok((entries, total))
     }
 
+    /// Insert a new submission entry in the DB.
     pub async fn insert_submission_entry(&self, e: &Entry) -> Result<Option<i64>, Error> {
         if !self.langs.contains_key(&e.lang) {
             return Err(Error::UnknownLang(e.lang.clone()));
@@ -443,6 +456,7 @@ impl Manager {
         Ok(row.map(|(id,)| id))
     }
 
+    /// Insert a new submission relation to the DB.
     pub async fn insert_submission_relation(
         &self,
         from_id: i64,
@@ -466,6 +480,7 @@ impl Manager {
         Ok(row.map(|(id,)| id))
     }
 
+    // Approve a user submission.
     pub async fn approve_submission(&self, id: i64) -> Result<(), Error> {
         sqlx::query(&q.approve_submission.query)
             .bind(id)
@@ -482,6 +497,7 @@ impl Manager {
         Ok(())
     }
 
+    // Reject a user submission.
     pub async fn reject_submission(&self, id: i64) -> Result<(), Error> {
         sqlx::query(&q.reject_submission_to_entries.query)
             .bind(id)
@@ -501,6 +517,7 @@ impl Manager {
     // #########################
     // Comments
 
+    /// Insert a new comment.
     pub async fn insert_comment(
         &self,
         from_guid: &str,
@@ -516,6 +533,7 @@ impl Manager {
         Ok(())
     }
 
+    /// Get all comments.
     pub async fn get_comments(&self) -> Result<Vec<Comment>, Error> {
         let comments: Vec<Comment> = sqlx::query_as(&q.get_comments.query)
             .fetch_all(&self.db)
@@ -523,6 +541,7 @@ impl Manager {
         Ok(comments)
     }
 
+    /// Delete a comment by ID.
     pub async fn delete_comment(&self, id: i64) -> Result<(), Error> {
         sqlx::query(&q.delete_comment.query)
             .bind(id)
@@ -531,6 +550,7 @@ impl Manager {
         Ok(())
     }
 
+    /// Delete all pending entries, relations, and comments.
     pub async fn delete_all_pending(&self) -> Result<(), Error> {
         sqlx::query(&q.delete_all_pending_relations.query)
             .execute(&self.db)
