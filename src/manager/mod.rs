@@ -98,8 +98,6 @@ impl Manager {
         // Generate FTS query.
         let fts_query = self.to_fts_query(&sq.query, &sq.from_lang)?;
 
-        println!("FTS Query: {}", fts_query);
-
         let status = if sq.status.is_empty() {
             STATUS_ENABLED.to_string()
         } else {

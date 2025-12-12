@@ -21,12 +21,17 @@ CREATE TABLE IF NOT EXISTS entries (
     meta TEXT NOT NULL DEFAULT '{}',
     status TEXT NOT NULL DEFAULT 'enabled' CHECK(status IN ('pending', 'enabled', 'disabled')),
     created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+
+    -- Generated column for direct word matching (first 50 chars, lowercased).
+    content_head TEXT GENERATED ALWAYS AS (LOWER(SUBSTR(JSON_EXTRACT(content, '$[0]'), 1, 50))) STORED
 ) STRICT;
 
 CREATE INDEX IF NOT EXISTS idx_entries_initial ON entries(initial);
 CREATE INDEX IF NOT EXISTS idx_entries_lang ON entries(lang);
 CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status);
+
+CREATE INDEX IF NOT EXISTS idx_entries_content_head ON entries(content_head);
 
 -- FTS5 virtual table for fulltext search.
 CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(tokens, content='');

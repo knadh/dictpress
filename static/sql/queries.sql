@@ -1,36 +1,21 @@
 -- name: search
--- Two-stage search: direct string match (negative rank) + FTS token match (positive rank).
--- Direct matches rank higher due to negative values.
+-- FTS5 search with length-based ranking (shorter content ranks higher).
+-- Exact content matches get extra boost via negative rank adjustment.
 -- $1: lang, $2: raw query, $3: FTS query, $4: status, $5: offset, $6: limit
-WITH direct_match AS (
-    SELECT DISTINCT e.*,
-           e.weight + (-1.0 * (50.0 - length(json_extract(e.content, '$[0]')))) AS rank
-    FROM entries e
-    INNER JOIN relations r ON e.id = r.from_id
-    WHERE ($1 = '' OR e.lang = $1)
-      AND ($4 = '' OR e.status = $4)
-      AND $2 != ''
-      AND (
-          lower(substr(json_extract(e.content, '$[0]'), 1, 50)) = lower(substr($2, 1, 50))
-          OR e.tokens LIKE '%' || lower($2) || '%'
-      )
-),
-token_match AS (
-    SELECT DISTINCT e.*,
-           e.weight + (1.0 - bm25(entries_fts)) AS rank
-    FROM entries e
-    INNER JOIN entries_fts fts ON fts.rowid = e.id
-    INNER JOIN relations r ON e.id = r.from_id
-    WHERE entries_fts MATCH $3
-      AND ($1 = '' OR e.lang = $1)
-      AND ($4 = '' OR e.status = $4)
-      AND e.id NOT IN (SELECT id FROM direct_match)
-)
-SELECT *, COUNT(*) OVER() AS total FROM (
-    SELECT * FROM direct_match
-    UNION ALL
-    SELECT * FROM token_match
-) combined
+SELECT DISTINCT e.*,
+       -- Rank: weight - (50 - content_length). Shorter content = more negative = ranks first.
+       -- Exact matches get extra -1000 boost to always rank highest.
+       e.weight + (-1.0 * (50.0 - length(JSON_EXTRACT(e.content, '$[0]'))))
+       + CASE WHEN e.content_head = LOWER(SUBSTR($2, 1, 50)) THEN -1000.0 ELSE 0.0 END
+       AS rank,
+       COUNT(*) OVER() AS total
+FROM entries e
+INNER JOIN entries_fts fts ON fts.rowid = e.id
+INNER JOIN relations r ON e.id = r.from_id
+WHERE entries_fts MATCH $3
+  AND ($1 = '' OR e.lang = $1)
+  AND ($4 = '' OR e.status = $4)
+  AND $2 != ''
 ORDER BY rank
 LIMIT $6 OFFSET $5;
 
