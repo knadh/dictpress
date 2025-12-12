@@ -1,13 +1,11 @@
-//! CSV importer for dictionary entries.
-
 use std::path::Path;
 
 use regex::Regex;
 use sqlx::Row;
 
 use crate::{
-    db, init,
-    models::{schema, LangMap, STATUS_ENABLED},
+    db,
+    models::{LangMap, STATUS_ENABLED},
     tokenizer::{self, TokenizerMap},
 };
 
@@ -33,7 +31,7 @@ pub enum ImportError {
 
 /// Entry row from CSV.
 struct Entry {
-    entry_type: String,     // 0: "-" for entry, "^" for definition
+    entry_type: String,     // 0: "-" for entry, "^" for definition.
     initial: String,        // 1
     content: String,        // 2
     lang: String,           // 3
@@ -42,7 +40,7 @@ struct Entry {
     ts_tokens: String,      // 6
     tags: Vec<String>,      // 7
     phones: Vec<String>,    // 8
-    def_types: Vec<String>, // 9: Only for definition entries
+    def_types: Vec<String>, // 9: Only for definition entries.
     meta: String,           // 10
 
     definitions: Vec<Entry>,
@@ -55,12 +53,7 @@ pub async fn import_csv(
     tokenizers_dir: &str,
     langs: LangMap,
 ) -> Result<(), ImportError> {
-    // Connect to database.
     let db = db::init(db_path, 1, false).await?;
-
-    // Apply pragma and schema.
-    sqlx::query(&schema.pragma.query).execute(&db).await?;
-    sqlx::query(&schema.schema.query).execute(&db).await?;
 
     // Load tokenizers.
     let tokenizers = tokenizer::load_tokenizers(Path::new(tokenizers_dir))?;
@@ -119,7 +112,7 @@ pub async fn import_csv(
         entries.push(entry);
     }
 
-    // Insert remaining entries.
+    // Flush any remaining entries.
     if !entries.is_empty() {
         insert_entries(&db, &entries, num_main).await?;
     }
@@ -129,6 +122,7 @@ pub async fn import_csv(
         num_main + entries.len(),
         num_defs
     );
+
     Ok(())
 }
 
@@ -244,14 +238,15 @@ async fn insert_entries(
     line_start: usize,
 ) -> Result<(), ImportError> {
     // Insert main entries.
-    let mut entry_ids: Vec<i64> = Vec::with_capacity(entries.len());
+    let mut ids: Vec<i64> = Vec::with_capacity(entries.len());
 
     for (i, e) in entries.iter().enumerate() {
         let guid = uuid::Uuid::new_v4().to_string();
-        let content_json =
-            serde_json::to_string(&vec![&e.content]).unwrap_or_else(|_| "[]".to_string());
-        let tags_json = serde_json::to_string(&e.tags).unwrap_or_else(|_| "[]".to_string());
-        let phones_json = serde_json::to_string(&e.phones).unwrap_or_else(|_| "[]".to_string());
+
+        // Encode text arrays to JSON for SQLite.
+        let content = serde_json::to_string(&[&e.content]).unwrap_or_else(|_| "[]".to_string());
+        let tags = serde_json::to_string(&e.tags).unwrap_or_else(|_| "[]".to_string());
+        let phones = serde_json::to_string(&e.phones).unwrap_or_else(|_| "[]".to_string());
 
         let row = sqlx::query(
             r#"INSERT INTO entries (guid, content, initial, weight, tokens, lang, tags, phones, notes, meta, status)
@@ -259,31 +254,31 @@ async fn insert_entries(
                RETURNING id"#,
         )
         .bind(&guid)
-        .bind(&content_json)
+        .bind(&content)
         .bind(&e.initial)
         .bind((line_start + i) as i32)
         .bind(&e.ts_tokens)
         .bind(&e.lang)
-        .bind(&tags_json)
-        .bind(&phones_json)
+        .bind(&tags)
+        .bind(&phones)
         .bind(&e.notes)
         .bind(&e.meta)
         .bind(STATUS_ENABLED)
         .fetch_one(db)
         .await?;
 
-        entry_ids.push(row.get(0));
+        ids.push(row.get(0));
     }
 
     // Insert definition entries and create relations.
     for (i, main_entry) in entries.iter().enumerate() {
-        let from_id = entry_ids[i];
+        let from_id = ids[i];
 
         for (j, def) in main_entry.definitions.iter().enumerate() {
             // Insert definition entry.
             let guid = uuid::Uuid::new_v4().to_string();
             let content_json =
-                serde_json::to_string(&vec![&def.content]).unwrap_or_else(|_| "[]".to_string());
+                serde_json::to_string(&[&def.content]).unwrap_or_else(|_| "[]".to_string());
             let phones_json =
                 serde_json::to_string(&def.phones).unwrap_or_else(|_| "[]".to_string());
 
