@@ -138,7 +138,7 @@ SELECT DISTINCT(initial) as initial FROM entries
 SELECT COUNT(*) OVER () AS total, e.id, e.content FROM entries e
     LEFT JOIN relations ON (relations.to_id = e.id)
     WHERE relations.to_id IS NULL AND e.lang=$1 AND e.initial=$2 AND e.status='enabled'
-    ORDER BY e.weight OFFSET $3 LIMIT $4;
+    ORDER BY content[1] OFFSET $3 LIMIT $4;
 
 -- name: insert-entry
 WITH w AS (
