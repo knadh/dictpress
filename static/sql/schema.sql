@@ -1,10 +1,15 @@
 -- name: pragma
-PRAGMA busy_timeout       = 5000;
+-- Concurrency (minimal write concern)
 PRAGMA journal_mode       = WAL;
-PRAGMA synchronous        = NORMAL;
-PRAGMA foreign_keys       = ON;
+PRAGMA busy_timeout       = 1000;    -- Shorter; writes are rare.
+PRAGMA wal_autocheckpoint = 0;       -- Disable auto-checkpoint; do it manually during maintenance
+PRAGMA cache_size         = -256000; -- 256MB cache (or more if available)
 PRAGMA temp_store         = MEMORY;
-PRAGMA cache_size         = -16000;
+PRAGMA mmap_size          = 1073741824; -- 1GB mmap - keep entire DB in memory if possible
+PRAGMA foreign_keys       = ON;
+PRAGMA query_only         = OFF;
+PRAGMA analysis_limit     = 1000;
+
 
 -- name: schema
 CREATE TABLE IF NOT EXISTS entries (

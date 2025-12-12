@@ -91,8 +91,13 @@ ml_num_keys = 2
 
 [lang.english]
 name = "English"
-tokenizer = "simple"
-tokenizer_type = "lua"
+
+# Either 'default' or 'lua'.
+tokenizer_type = "default"
+
+# For 'default' tokenizer_type, supported = arabic, danish, dutch, english, finnish, french, german, greek, hungarian, italian, norwegian, portuguese, romanian, russian, spanish, swedish, tamil, turkish
+# For 'lua', path to the Lua script file in the tokenizers_dir, eg: malayalam.lua
+tokenizer = "english"
 
 [lang.english.types]
 noun = "Noun"

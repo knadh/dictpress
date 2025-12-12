@@ -30,6 +30,22 @@ pub fn langs(config: &Config) -> LangMap {
     let mut langs = LangMap::new();
 
     for (id, cfg) in &config.lang {
+        // Validate tokenizer_type.
+        let tokenizer_type = if cfg.tokenizer_type.is_empty() {
+            "default".to_string()
+        } else {
+            cfg.tokenizer_type.clone()
+        };
+
+        if tokenizer_type != "default" && tokenizer_type != "lua" {
+            log::error!(
+                "unknown tokenizer_type '{}' for language '{}'. Must be 'default' or 'lua'.",
+                tokenizer_type,
+                id
+            );
+            std::process::exit(1);
+        }
+
         let lang = Lang {
             id: id.clone(),
             name: if cfg.name.is_empty() {
@@ -43,14 +59,15 @@ pub fn langs(config: &Config) -> LangMap {
             } else {
                 cfg.tokenizer.clone()
             },
-            tokenizer_type: if cfg.tokenizer_type.is_empty() {
-                "lua".to_string()
-            } else {
-                cfg.tokenizer_type.clone()
-            },
+            tokenizer_type,
         };
 
-        log::info!("language: {} (tokenizer: {})", id, lang.tokenizer);
+        log::info!(
+            "language: {} (tokenizer: {}, type: {})",
+            id,
+            lang.tokenizer,
+            lang.tokenizer_type
+        );
         langs.insert(id.clone(), lang);
     }
 
