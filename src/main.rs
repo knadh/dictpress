@@ -19,6 +19,7 @@ use models::schema;
 #[tokio::main]
 async fn main() {
     init::init_logger();
+
     let cli = cli::Cli::parse();
 
     // DB path from --db flag.
@@ -138,12 +139,6 @@ async fn main() {
             std::process::exit(1);
         }
     };
-
-    // Apply SQLite DB pragmas.
-    if let Err(e) = sqlx::query(&schema.pragma.query).execute(&db).await {
-        log::error!("error applying pragmas: {}", e);
-        std::process::exit(1);
-    }
 
     // Check for pending semver DB upgrades.
     if let Err(e) = init::check_upgrade(&db).await {

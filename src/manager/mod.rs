@@ -81,9 +81,8 @@ impl Manager {
         }
     }
 
-    // -------------------------------------------------------------------------
+    // #########################
     // Search
-    // -------------------------------------------------------------------------
 
     pub async fn search(
         &self,
@@ -181,9 +180,8 @@ impl Manager {
         Ok(())
     }
 
-    // -------------------------------------------------------------------------
+    // #########################
     // Entry CRUD
-    // -------------------------------------------------------------------------
 
     pub async fn get_entry(&self, id: i64, guid: &str) -> Result<Entry, Error> {
         let entry: Entry = sqlx::query_as(&q.get_entry.query)
@@ -289,9 +287,8 @@ impl Manager {
         Ok(())
     }
 
-    // -------------------------------------------------------------------------
+    // #########################
     // Relation CRUD
-    // -------------------------------------------------------------------------
 
     pub async fn insert_relation(
         &self,
@@ -356,9 +353,8 @@ impl Manager {
         Ok(())
     }
 
-    // -------------------------------------------------------------------------
+    // #########################
     // Glossary
-    // -------------------------------------------------------------------------
 
     pub async fn get_initials(&self, lang: &str) -> Result<Vec<String>, Error> {
         let rows: Vec<(String,)> = sqlx::query_as(&q.get_initials.query)
@@ -387,21 +383,8 @@ impl Manager {
         Ok((words, total))
     }
 
-    // -------------------------------------------------------------------------
-    // Stats
-    // -------------------------------------------------------------------------
-
-    pub async fn get_stats(&self) -> Result<Stats, Error> {
-        let row: (String,) = sqlx::query_as(&q.get_stats.query)
-            .fetch_one(&self.db)
-            .await?;
-        let stats: Stats = serde_json::from_str(&row.0).unwrap_or_default();
-        Ok(stats)
-    }
-
-    // -------------------------------------------------------------------------
+    // #########################
     // Submissions
-    // -------------------------------------------------------------------------
 
     pub async fn get_pending_entries(
         &self,
@@ -515,9 +498,8 @@ impl Manager {
         Ok(())
     }
 
-    // -------------------------------------------------------------------------
+    // #########################
     // Comments
-    // -------------------------------------------------------------------------
 
     pub async fn insert_comment(
         &self,
@@ -560,5 +542,16 @@ impl Manager {
             .execute(&self.db)
             .await?;
         Ok(())
+    }
+
+    // #########################
+    // Misc
+
+    pub async fn get_stats(&self) -> Result<Stats, Error> {
+        let row: (String,) = sqlx::query_as(&q.get_stats.query)
+            .fetch_one(&self.db)
+            .await?;
+        let stats: Stats = serde_json::from_str(&row.0).unwrap_or_default();
+        Ok(stats)
     }
 }

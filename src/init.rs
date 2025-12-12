@@ -12,19 +12,6 @@ const SAMPLE_CONFIG: &str = include_str!("../config.sample.toml");
 /// Current schema version.
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Create a SQLite connection pool.
-pub async fn init_db(
-    db_path: &str,
-    max_conns: u32,
-    read_only: bool,
-) -> Result<SqlitePool, sqlx::Error> {
-    let mode = if read_only { "ro" } else { "rwc" };
-    SqlitePoolOptions::new()
-        .max_connections(max_conns)
-        .connect(&format!("sqlite://{}?mode={}", db_path, mode))
-        .await
-}
-
 /// Initialize logger.
 pub fn init_logger() {
     env_logger::Builder::new()
@@ -362,6 +349,27 @@ pub async fn upgrade_schema(db_path: &str, prompt: bool) -> Result<(), Box<dyn s
 
     log::info!("upgrade complete");
     Ok(())
+}
+
+/// Create a SQLite connection pool.
+pub async fn init_db(
+    db_path: &str,
+    max_conns: u32,
+    read_only: bool,
+) -> Result<SqlitePool, sqlx::Error> {
+    let mode = if read_only { "ro" } else { "rwc" };
+    let db = SqlitePoolOptions::new()
+        .max_connections(max_conns)
+        .connect(&format!("sqlite://{}?mode={}", db_path, mode))
+        .await?;
+
+    // Apply SQLite DB pragmas.
+    if let Err(e) = sqlx::query(&schema.pragma.query).execute(&db).await {
+        log::error!("error applying pragmas: {}", e);
+        std::process::exit(1);
+    }
+
+    Ok(db)
 }
 
 /// Simple semver comparison (-1 = a < b, 0 = a == b, 1 = a > b).
