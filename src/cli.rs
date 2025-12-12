@@ -12,8 +12,8 @@ pub struct Cli {
     pub config: Vec<PathBuf>,
 
     /// Path to SQLite database file.
-    #[arg(long, default_value = "data.db")]
-    pub db: PathBuf,
+    #[arg(long = "db", default_value = "data.db")]
+    pub db_path: PathBuf,
 
     /// Path to site theme directory. If left empty, only HTTP APIs at /api/* will be available,
     /// and there is no site rendered at /.

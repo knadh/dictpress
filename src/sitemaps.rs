@@ -1,6 +1,6 @@
 use std::{io::Write, path::Path};
 
-use crate::init;
+use crate::{db, init};
 
 /// Generate sitemap files for entries in the DB.
 pub async fn generate_sitemaps(
@@ -21,7 +21,7 @@ pub async fn generate_sitemaps(
     fs::create_dir_all(output_dir)?;
 
     // Get all entries for `from_lang``.
-    let db = init::init_db(db_path, 1, true).await?;
+    let db = db::init(db_path, 1, true).await?;
     let rows: Vec<(String,)> = sqlx::query_as(
         "SELECT json_extract(content, '$[0]') FROM entries WHERE lang = ? AND status = 'enabled' ORDER BY weight"
     )

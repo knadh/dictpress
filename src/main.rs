@@ -1,5 +1,6 @@
 mod cli;
 mod config;
+mod db;
 mod handlers;
 mod http;
 mod importer;
@@ -19,12 +20,12 @@ use manager::{Manager, ManagerConfig};
 
 #[tokio::main]
 async fn main() {
-    init::init_logger();
+    init::logger();
 
     let cli = cli::Cli::parse();
 
     // DB path from --db flag.
-    let db_path = cli.db.to_string_lossy().to_string();
+    let db_path = cli.db_path.to_string_lossy().to_string();
 
     // Handle CLI flags.
     if let Some(cmd) = cli.command {
@@ -45,11 +46,11 @@ async fn main() {
 
             // Create a new SQLite database with schema.
             Commands::Install { yes } => {
-                if cli.db.exists() {
-                    log::error!("database '{}' already exists", cli.db.display());
+                if cli.db_path.exists() {
+                    log::error!("database '{}' already exists", cli.db_path.display());
                     std::process::exit(1);
                 }
-                if let Err(e) = init::install_schema(&db_path, !yes).await {
+                if let Err(e) = db::install_schema(&db_path, !yes).await {
                     log::error!("error installing schema: {}", e);
                     std::process::exit(1);
                 }
@@ -58,9 +59,9 @@ async fn main() {
 
             // Upgrade existing database schema.
             Commands::Upgrade { yes } => {
-                check_db(&cli.db);
+                db::exists(&cli.db_path);
 
-                if let Err(e) = init::upgrade_schema(&db_path, !yes).await {
+                if let Err(e) = db::upgrade_schema(&db_path, !yes).await {
                     log::error!("error upgrading schema: {}", e);
                     std::process::exit(1);
                 }
@@ -69,10 +70,10 @@ async fn main() {
 
             // Import entries from a CSV file.
             Commands::Import { file } => {
-                check_db(&cli.db);
+                db::exists(&cli.db_path);
 
                 let config = config::load_all(&cli.config);
-                let langs = init::init_langs(&config);
+                let langs = init::langs(&config);
 
                 let tokenizers_dir = if config.app.tokenizers_dir.is_empty() {
                     "tokenizers".to_string()
@@ -98,7 +99,7 @@ async fn main() {
                 output_dir,
                 robots,
             } => {
-                check_db(&cli.db);
+                db::exists(&cli.db_path);
 
                 let config = config::load_all(&cli.config);
                 if let Err(e) = sitemaps::generate_sitemaps(
@@ -123,17 +124,17 @@ async fn main() {
     }
 
     // For server mode, DB must exist.
-    check_db(&cli.db);
+    db::exists(&cli.db_path);
 
     // Load config.
     let config = config::load_all(&cli.config);
 
     // Initialize languages and dicts config.
-    let langs = init::init_langs(&config);
-    let dicts = init::init_dicts(&langs, &config);
+    let langs = init::langs(&config);
+    let dicts = init::dicts(&langs, &config);
 
     // Create database pool.
-    let db = match init::init_db(&db_path, config.db.max_conns, false).await {
+    let db = match db::init(&db_path, config.db.max_conns, false).await {
         Ok(pool) => pool,
         Err(e) => {
             log::error!("error connecting to database: {}", e);
@@ -142,13 +143,13 @@ async fn main() {
     };
 
     // Check for pending semver DB upgrades.
-    if let Err(e) = init::check_upgrade(&db).await {
+    if let Err(e) = db::check_upgrade(&db).await {
         log::error!("{}", e);
         std::process::exit(1);
     }
 
     // Initialize admin templates (embedded).
-    let admin_tpl = match init::init_admin_templates() {
+    let admin_tpl = match init::admin_tpls() {
         Ok(t) => Arc::new(t),
         Err(e) => {
             log::error!("error loading admin templates: {}", e);
@@ -160,7 +161,7 @@ async fn main() {
     let site_tpl = if let Some(site_path) = &cli.site {
         log::info!("loading site theme: {}", site_path.display());
 
-        let templates = init::init_site_templates(site_path).unwrap_or_else(|e| {
+        let templates = init::site_tpls(site_path).unwrap_or_else(|e| {
             log::error!(
                 "error loading site templates from {}: {}",
                 site_path.display(),
@@ -176,7 +177,7 @@ async fn main() {
 
     // Load i18n strings (only if site is enabled).
     let i18n = if let Some(site_path) = &cli.site {
-        init::load_i18n(&site_path.join("lang.json")).unwrap_or_else(|e| {
+        init::i18n(&site_path.join("lang.json")).unwrap_or_else(|e| {
             log::warn!("failed to load i18n: {}, using empty", e);
             std::collections::HashMap::new()
         })
@@ -250,17 +251,6 @@ async fn main() {
 
     if let Err(e) = axum::serve(listener, routes).await {
         log::error!("server error: {}", e);
-        std::process::exit(1);
-    }
-}
-
-/// Check if the DB file exists and exit with error message if not.
-fn check_db(path: &PathBuf) {
-    if !path.exists() {
-        log::error!(
-            "database '{}' not found. Run `install` to create a new one.",
-            path.display()
-        );
         std::process::exit(1);
     }
 }

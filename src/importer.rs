@@ -6,7 +6,7 @@ use regex::Regex;
 use sqlx::Row;
 
 use crate::{
-    init,
+    db, init,
     models::{schema, LangMap, STATUS_ENABLED},
     tokenizer::{self, TokenizerMap},
 };
@@ -56,7 +56,7 @@ pub async fn import_csv(
     langs: LangMap,
 ) -> Result<(), ImportError> {
     // Connect to database.
-    let db = init::init_db(db_path, 1, false).await?;
+    let db = db::init(db_path, 1, false).await?;
 
     // Apply pragma and schema.
     sqlx::query(&schema.pragma.query).execute(&db).await?;
