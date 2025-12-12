@@ -17,7 +17,7 @@ pub struct GlossaryQuery {
     pub per_page: i32,
 }
 
-/// Search a dictionary with query in path.
+/// Search a dictionary with query in path (public API).
 pub async fn search(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang, q)): Path<(String, String, String)>,
@@ -27,7 +27,7 @@ pub async fn search(
     query.from_lang = from_lang;
     query.to_lang = to_lang.clone();
 
-    do_search(ctx, query, false).await
+    do_search(ctx, query, false, 0, 0).await
 }
 
 /// Admin search (response includes internal IDs also).
@@ -39,13 +39,18 @@ pub async fn search_admin(
     query.from_lang = from_lang;
     query.to_lang = to_lang.clone();
 
-    do_search(ctx, query, true).await
+    do_search(ctx, query, true, 0, 0).await
 }
 
-async fn do_search(
+/// Perform search with configurable limits on relations and content items.
+/// max_relations: 0 = unlimited, >0 = limit per type.
+/// max_content_items: 0 = unlimited, >0 = truncate content array.
+pub async fn do_search(
     ctx: Arc<Ctx>,
     query: SearchQuery,
     is_admin: bool,
+    max_relations: i32,
+    max_content_items: i32,
 ) -> Result<ApiResp<SearchResults>> {
     if query.query.is_empty() {
         return Err(ApiErr::new("query is required", StatusCode::BAD_REQUEST));
@@ -65,12 +70,12 @@ async fn do_search(
         query.to_lang.clone()
     };
 
-    // Figure out pagination.
+    // Figure out pagination (use API pagination config for API endpoints).
     let (page, per_page, offset) = paginate(
         query.page,
         query.per_page,
-        ctx.consts.max_per_page,
-        ctx.consts.default_per_page,
+        ctx.consts.api_max_per_page,
+        ctx.consts.api_default_per_page,
     );
 
     // Search entries in the DB.
@@ -83,8 +88,26 @@ async fn do_search(
         &query.status
     };
     ctx.mgr
-        .load_relations(&mut entries, &to_lang, &query.types, &query.tags, status)
+        .load_relations(
+            &mut entries,
+            &to_lang,
+            &query.types,
+            &query.tags,
+            status,
+            max_relations,
+        )
         .await?;
+
+    // Apply content item limit if specified.
+    if max_content_items > 0 {
+        for entry in &mut entries {
+            for rel in &mut entry.relations {
+                if rel.content.len() > max_content_items as usize {
+                    rel.content.0.truncate(max_content_items as usize);
+                }
+            }
+        }
+    }
 
     // Hide internal IDs for non-admin requests.
     if !is_admin {
@@ -113,6 +136,11 @@ pub async fn get_initials(
     State(ctx): State<Arc<Ctx>>,
     Path(lang): Path<String>,
 ) -> Result<ApiResp<Vec<String>>> {
+    // Check if glossary is enabled.
+    if !ctx.consts.enable_glossary {
+        return Err(ApiErr::new("glossary disabled", StatusCode::NOT_FOUND));
+    }
+
     if !ctx.langs.contains_key(&lang) {
         return Err(ApiErr::new("unknown language", StatusCode::BAD_REQUEST));
     }
@@ -127,15 +155,21 @@ pub async fn get_glossary_words(
     Path((lang, initial)): Path<(String, String)>,
     Query(query): Query<GlossaryQuery>,
 ) -> Result<ApiResp<GlossaryResults>> {
+    // Check if glossary is enabled.
+    if !ctx.consts.enable_glossary {
+        return Err(ApiErr::new("glossary disabled", StatusCode::NOT_FOUND));
+    }
+
     if !ctx.langs.contains_key(&lang) {
         return Err(ApiErr::new("unknown language", StatusCode::BAD_REQUEST));
     }
 
+    // Use glossary pagination config.
     let (page, per_page, offset) = paginate(
         query.page,
         query.per_page,
-        ctx.consts.max_per_page,
-        ctx.consts.default_per_page,
+        ctx.consts.glossary_max_per_page,
+        ctx.consts.glossary_default_per_page,
     );
 
     let (words, total) = ctx

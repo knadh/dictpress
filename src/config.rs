@@ -69,6 +69,10 @@ fn merge(dest: &mut Config, src: Config) {
     if !src.app.tokenizers_dir.is_empty() {
         dest.app.tokenizers_dir = src.app.tokenizers_dir;
     }
+    if !src.app.admin_assets.is_empty() {
+        dest.app.admin_assets = src.app.admin_assets;
+    }
+    dest.app.enable_pages = src.app.enable_pages;
     dest.app.enable_submissions = src.app.enable_submissions;
 
     // Merge DB config.
@@ -77,6 +81,44 @@ fn merge(dest: &mut Config, src: Config) {
     }
     if src.db.max_conns > 0 {
         dest.db.max_conns = src.db.max_conns;
+    }
+
+    // Merge API results config.
+    if src.api_results.per_page > 0 {
+        dest.api_results.per_page = src.api_results.per_page;
+    }
+    if src.api_results.max_per_page > 0 {
+        dest.api_results.max_per_page = src.api_results.max_per_page;
+    }
+
+    // Merge site results config.
+    if src.site_results.per_page > 0 {
+        dest.site_results.per_page = src.site_results.per_page;
+    }
+    if src.site_results.max_per_page > 0 {
+        dest.site_results.max_per_page = src.site_results.max_per_page;
+    }
+    if src.site_results.num_page_nums > 0 {
+        dest.site_results.num_page_nums = src.site_results.num_page_nums;
+    }
+    if src.site_results.max_entry_relations_per_type > 0 {
+        dest.site_results.max_entry_relations_per_type =
+            src.site_results.max_entry_relations_per_type;
+    }
+    if src.site_results.max_entry_content_items > 0 {
+        dest.site_results.max_entry_content_items = src.site_results.max_entry_content_items;
+    }
+
+    // Merge glossary config.
+    dest.glossary.enabled = src.glossary.enabled;
+    if src.glossary.default_per_page > 0 {
+        dest.glossary.default_per_page = src.glossary.default_per_page;
+    }
+    if src.glossary.max_per_page > 0 {
+        dest.glossary.max_per_page = src.glossary.max_per_page;
+    }
+    if src.glossary.num_page_nums > 0 {
+        dest.glossary.num_page_nums = src.glossary.num_page_nums;
     }
 
     // Merge languages.

@@ -78,7 +78,7 @@ pub async fn search(
     context.insert("page_type", "search");
     context.insert("query", &query);
 
-    // Perform search.
+    // Perform search
     let sq = SearchQuery {
         query: query.clone(),
         from_lang: from_lang.clone(),
@@ -86,23 +86,56 @@ pub async fn search(
         ..Default::default()
     };
 
-    match ctx.mgr.search(&sq, 0, 50).await {
+    let per_page = ctx.consts.site_default_per_page;
+    let max_relations = ctx.consts.site_max_relations_per_type;
+    let max_content_items = ctx.consts.site_max_content_items;
+
+    match ctx.mgr.search(&sq, 0, per_page).await {
         Ok((mut entries, total)) => {
-            // Load relations for all entries.
+            // Load relations for all entries with site-specific limits.
             if let Err(e) = ctx
                 .mgr
-                .load_relations(&mut entries, &to_lang, &[], &[], STATUS_ENABLED)
+                .load_relations(
+                    &mut entries,
+                    &to_lang,
+                    &[],
+                    &[],
+                    STATUS_ENABLED,
+                    max_relations,
+                )
                 .await
             {
                 log::error!("error loading relations: {}", e);
             }
 
+            // Apply content item limit.
+            if max_content_items > 0 {
+                for entry in &mut entries {
+                    for rel in &mut entry.relations {
+                        if rel.content.len() > max_content_items as usize {
+                            rel.content.0.truncate(max_content_items as usize);
+                        }
+                    }
+                }
+            }
+
+            // Hide internal IDs for public site.
+            for e in &mut entries {
+                e.id = 0;
+                for r in &mut e.relations {
+                    r.id = 0;
+                    if let Some(rel) = &mut r.relation {
+                        rel.id = 0;
+                    }
+                }
+            }
+
             let results = crate::models::SearchResults {
                 entries,
                 page: 1,
-                per_page: 50,
+                per_page,
                 total,
-                total_pages: ((total as f64) / 50.0).ceil() as i32,
+                total_pages: ((total as f64) / (per_page as f64)).ceil() as i32,
             };
             context.insert("results", &results);
         }
@@ -113,7 +146,7 @@ pub async fn search(
                 &crate::models::SearchResults {
                     entries: vec![],
                     page: 1,
-                    per_page: 50,
+                    per_page,
                     total: 0,
                     total_pages: 0,
                 },
@@ -125,11 +158,16 @@ pub async fn search(
 }
 
 /// Glossary page.
-pub async fn glossary(
+pub async fn render_glossary_page(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang, initial)): Path<(String, String, String)>,
     Query(params): Query<GlossaryParams>,
 ) -> impl IntoResponse {
+    // Check if glossary is enabled.
+    if !ctx.consts.enable_glossary {
+        return (StatusCode::NOT_FOUND, "glossary is disabled").into_response();
+    }
+
     let mut context = base_context(&ctx);
     context.insert("page_type", "glossary");
     context.insert("initial", &initial);
@@ -143,22 +181,31 @@ pub async fn glossary(
         }
     }
 
-    // Get words for this initial.
+    // Use glossary pagination config.
     let page = params.page.unwrap_or(1);
-    let per_page = params.per_page.unwrap_or(100);
+    let per_page = params
+        .per_page
+        .unwrap_or(ctx.consts.glossary_default_per_page)
+        .min(ctx.consts.glossary_max_per_page);
+    let offset = (page - 1) * per_page;
+
     match ctx
         .mgr
-        .get_glossary_words(&from_lang, &initial, page, per_page)
+        .get_glossary_words(&from_lang, &initial, offset, per_page)
         .await
     {
-        Ok((words, _total)) => {
+        Ok((words, total)) => {
             let g = GlossaryData {
                 words,
                 from_lang: from_lang.clone(),
                 to_lang: to_lang.clone(),
             };
             context.insert("glossary", &g);
-            context.insert("pg_bar", ""); // Pagination bar (simplified).
+            context.insert("page", &page);
+            context.insert("per_page", &per_page);
+            context.insert("total", &total);
+            let total_pages = ((total as f64) / (per_page as f64)).ceil() as i32;
+            context.insert("total_pages", &total_pages);
         }
         Err(e) => {
             log::error!("glossary error: {}", e);
@@ -173,7 +220,10 @@ pub async fn glossary(
         }
     }
 
-    render(&ctx, "glossary.html", &context)
+    match render(&ctx, "glossary.html", &context) {
+        Ok(html) => html.into_response(),
+        Err(e) => e.into_response(),
+    }
 }
 
 /// Submit new entry page.
@@ -190,13 +240,19 @@ pub async fn submit_form(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
 }
 
 /// Custom pages.
-pub async fn custom_page(
+pub async fn render_custom_page(
     State(ctx): State<Arc<Ctx>>,
     Path(page): Path<String>,
 ) -> impl IntoResponse {
+    // Check if custom pages are enabled.
+    if !ctx.consts.enable_pages {
+        return (StatusCode::NOT_FOUND, "custom pages are disabled").into_response();
+    }
+
     let template = format!("pages/{}.html", page);
     let mut context = base_context(&ctx);
     context.insert("page_type", "page");
+    context.insert("page_id", &page);
 
     // Check if template exists.
     match &ctx.site_tpl {

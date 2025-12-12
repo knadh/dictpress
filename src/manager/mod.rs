@@ -119,6 +119,8 @@ impl Manager {
     }
 
     /// Load relations for a set of entries.
+    /// max_per_type: 0 = load all relations.
+    /// > 0 = limit relations per type per entry.
     pub async fn load_relations(
         &self,
         entries: &mut [Entry],
@@ -126,6 +128,7 @@ impl Manager {
         types: &[String],
         tags: &[String],
         status: &str,
+        max_per_type: i32,
     ) -> Result<(), Error> {
         if entries.is_empty() {
             return Ok(());
@@ -150,7 +153,7 @@ impl Manager {
             .bind(&types_json)
             .bind(&tags_json)
             .bind(status)
-            .bind(0i32) // max per type (0 = unlimited)
+            .bind(max_per_type)
             .fetch_all(&self.db)
             .await?;
 

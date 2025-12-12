@@ -11,7 +11,13 @@
 	<script defer src="/admin/static/main.js?v={{ asset_ver }}"></script>
 	<script defer src="/admin/static/alpine.js?v={{ asset_ver }}"></script>
 
-	{# Additional admin assets would be loaded here #}
+	{# Load additional admin assets from config #}
+	{% for asset in consts.admin_css_assets %}
+	<link rel="stylesheet" type="text/css" href="{{ asset }}">
+	{% endfor %}
+	{% for asset in consts.admin_js_assets %}
+	<script defer src="{{ asset }}"></script>
+	{% endfor %}
 </head>
 <body x-init="onLoad()" x-data="globalComponent()">
 <template x-if="ready">

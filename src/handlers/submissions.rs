@@ -151,8 +151,8 @@ pub async fn get_pending_entries(
     let (page, per_page, offset) = paginate(
         query.page,
         query.per_page,
-        ctx.consts.max_per_page,
-        ctx.consts.default_per_page,
+        ctx.consts.api_max_per_page,
+        ctx.consts.api_default_per_page,
     );
 
     let (entries, total) = ctx.mgr.get_pending_entries("", offset, per_page).await?;

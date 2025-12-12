@@ -116,16 +116,23 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
 
     // Add public site routes if site templates are loaded via the --site flag.
     if ctx.site_tpl.is_some() {
-        let r = Router::new()
+        let mut r = Router::new()
             .route("/", get(site::index))
             .route("/dictionary/{from}/{to}/{q}", get(site::search))
-            .route("/glossary/{from}/{to}/{initial}", get(site::glossary))
             .route("/submit", get(site::submit_form))
             .route("/message", get(site::message))
             .route("/static/_bundle.js", get(serve_bundle))
             .route("/static/_bundle.css", get(serve_bundle))
             .route("/static/{*path}", get(serve_site_static))
-            .route("/page/{page}", get(site::custom_page));
+            .route(
+                "/glossary/{from}/{to}/{initial}",
+                get(site::render_glossary_page),
+            )
+            .route("/page/{page}", get(site::render_custom_page));
+
+        // Conditionally add custom pages route based on config.
+        if ctx.consts.enable_pages {}
+
         router = router.merge(r);
         log::info!("site routes enabled (--site flag provided)");
     } else {

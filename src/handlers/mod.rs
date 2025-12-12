@@ -46,31 +46,62 @@ pub struct Ctx {
 #[derive(Clone, serde::Serialize)]
 pub struct Consts {
     pub root_url: String,
+    pub enable_pages: bool,
     pub enable_submissions: bool,
     pub enable_glossary: bool,
     #[serde(skip)]
     pub admin_username: String,
     #[serde(skip)]
     pub admin_password: String,
-    pub default_per_page: i32,
-    pub max_per_page: i32,
+
+    // API pagination settings.
+    pub api_default_per_page: i32,
+    pub api_max_per_page: i32,
+
+    // Site pagination settings.
+    pub site_default_per_page: i32,
+    pub site_max_per_page: i32,
+    pub site_num_page_nums: i32,
+    pub site_max_relations_per_type: i32,
     pub site_max_content_items: i32,
+
+    // Glossary pagination settings.
+    pub glossary_default_per_page: i32,
+    pub glossary_max_per_page: i32,
+    pub glossary_num_page_nums: i32,
+
+    // Admin assets split by type for easier template rendering.
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub admin_assets: Vec<String>,
+    pub admin_js_assets: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub admin_css_assets: Vec<String>,
 }
 
 impl Default for Consts {
     fn default() -> Self {
         Self {
             root_url: String::new(),
+            enable_pages: true,
             enable_submissions: false,
             enable_glossary: true,
             admin_username: String::new(),
             admin_password: String::new(),
-            default_per_page: 20,
-            max_per_page: 100,
+
+            api_default_per_page: 10,
+            api_max_per_page: 20,
+
+            site_default_per_page: 10,
+            site_max_per_page: 20,
+            site_num_page_nums: 10,
+            site_max_relations_per_type: 5,
             site_max_content_items: 5,
-            admin_assets: Vec::new(),
+
+            glossary_default_per_page: 100,
+            glossary_max_per_page: 100,
+            glossary_num_page_nums: 10,
+
+            admin_js_assets: Vec::new(),
+            admin_css_assets: Vec::new(),
         }
     }
 }

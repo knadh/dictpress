@@ -215,17 +215,43 @@ async fn main() {
         i18n,
         static_files,
 
-        // Global constants.
+        // Global constants populated from config.
         consts: Consts {
             root_url: config.app.root_url,
+            enable_pages: config.app.enable_pages,
             enable_submissions: config.app.enable_submissions,
-            enable_glossary: true,
+            enable_glossary: config.glossary.enabled,
             admin_username: config.app.admin_username,
             admin_password: config.app.admin_password,
-            default_per_page: 20,
-            max_per_page: 100,
-            site_max_content_items: 5,
-            admin_assets: Vec::new(),
+
+            api_default_per_page: config.api_results.per_page,
+            api_max_per_page: config.api_results.max_per_page,
+
+            site_default_per_page: config.site_results.per_page,
+            site_max_per_page: config.site_results.max_per_page,
+            site_num_page_nums: config.site_results.num_page_nums,
+            site_max_relations_per_type: config.site_results.max_entry_relations_per_type,
+            site_max_content_items: config.site_results.max_entry_content_items,
+
+            glossary_default_per_page: config.glossary.default_per_page,
+            glossary_max_per_page: config.glossary.max_per_page,
+            glossary_num_page_nums: config.glossary.num_page_nums,
+
+            // Split admin assets by file extension for template rendering.
+            admin_js_assets: config
+                .app
+                .admin_assets
+                .iter()
+                .filter(|a| a.ends_with(".js"))
+                .cloned()
+                .collect(),
+            admin_css_assets: config
+                .app
+                .admin_assets
+                .iter()
+                .filter(|a| a.ends_with(".css"))
+                .cloned()
+                .collect(),
         },
 
         // Generate a random string for asset version cache busting.

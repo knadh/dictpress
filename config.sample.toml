@@ -7,16 +7,33 @@ admin_username = "admin"
 admin_password = "admin123"
 
 # The website URL to be used on the frontend pages.
+# Example: yourdictionary.site.com
 root_url = "http://localhost:9000"
 
-# Enable API endpoints for accepting public user submissions.
+# (Optional) URLs to one or more JS/CSS files (ending in .js or .css) to load on the admin UI.
+# This may be useful to integrate multi-lingual typing capabilities in admin UI boxes when dealing with different languages.
+admin_assets = []
+
+# Enable rendering arbitrary pages from (site_dir/pages/*.html).
+# For instance, "about" for site_dir/pages/about.html will be
+# rendered on site.com/page/about where the template is defined
+# with the name {{ define "page-about" }}. All template name definitions
+# should be "page-*".
+#
+# This is relevant when starting the app with a site theme (--site param).
+enable_pages = true
+
+# Enable API endpoints for accepting public user submissions and corrections.
+# All user submissions are queued for the admin to review and only get published
+# on approval.
 enable_submissions = false
 
 # Directory containing Lua tokenizer scripts.
 tokenizers_dir = "tokenizers"
 
-# Available dictionary pairs. [from_lang, to_lang] pairs.
+# Available dictionary pairs. [$FromLangName, $ToLangName] pairs from the languages defined below in [lang.*] keys.
 dicts = [["english", "english"]]
+
 
 
 [db]
@@ -25,6 +42,44 @@ path = "data.db"
 
 # Maximum connections.
 max_conns = 10
+
+
+[api_results]
+# Default number of entries to return per page when paginated.
+per_page = 10
+
+# The absolute maximum number of results to return per query in case the
+# per_page value above if overwritten from the frontend.
+max_per_page = 20
+
+
+[site_results]
+# Default number of entries to return per page when paginated.
+per_page = 10
+
+# The absolute maximum number of results to return per query in case the
+# per_page value above if overwritten from the frontend.
+max_per_page = 20
+
+# Count of page numbers to render in the pagination list.
+num_page_nums = 10
+
+# The maximum number of relations (definitions) to return for per type (eg: noun, verb)
+# for every entry in the search results.
+max_entry_relations_per_type = 5
+
+# 'content' in the entries table for every individual entry is an array of text strings.
+# While for a conventionaly dictionary, this will mostly be a single word,
+# for thesaurus/multi-lingual dictionaries, each entry's content itself may be more than one value.
+# This defines the max number of content items to return in the search results for every definition entry.
+max_entry_content_items = 5
+
+
+[glossary]
+enabled = true
+default_per_page = 100
+max_per_page = 100
+num_page_nums = 10
 
 
 # Tokenizer-specific configuration.

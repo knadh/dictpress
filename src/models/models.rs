@@ -255,6 +255,12 @@ pub struct Config {
     pub app: AppConfig,
     pub db: DbConfig,
     #[serde(default)]
+    pub api_results: ApiResultsConfig,
+    #[serde(default)]
+    pub site_results: SiteResultsConfig,
+    #[serde(default)]
+    pub glossary: GlossaryConfig,
+    #[serde(default)]
     pub lang: HashMap<String, LangConfig>,
     #[serde(default)]
     pub tokenizer: HashMap<String, toml::Value>,
@@ -273,11 +279,121 @@ pub struct AppConfig {
     #[serde(default)]
     pub site: String,
     #[serde(default)]
+    pub admin_assets: Vec<String>,
+    #[serde(default = "default_true")]
+    pub enable_pages: bool,
+    #[serde(default)]
     pub enable_submissions: bool,
     #[serde(default)]
     pub dicts: Vec<Vec<String>>,
     #[serde(default)]
     pub tokenizers_dir: String,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ApiResultsConfig {
+    #[serde(default = "default_api_per_page")]
+    pub per_page: i32,
+    #[serde(default = "default_api_max_per_page")]
+    pub max_per_page: i32,
+}
+
+fn default_api_per_page() -> i32 {
+    10
+}
+
+fn default_api_max_per_page() -> i32 {
+    20
+}
+
+impl Default for ApiResultsConfig {
+    fn default() -> Self {
+        Self {
+            per_page: default_api_per_page(),
+            max_per_page: default_api_max_per_page(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SiteResultsConfig {
+    #[serde(default = "default_site_per_page")]
+    pub per_page: i32,
+    #[serde(default = "default_site_max_per_page")]
+    pub max_per_page: i32,
+    #[serde(default = "default_num_page_nums")]
+    pub num_page_nums: i32,
+    #[serde(default = "default_max_entry_relations_per_type")]
+    pub max_entry_relations_per_type: i32,
+    #[serde(default = "default_max_entry_content_items")]
+    pub max_entry_content_items: i32,
+}
+
+fn default_site_per_page() -> i32 {
+    10
+}
+
+fn default_site_max_per_page() -> i32 {
+    20
+}
+
+fn default_num_page_nums() -> i32 {
+    10
+}
+
+fn default_max_entry_relations_per_type() -> i32 {
+    5
+}
+
+fn default_max_entry_content_items() -> i32 {
+    5
+}
+
+impl Default for SiteResultsConfig {
+    fn default() -> Self {
+        Self {
+            per_page: default_site_per_page(),
+            max_per_page: default_site_max_per_page(),
+            num_page_nums: default_num_page_nums(),
+            max_entry_relations_per_type: default_max_entry_relations_per_type(),
+            max_entry_content_items: default_max_entry_content_items(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct GlossaryConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default = "default_glossary_per_page")]
+    pub default_per_page: i32,
+    #[serde(default = "default_glossary_max_per_page")]
+    pub max_per_page: i32,
+    #[serde(default = "default_num_page_nums")]
+    pub num_page_nums: i32,
+}
+
+fn default_glossary_per_page() -> i32 {
+    100
+}
+
+fn default_glossary_max_per_page() -> i32 {
+    100
+}
+
+impl Default for GlossaryConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            default_per_page: default_glossary_per_page(),
+            max_per_page: default_glossary_max_per_page(),
+            num_page_nums: default_num_page_nums(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
