@@ -11,6 +11,7 @@ use sqlx::{
 
 pub const STATUS_PENDING: &str = "pending";
 pub const STATUS_ENABLED: &str = "enabled";
+#[allow(dead_code)]
 pub const STATUS_DISABLED: &str = "disabled";
 
 /// JSON array wrapper for SQLite TEXT columns storing JSON arrays.
@@ -18,10 +19,6 @@ pub const STATUS_DISABLED: &str = "disabled";
 pub struct StringArray(pub Vec<String>);
 
 impl StringArray {
-    pub fn new() -> Self {
-        Self(Vec::new())
-    }
-
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -66,20 +63,27 @@ impl<'r> Decode<'r, Sqlite> for StringArray {
 pub struct Entry {
     #[serde(skip_serializing_if = "is_zero")]
     pub id: i64,
+
     pub guid: String,
     pub content: StringArray,
+
     #[sqlx(default)]
     pub content_length: i32,
+
     pub initial: String,
     pub weight: f64,
+
     #[serde(skip_serializing_if = "String::is_empty")]
     pub tokens: String,
+
     pub lang: String,
     pub tags: StringArray,
     pub phones: StringArray,
     pub notes: String,
+
     #[sqlx(try_from = "String")]
     pub meta: serde_json::Value,
+
     pub status: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -102,27 +106,35 @@ pub struct Entry {
     #[sqlx(default)]
     #[serde(skip)]
     pub from_id: i64,
+
     #[sqlx(default)]
     #[serde(skip)]
     pub relation_id: i64,
+
     #[sqlx(default)]
     #[serde(skip)]
     pub relation_types: StringArray,
+
     #[sqlx(default)]
     #[serde(skip)]
     pub relation_tags: StringArray,
+
     #[sqlx(default)]
     #[serde(skip)]
     pub relation_notes: String,
+
     #[sqlx(default)]
     #[serde(skip)]
     pub relation_weight: f64,
+
     #[sqlx(default)]
     #[serde(skip)]
     pub relation_status: String,
+
     #[sqlx(default)]
     #[serde(skip)]
     pub relation_created_at: Option<DateTime<Utc>>,
+
     #[sqlx(default)]
     #[serde(skip)]
     pub relation_updated_at: Option<DateTime<Utc>>,
@@ -151,8 +163,10 @@ pub struct Relation {
     pub notes: String,
     pub weight: f64,
     pub status: String,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub created_at: Option<DateTime<Utc>>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<DateTime<Utc>>,
 }
@@ -194,18 +208,25 @@ pub struct Comment {
 pub struct SearchQuery {
     #[serde(rename = "q", default)]
     pub query: String,
+
     #[serde(default)]
     pub from_lang: String,
+
     #[serde(default)]
     pub to_lang: String,
+
     #[serde(rename = "type", default)]
     pub types: Vec<String>,
+
     #[serde(rename = "tag", default)]
     pub tags: Vec<String>,
+
     #[serde(default)]
     pub status: String,
+
     #[serde(default)]
     pub page: i32,
+
     #[serde(default)]
     pub per_page: i32,
 }
@@ -225,12 +246,16 @@ pub struct SearchResults {
 pub struct Lang {
     #[serde(default)]
     pub id: String,
+
     #[serde(default)]
     pub name: String,
+
     #[serde(default)]
     pub types: HashMap<String, String>,
+
     #[serde(default)]
     pub tokenizer: String,
+
     #[serde(default)]
     pub tokenizer_type: String,
 }
@@ -246,38 +271,46 @@ pub type Dicts = Vec<DictPair>;
 pub struct Config {
     pub app: AppConfig,
     pub db: DbConfig,
+
     #[serde(default)]
     pub api_results: ApiResultsConfig,
+
     #[serde(default)]
     pub site_results: SiteResultsConfig,
+
     #[serde(default)]
     pub glossary: GlossaryConfig,
+
     #[serde(default)]
     pub lang: HashMap<String, LangConfig>,
-    #[serde(default)]
-    pub tokenizer: HashMap<String, toml::Value>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct AppConfig {
     #[serde(default)]
     pub address: String,
+
     #[serde(default)]
     pub admin_username: String,
+
     #[serde(default)]
     pub admin_password: String,
+
     #[serde(default)]
     pub root_url: String,
-    #[serde(default)]
-    pub site: String,
+
     #[serde(default)]
     pub admin_assets: Vec<String>,
+
     #[serde(default = "default_true")]
     pub enable_pages: bool,
+
     #[serde(default)]
     pub enable_submissions: bool,
+
     #[serde(default)]
     pub dicts: Vec<Vec<String>>,
+
     #[serde(default)]
     pub tokenizers_dir: String,
 }
@@ -377,6 +410,10 @@ fn default_glossary_max_per_page() -> i32 {
     100
 }
 
+fn default_max_conns() -> u32 {
+    5
+}
+
 impl Default for GlossaryConfig {
     fn default() -> Self {
         Self {
@@ -390,9 +427,7 @@ impl Default for GlossaryConfig {
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct DbConfig {
-    #[serde(default)]
-    pub path: String,
-    #[serde(default)]
+    #[serde(default = "default_max_conns")]
     pub max_conns: u32,
 }
 
@@ -400,10 +435,13 @@ pub struct DbConfig {
 pub struct LangConfig {
     #[serde(default)]
     pub name: String,
+
     #[serde(default)]
     pub tokenizer: String,
+
     #[serde(default)]
     pub tokenizer_type: String,
+
     #[serde(default)]
     pub types: HashMap<String, String>,
 }

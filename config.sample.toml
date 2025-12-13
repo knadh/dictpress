@@ -37,11 +37,8 @@ dicts = [["english", "english"]]
 
 
 [db]
-# SQLite database path.
-path = "data.db"
-
 # Maximum connections.
-max_conns = 10
+max_conns = 100
 
 
 [api_results]
