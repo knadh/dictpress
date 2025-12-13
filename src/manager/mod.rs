@@ -67,11 +67,11 @@ impl Manager {
 
     /// Convert search query to FTS5 query string.
     pub fn to_fts_query(&self, query: &str, lang_id: &str) -> Result<String, Error> {
-        if let Some(tk) = self.get_tokenizer(lang_id) {
-            Ok(tk.to_query(query, lang_id)?)
-        } else {
-            Ok(query.to_lowercase())
-        }
+        let tk = self
+            .get_tokenizer(lang_id)
+            .ok_or_else(|| Error::UnknownLang(lang_id.to_string()))?;
+
+        Ok(tk.to_query(query, lang_id)?)
     }
 
     // #########################

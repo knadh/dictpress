@@ -127,9 +127,9 @@ pub fn load_all(dir: &Path) -> Result<Tokenizers, TokenizerError> {
             continue;
         }
 
-        // Get tokenizer name - skip invalid filenames.
-        let name = match path.file_stem().and_then(|s| s.to_str()) {
-            Some(stem) if !stem.is_empty() => stem.to_string(),
+        // Get tokenizer name (full filename including .lua extension).
+        let name = match path.file_name().and_then(|s| s.to_str()) {
+            Some(n) if !n.is_empty() => n.to_string(),
             _ => {
                 log::warn!("skipping invalid file '{}'", fname);
                 continue;
