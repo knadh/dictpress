@@ -36,12 +36,12 @@ struct Entry {
     content: String,        // 2
     lang: String,           // 3
     notes: String,          // 4
-    ts_lang: String,        // 5: Postgres language (ignored, we use custom tokenizers)
-    ts_tokens: String,      // 6
-    tags: Vec<String>,      // 7
-    phones: Vec<String>,    // 8
+    tokenizer: String, // 5: "default:name" or "lua:filename.lua" (or if empty, use tokens as-is from the next field)
+    tokens: String,    // 6
+    tags: Vec<String>, // 7
+    phones: Vec<String>, // 8
     def_types: Vec<String>, // 9: Only for definition entries.
-    meta: String,           // 10
+    meta: String,      // 10
 
     definitions: Vec<Entry>,
 }
@@ -146,8 +146,8 @@ fn read_entry(
         content: clean_string(&get(2), re_spaces),
         lang: clean_string(&get(3), re_spaces),
         notes: clean_string(&get(4), re_spaces),
-        ts_lang: clean_string(&get(5), re_spaces),
-        ts_tokens: clean_string(&get(6), re_spaces),
+        tokenizer: clean_string(&get(5), re_spaces),
+        tokens: clean_string(&get(6), re_spaces),
         tags: split_string(&clean_string(&get(7), re_spaces)),
         phones: split_string(&clean_string(&get(8), re_spaces)),
         def_types: Vec::new(),
@@ -188,13 +188,25 @@ fn read_entry(
             .unwrap_or_default();
     }
 
-    // Generate tokens if not provided.
-    if entry.ts_lang.is_empty() && entry.ts_tokens.is_empty() {
-        if let Some(tk) = tokenizers.get(&lang.tokenizer) {
-            let tokens = tk.tokenize(&entry.content, &lang.id)?;
-            entry.ts_tokens = tokens.join(" ");
+    // Generate tokens based on the tokenizer specified.
+    if let Some(tk_key) = parse_tokenizer_field(&entry.tokenizer) {
+        match tokenizers.get(&tk_key) {
+            Some(tk) => match tk.tokenize(&entry.content, &lang.id) {
+                Ok(tokens) => entry.tokens = tokens.join(" "),
+                Err(e) => log::warn!(
+                    "line {}: tokenizer '{}' failed for content '{}': {}",
+                    line,
+                    entry.tokenizer,
+                    entry.content,
+                    e
+                ),
+            },
+            None => {
+                log::warn!("line {}: tokenizer '{}' not found", line, entry.tokenizer);
+            }
         }
     }
+    // If tokenizer field is empty, entry.tokens is used as-is (may be empty or pre-provided)
 
     // Parse definition types.
     let def_type_str = clean_string(&get(9), re_spaces);
@@ -202,10 +214,12 @@ fn read_entry(
         let def_types = split_string(&def_type_str);
         for t in &def_types {
             if !lang.types.contains_key(t) {
-                return Err(ImportError::Validation(format!(
+                log::warn!(
                     "line {}: unknown type '{}' for language '{}'",
-                    line, t, entry.lang
-                )));
+                    line,
+                    t,
+                    entry.lang,
+                )
             }
         }
         entry.def_types = def_types;
@@ -219,11 +233,23 @@ fn read_entry(
     // Validate meta JSON.
     if entry.meta.is_empty() {
         entry.meta = "{}".to_string();
-    } else if !entry.meta.starts_with('{') {
-        return Err(ImportError::Validation(format!(
-            "line {}: column 10, meta JSON should begin with `{{`",
-            line
-        )));
+    } else {
+        match serde_json::from_str::<serde_json::Value>(&entry.meta) {
+            Ok(v) => {
+                if !v.is_object() {
+                    return Err(ImportError::Validation(format!(
+                        "line {}: column 10, meta should be a JSON object",
+                        line
+                    )));
+                }
+            }
+            Err(e) => {
+                return Err(ImportError::Validation(format!(
+                    "line {}: column 10, invalid JSON: {}",
+                    line, e
+                )));
+            }
+        }
     }
 
     Ok(entry)
@@ -254,7 +280,7 @@ async fn insert_entries(
         .bind(&content)
         .bind(&e.initial)
         .bind((line_start + i) as i32)
-        .bind(&e.ts_tokens)
+        .bind(&e.tokens)
         .bind(&e.lang)
         .bind(&tags)
         .bind(&phones)
@@ -288,7 +314,7 @@ async fn insert_entries(
             .bind(&content_json)
             .bind(&def.initial)
             .bind(j as i32)
-            .bind(&def.ts_tokens)
+            .bind(&def.tokens)
             .bind(&def.lang)
             .bind(&phones_json)
             .bind(&def.meta)
@@ -331,4 +357,26 @@ fn split_string(s: &str) -> Vec<String> {
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
         .collect()
+}
+
+/// Parse tokenizer field and return the tokenizer name for lookup.
+fn parse_tokenizer_field(tokenizer: &str) -> Option<String> {
+    if tokenizer.is_empty() {
+        return None;
+    }
+
+    if let Some(name) = tokenizer.strip_prefix("default:") {
+        // default:english -> "english"
+        Some(name.to_string())
+    } else if let Some(filename) = tokenizer.strip_prefix("lua:") {
+        // lua:indicphone_kn.lua -> "indicphone_kn.lua"
+        Some(filename.to_string())
+    } else {
+        // Unknown format.
+        log::warn!(
+            "unknown tokenizer format '{}'. expected 'default:name' or 'lua:filename.lua'",
+            tokenizer
+        );
+        None
+    }
 }

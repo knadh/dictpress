@@ -4,6 +4,7 @@ dictpress is language agnostic and has no concept of language semantics. It stor
 
 All content, the entry words and their definitions, are stored in the `entries` table. Entry-definition many-to-many relationships are stored in the `relations` table, represented by `from_id` (entry word) -> `to_id` (definition word), where both IDs refer to the `entries` table.
 
+### Built-in fulltext languages
 dictpress bundles a Snowball stemming algorithm library which supports basic stemming/tokenization for the following languages.
 
 - arabic
@@ -24,6 +25,8 @@ dictpress bundles a Snowball stemming algorithm library which supports basic ste
 - swedish
 - tamil
 - turkish
+
+These are specified in the config.toml configuration, eg: `tokenizer = english, tokenizer_type = default` or in CSV imports as `default:english`.
 
 ## Database tables
 
