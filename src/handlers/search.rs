@@ -16,7 +16,7 @@ pub async fn search(
 ) -> Result<ApiResp<SearchResults>> {
     query.query = q;
     query.from_lang = from_lang;
-    query.to_lang = to_lang.clone();
+    query.to_lang = to_lang;
 
     do_search(ctx, query, false, 0, 0).await
 }
@@ -28,7 +28,7 @@ pub async fn search_admin(
     Query(mut query): Query<SearchQuery>,
 ) -> Result<ApiResp<SearchResults>> {
     query.from_lang = from_lang;
-    query.to_lang = to_lang.clone();
+    query.to_lang = to_lang;
 
     do_search(ctx, query, true, 0, 0).await
 }
@@ -102,9 +102,9 @@ pub async fn do_search(
 
     // Hide internal IDs for non-admin requests.
     if !is_admin {
-        for e in &mut entries {
-            e.id = 0;
-            for r in &mut e.relations {
+        for entry in &mut entries {
+            entry.id = 0;
+            for r in &mut entry.relations {
                 r.id = 0;
                 if let Some(rel) = &mut r.relation {
                     rel.id = 0;

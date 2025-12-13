@@ -36,14 +36,14 @@ impl LuaTokenizer {
         })
     }
 
-    fn call_tokenize(&self, text: &str, lang: &str) -> Result<Vec<String>, TokenizerError> {
+    fn _tokenize(&self, text: &str, lang: &str) -> Result<Vec<String>, TokenizerError> {
         let lua = self.lua.lock().unwrap();
         let func: Function = lua.registry_value(&self.tokenize_fn)?;
         let tokens: Vec<String> = func.call((text, lang))?;
         Ok(tokens)
     }
 
-    fn call_query(&self, text: &str, lang: &str) -> Result<String, TokenizerError> {
+    fn _query(&self, text: &str, lang: &str) -> Result<String, TokenizerError> {
         let lua = self.lua.lock().unwrap();
         let func: Function = lua.registry_value(&self.to_query_fn)?;
         let query: String = func.call((text, lang))?;
@@ -53,10 +53,10 @@ impl LuaTokenizer {
 
 impl Tokenizer for LuaTokenizer {
     fn tokenize(&self, text: &str, lang: &str) -> Result<Vec<String>, TokenizerError> {
-        self.call_tokenize(text, lang)
+        self._tokenize(text, lang)
     }
 
     fn to_query(&self, text: &str, lang: &str) -> Result<String, TokenizerError> {
-        self.call_query(text, lang)
+        self._query(text, lang)
     }
 }

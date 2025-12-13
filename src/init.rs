@@ -8,10 +8,10 @@ pub fn logger() {
     env_logger::Builder::new()
         .filter_level(log::LevelFilter::Info)
         .parse_env("RUST_LOG")
-        .format(|buf, record| {
+        .format(|buf, rec| {
             use std::io::Write;
-            let level = if record.level() != log::Level::Info {
-                format!("[{}] ", record.level())
+            let level = if rec.level() != log::Level::Info {
+                format!("[{}] ", rec.level())
             } else {
                 String::new()
             };
@@ -19,10 +19,10 @@ pub fn logger() {
                 buf,
                 "{} {}:{} {}{}",
                 chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f"),
-                record.file().unwrap_or("unknown"),
-                record.line().unwrap_or(0),
+                rec.file().unwrap_or("unknown"),
+                rec.line().unwrap_or(0),
                 level,
-                record.args()
+                rec.args()
             )
         })
         .init();
@@ -34,16 +34,16 @@ pub fn langs(config: &Config) -> LangMap {
 
     for (id, cfg) in &config.lang {
         // Validate tokenizer_type.
-        let tokenizer_type = if cfg.tokenizer_type.is_empty() {
+        let typ = if cfg.tokenizer_type.is_empty() {
             "default".to_string()
         } else {
             cfg.tokenizer_type.clone()
         };
 
-        if tokenizer_type != "default" && tokenizer_type != "lua" {
+        if typ != "default" && typ != "lua" {
             log::error!(
                 "unknown tokenizer_type '{}' for language '{}'. Must be 'default' or 'lua'.",
-                tokenizer_type,
+                typ,
                 id
             );
             std::process::exit(1);
@@ -62,7 +62,7 @@ pub fn langs(config: &Config) -> LangMap {
             } else {
                 cfg.tokenizer.clone()
             },
-            tokenizer_type,
+            tokenizer_type: typ,
         };
 
         log::info!(
@@ -71,6 +71,7 @@ pub fn langs(config: &Config) -> LangMap {
             lang.tokenizer,
             lang.tokenizer_type
         );
+
         langs.insert(id.clone(), lang);
     }
 
@@ -83,7 +84,7 @@ pub fn langs(config: &Config) -> LangMap {
 
 /// Initialize dictionary pairs from config.
 pub fn dicts(langs: &LangMap, config: &Config) -> Dicts {
-    let mut dicts = Dicts::new();
+    let mut out = Dicts::new();
 
     for d in &config.app.dicts {
         if d.len() != 2 {
@@ -111,14 +112,14 @@ pub fn dicts(langs: &LangMap, config: &Config) -> Dicts {
         };
 
         log::info!("dict: {} -> {}", from_id, to_id);
-        dicts.push((from, to));
+        out.push((from, to));
     }
 
-    if dicts.is_empty() {
+    if out.is_empty() {
         log::warn!("no dictionary pairs configured");
     }
 
-    dicts
+    out
 }
 
 /// Initialize admin templates from embedded files.
@@ -150,6 +151,7 @@ pub fn site_tpls(site_dir: &std::path::Path) -> Result<tera::Tera, Box<dyn std::
     let mut tera = tera::Tera::new(&glob)?;
     tera.autoescape_on(vec![".html"]);
     log::info!("loaded site templates from {}", site_dir.display());
+
     Ok(tera)
 }
 
@@ -164,6 +166,7 @@ pub fn i18n(
         .into_iter()
         .map(|(k, v)| (k.replace('.', "_"), v))
         .collect();
+
     Ok(i18n)
 }
 

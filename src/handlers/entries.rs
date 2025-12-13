@@ -109,6 +109,7 @@ pub async fn get_parent_entries(
     Path(id): Path<i64>,
 ) -> Result<ApiResp<Vec<Entry>>> {
     let out = ctx.mgr.get_parent_entries(id).await?;
+
     Ok(json(out))
 }
 
@@ -150,5 +151,6 @@ pub async fn delete_entry(
     Path(id): Path<i64>,
 ) -> Result<ApiResp<bool>> {
     ctx.mgr.delete_entry(id).await?;
+
     Ok(json(true))
 }

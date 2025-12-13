@@ -3,7 +3,7 @@ use std::{io::Write, path::Path};
 use crate::db;
 
 /// Generate sitemap files for entries in the DB.
-pub async fn generate_sitemaps(
+pub async fn generate(
     db_path: &str,
     from_lang: &str,
     to_lang: &str,
@@ -23,7 +23,7 @@ pub async fn generate_sitemaps(
     // Get all entries for `from_lang``.
     let db = db::init(db_path, 1, true).await?;
     let rows: Vec<(String,)> = sqlx::query_as(
-        "SELECT json_extract(content, '$[0]') FROM entries WHERE lang = ? AND status = 'enabled' ORDER BY weight"
+        "SELECT JSON_EXTRACT(content, '$[0]') FROM entries WHERE lang = ? AND status = 'enabled' ORDER BY weight"
     )
     .bind(from_lang)
     .fetch_all(&db)
@@ -48,6 +48,7 @@ pub async fn generate_sitemaps(
             urls.clear();
             file_index += 1;
         }
+
         n += 1;
     }
 
@@ -76,10 +77,10 @@ fn write_sitemap(
 ) -> Result<(), Box<dyn std::error::Error>> {
     use std::fs::File;
 
-    let filepath = output_dir.join(format!("{}{}.txt", output_prefix, index));
-    log::info!("writing to {}", filepath.display());
+    let fpath = output_dir.join(format!("{}{}.txt", output_prefix, index));
+    log::info!("writing to {}", fpath.display());
 
-    let mut file = File::create(&filepath)?;
+    let mut file = File::create(&fpath)?;
     for url in urls {
         writeln!(file, "{}", url)?;
     }

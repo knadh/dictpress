@@ -116,14 +116,14 @@ pub fn load_all(dir: &Path) -> Result<Tokenizers, TokenizerError> {
     // Add .lua tokenizers from the directory.
     for entry in std::fs::read_dir(dir)?.flatten() {
         let path = entry.path();
-        let filename = path
+        let fname = path
             .file_name()
             .and_then(|s| s.to_str())
             .unwrap_or("<invalid>");
 
         // Skip non-.lua files with logging.
         if path.extension().is_none_or(|e| e != "lua") {
-            log::info!("skipping '{}'", filename);
+            log::info!("skipping '{}'", fname);
             continue;
         }
 
@@ -131,32 +131,32 @@ pub fn load_all(dir: &Path) -> Result<Tokenizers, TokenizerError> {
         let name = match path.file_stem().and_then(|s| s.to_str()) {
             Some(stem) if !stem.is_empty() => stem.to_string(),
             _ => {
-                log::warn!("skipping invalid file '{}'", filename);
+                log::warn!("skipping invalid file '{}'", fname);
                 continue;
             }
         };
 
         // Load Lua tokenizer.
-        let tokenizer = match LuaTokenizer::from_file(&path) {
+        let tk = match LuaTokenizer::from_file(&path) {
             Ok(t) => t,
             Err(e) => {
-                log::error!("error reading '{}': {}", filename, e);
+                log::error!("error reading '{}': {}", fname, e);
                 continue;
             }
         };
 
         // Validate by calling tokenize() and to_query().
-        if let Err(e) = tokenizer.tokenize("test", "test") {
-            log::error!("error validating '{}': {}", filename, e);
+        if let Err(e) = tk.tokenize("test", "test") {
+            log::error!("error validating '{}': {}", fname, e);
             continue;
         }
-        if let Err(e) = tokenizer.to_query("test", "test") {
-            log::error!("error validating '{}': {}", filename, e);
+        if let Err(e) = tk.to_query("test", "test") {
+            log::error!("error validating '{}': {}", fname, e);
             continue;
         }
 
-        log::info!("loaded '{}'", filename);
-        out.insert(name, Arc::new(tokenizer));
+        log::info!("loaded '{}'", fname);
+        out.insert(name, Arc::new(tk));
     }
 
     Ok(out)

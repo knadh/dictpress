@@ -26,7 +26,7 @@ pub struct AdminTemplates;
 /// Initialize HTTP routes.
 pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
     // Public API routes.
-    let public = Router::new()
+    let pub_routes = Router::new()
         .route("/api/config", get(admin::get_config))
         .route(
             "/api/dictionary/{fromLang}/{toLang}/{q}",
@@ -38,7 +38,7 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
         );
 
     // Public submission routes (if enabled).
-    let submissions_routes = Router::new()
+    let submit_routes = Router::new()
         .route("/api/submissions", post(submissions::insert_submission))
         .route(
             "/api/submissions/comments",
@@ -46,10 +46,10 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
         );
 
     // Admin static (no auth required).
-    let admin_static = Router::new().route("/admin/static/{*path}", get(serve_admin_static));
+    let admin_static_routes = Router::new().route("/admin/static/{*path}", get(serve_admin_static));
 
     // Admin (requires auth).
-    let admin = Router::new()
+    let admin_routes = Router::new()
         // Admin pages.
         .route("/admin", get(admin::render_index_page))
         .route("/admin/search", get(admin::render_search_page))
@@ -104,14 +104,14 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
 
     // Setup the router.
     let mut router = Router::new()
-        .merge(public)
-        .merge(submissions_routes)
-        .merge(admin_static)
-        .merge(admin);
+        .merge(pub_routes)
+        .merge(submit_routes)
+        .merge(admin_static_routes)
+        .merge(admin_routes);
 
     // Add public site routes if site templates are loaded via the --site flag.
     if ctx.site_tpl.is_some() {
-        let r = Router::new()
+        let site_routes = Router::new()
             .route("/", get(site::index))
             .route("/dictionary/{from}/{to}/{q}", get(site::search))
             .route("/submit", get(site::render_submit_page))
@@ -126,7 +126,7 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
             )
             .route("/page/{page}", get(site::render_custom_page));
 
-        router = router.merge(r);
+        router = router.merge(site_routes);
         log::info!("site routes enabled (--site flag provided)");
     } else {
         log::info!("site routes disabled (no --site flag, API-only mode)");
@@ -157,13 +157,11 @@ async fn auth_middleware(
         .into_response()
 }
 
-/// Validate Basic Auth credentials from request headers.
+/// Validate BasicAuth credentials from request headers.
 fn validate_basic_auth(headers: &header::HeaderMap, username: &str, password: &str) -> bool {
     let check = || {
-        let auth = headers.get(header::AUTHORIZATION)?;
-        let auth_str = auth.to_str().ok()?;
-        let encoded = auth_str.strip_prefix("Basic ")?;
-        let decoded = base64_decode(encoded).ok()?;
+        let hdr = headers.get(header::AUTHORIZATION)?.to_str().ok()?;
+        let decoded = base64_decode(hdr.strip_prefix("Basic ")?).ok()?;
         let (user, pass) = decoded.split_once(':')?;
         Some(user == username && pass == password)
     };
@@ -198,7 +196,7 @@ async fn serve_bundle(
     uri: axum::http::Uri,
     axum::extract::Query(params): axum::extract::Query<Vec<(String, String)>>,
 ) -> impl IntoResponse {
-    let content_type = if uri.path().ends_with(".css") {
+    let r#type = if uri.path().ends_with(".css") {
         "text/css"
     } else {
         "application/javascript"
@@ -229,9 +227,8 @@ async fn serve_bundle(
     }
 
     // Concatenate into a single buffer with exact capacity.
-    let total_len: usize =
-        parts.iter().map(|b| b.len()).sum::<usize>() + parts.len().saturating_sub(1);
-    let mut buf = Vec::with_capacity(total_len);
+    let len: usize = parts.iter().map(|b| b.len()).sum::<usize>() + parts.len().saturating_sub(1);
+    let mut buf = Vec::with_capacity(len);
     for (i, b) in parts.iter().enumerate() {
         buf.extend_from_slice(b);
         if i + 1 < parts.len() {
@@ -239,7 +236,7 @@ async fn serve_bundle(
         }
     }
 
-    (StatusCode::OK, [(header::CONTENT_TYPE, content_type)], buf).into_response()
+    (StatusCode::OK, [(header::CONTENT_TYPE, r#type)], buf).into_response()
 }
 
 /// Serve site static files from disk (--site directory).
@@ -247,15 +244,15 @@ async fn serve_site_static(
     State(ctx): State<Arc<Ctx>>,
     axum::extract::Path(path): axum::extract::Path<String>,
 ) -> impl IntoResponse {
-    let path = path.trim_start_matches('/');
+    let uri = path.trim_start_matches('/');
 
     // Site static files are only served from disk (--site directory).
     if let Some(ref site_dir) = ctx.site_path {
-        let file_path = site_dir.join("static").join(path);
+        let file_path = site_dir.join("static").join(uri);
         if file_path.exists() {
             match std::fs::read(&file_path) {
                 Ok(content) => {
-                    let mime = mime_guess::from_path(path)
+                    let mime = mime_guess::from_path(uri)
                         .first_or_octet_stream()
                         .to_string();
                     return (StatusCode::OK, [(header::CONTENT_TYPE, mime)], content)

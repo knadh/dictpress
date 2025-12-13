@@ -46,6 +46,7 @@ pub async fn get_config(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<ConfigRes
             .map(|(from, to)| [from.id.clone(), to.id.clone()])
             .collect(),
     };
+
     Ok(json(out))
 }
 
@@ -66,20 +67,24 @@ pub async fn render_pending_page(State(ctx): State<Arc<Ctx>>) -> impl IntoRespon
 
 /// Render admin page with Tera (using embedded admin templates).
 fn render_admin(
-    ctx: &Ctx,
+    context: &Ctx,
     template: &str,
     title: &str,
 ) -> std::result::Result<Html<String>, impl IntoResponse> {
-    let mut c = tera::Context::new();
-    c.insert("title", title);
-    c.insert("asset_ver", &ctx.asset_ver);
-    c.insert("consts", &ctx.consts);
+    let mut ctx = tera::Context::new();
+    ctx.insert("title", title);
+    ctx.insert("asset_ver", &context.asset_ver);
+    ctx.insert("consts", &context.consts);
 
-    ctx.admin_tpl.render(template, &c).map(Html).map_err(|e| {
-        log::error!("template error: {}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("template error: {}", e),
-        )
-    })
+    context
+        .admin_tpl
+        .render(template, &ctx)
+        .map(Html)
+        .map_err(|e| {
+            log::error!("template error: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("template error: {}", e),
+            )
+        })
 }

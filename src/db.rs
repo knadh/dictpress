@@ -71,12 +71,12 @@ async fn record_migration_version(
 async fn get_last_migration_version(
     db: &sqlx::SqlitePool,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    let result: Option<(String,)> =
+    let res: Option<(String,)> =
         sqlx::query_as("SELECT JSON_EXTRACT(value, '$[#-1]') FROM settings WHERE key='migrations'")
             .fetch_optional(db)
             .await?;
 
-    match result {
+    match res {
         Some((ver,)) => Ok(ver),
         None => Ok("v0.0.0".to_string()),
     }

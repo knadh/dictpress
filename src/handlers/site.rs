@@ -80,10 +80,7 @@ fn render(
                 format!("template error: {}", msg),
             )
         }),
-        None => Err((
-            StatusCode::NOT_FOUND,
-            "site templates not loaded".to_string(),
-        )),
+        None => Err((StatusCode::NOT_FOUND, "no site templates found".to_string())),
     }
 }
 
@@ -96,29 +93,29 @@ pub async fn index(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
 
 /// Search page.
 pub async fn search(
-    State(ctx): State<Arc<Ctx>>,
+    State(context): State<Arc<Ctx>>,
     Path((from_lang, to_lang, query)): Path<(String, String, String)>,
 ) -> impl IntoResponse {
-    let mut context = base_context(&ctx);
-    context.insert("page_type", "search");
-    context.insert("query", &query);
+    let mut ctx = base_context(&context);
+    ctx.insert("page_type", "search");
+    ctx.insert("query", &query);
 
     // Perform search
-    let sq = SearchQuery {
+    let q = SearchQuery {
         query: query.clone(),
         from_lang: from_lang.clone(),
         to_lang: to_lang.clone(),
         ..Default::default()
     };
 
-    let per_page = ctx.consts.site_default_per_page;
-    let max_relations = ctx.consts.site_max_relations_per_type;
-    let max_content_items = ctx.consts.site_max_content_items;
+    let per_page = context.consts.site_default_per_page;
+    let max_relations = context.consts.site_max_relations_per_type;
+    let max_content_items = context.consts.site_max_content_items;
 
-    match ctx.mgr.search(&sq, 0, per_page).await {
+    match context.mgr.search(&q, 0, per_page).await {
         Ok((mut entries, total)) => {
             // Load relations for all entries with site-specific limits.
-            if let Err(e) = ctx
+            if let Err(e) = context
                 .mgr
                 .load_relations(
                     &mut entries,
@@ -162,11 +159,11 @@ pub async fn search(
                 total,
                 total_pages: ((total as f64) / (per_page as f64)).ceil() as i32,
             };
-            context.insert("results", &results);
+            ctx.insert("results", &results);
         }
         Err(e) => {
-            log::error!("search error: {}", e);
-            context.insert(
+            log::error!("error searching: {}", e);
+            ctx.insert(
                 "results",
                 &crate::models::SearchResults {
                     entries: vec![],
@@ -179,30 +176,30 @@ pub async fn search(
         }
     }
 
-    render(&ctx, "search.html", &context)
+    render(&context, "search.html", &ctx)
 }
 
 /// Glossary page.
 pub async fn render_glossary_page(
-    State(ctx): State<Arc<Ctx>>,
+    State(context): State<Arc<Ctx>>,
     Path((from_lang, to_lang, initial)): Path<(String, String, String)>,
     Query(params): Query<GlossaryParams>,
 ) -> impl IntoResponse {
     // Check if glossary is enabled.
-    if !ctx.consts.enable_glossary {
+    if !context.consts.enable_glossary {
         return (StatusCode::NOT_FOUND, "glossary is disabled").into_response();
     }
 
-    let mut context = base_context(&ctx);
-    context.insert("page_type", "glossary");
-    context.insert("initial", &initial);
+    let mut ctx = base_context(&context);
+    ctx.insert("page_type", "glossary");
+    ctx.insert("initial", &initial);
 
     // Get initials.
-    match ctx.mgr.get_initials(&from_lang).await {
-        Ok(initials) => context.insert("initials", &initials),
+    match context.mgr.get_initials(&from_lang).await {
+        Ok(initials) => ctx.insert("initials", &initials),
         Err(e) => {
             log::error!("initials error: {}", e);
-            context.insert("initials", &Vec::<String>::new());
+            ctx.insert("initials", &Vec::<String>::new());
         }
     }
 
@@ -210,18 +207,18 @@ pub async fn render_glossary_page(
     let page = params.page.unwrap_or(1);
     let per_page = params
         .per_page
-        .unwrap_or(ctx.consts.glossary_default_per_page)
-        .min(ctx.consts.glossary_max_per_page);
+        .unwrap_or(context.consts.glossary_default_per_page)
+        .min(context.consts.glossary_max_per_page);
     let offset = (page - 1) * per_page;
 
     // Build base URL for pagination.
     let pg_url = format!(
         "{}/glossary/{}/{}/{}",
-        ctx.consts.root_url, from_lang, to_lang, initial
+        context.consts.root_url, from_lang, to_lang, initial
     );
-    context.insert("pg_url", &pg_url);
+    ctx.insert("pg_url", &pg_url);
 
-    match ctx
+    match context
         .mgr
         .get_glossary_words(&from_lang, &initial, offset, per_page)
         .await
@@ -232,16 +229,16 @@ pub async fn render_glossary_page(
                 from_lang: from_lang.clone(),
                 to_lang: to_lang.clone(),
             };
-            context.insert("glossary", &g);
-            context.insert("page", &page);
-            context.insert("per_page", &per_page);
-            context.insert("total", &total);
+            ctx.insert("glossary", &g);
+            ctx.insert("page", &page);
+            ctx.insert("per_page", &per_page);
+            ctx.insert("total", &total);
             let total_pages = ((total as f64) / (per_page as f64)).ceil() as i32;
-            context.insert("total_pages", &total_pages);
+            ctx.insert("total_pages", &total_pages);
         }
         Err(e) => {
             log::error!("glossary error: {}", e);
-            context.insert(
+            ctx.insert(
                 "glossary",
                 &GlossaryData {
                     words: vec![],
@@ -249,26 +246,26 @@ pub async fn render_glossary_page(
                     to_lang,
                 },
             );
-            context.insert("total_pages", &0);
+            ctx.insert("total_pages", &0);
         }
     }
 
-    match render(&ctx, "glossary.html", &context) {
+    match render(&context, "glossary.html", &ctx) {
         Ok(html) => html.into_response(),
         Err(e) => e.into_response(),
     }
 }
 
 /// Submit new entry page.
-pub async fn render_submit_page(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
-    if !ctx.consts.enable_submissions {
+pub async fn render_submit_page(State(context): State<Arc<Ctx>>) -> impl IntoResponse {
+    if !context.consts.enable_submissions {
         return (StatusCode::NOT_FOUND, "submissions disabled").into_response();
     }
 
-    let mut context = base_context(&ctx);
-    context.insert("page_type", "submit");
+    let mut ctx = base_context(&context);
+    ctx.insert("page_type", "submit");
 
-    match render(&ctx, "submit-new.html", &context) {
+    match render(&context, "submit-new.html", &ctx) {
         Ok(html) => html.into_response(),
         Err(e) => e.into_response(),
     }
@@ -276,21 +273,21 @@ pub async fn render_submit_page(State(ctx): State<Arc<Ctx>>) -> impl IntoRespons
 
 /// Custom pages.
 pub async fn render_custom_page(
-    State(ctx): State<Arc<Ctx>>,
+    State(context): State<Arc<Ctx>>,
     Path(page): Path<String>,
 ) -> impl IntoResponse {
     // Check if custom pages are enabled.
-    if !ctx.consts.enable_pages {
+    if !context.consts.enable_pages {
         return (StatusCode::NOT_FOUND, "custom pages are disabled").into_response();
     }
 
     let template = format!("pages/{}.html", page);
-    let mut context = base_context(&ctx);
-    context.insert("page_type", "page");
-    context.insert("page_id", &page);
+    let mut ctx = base_context(&context);
+    ctx.insert("page_type", "page");
+    ctx.insert("page_id", &page);
 
     // Check if template exists.
-    match &ctx.site_tpl {
+    match &context.site_tpl {
         Some(tpl) => {
             if tpl.get_template(&template).is_err() {
                 return (StatusCode::NOT_FOUND, "page not found").into_response();
@@ -299,7 +296,7 @@ pub async fn render_custom_page(
         None => return (StatusCode::NOT_FOUND, "site templates not loaded").into_response(),
     }
 
-    match render(&ctx, &template, &context) {
+    match render(&context, &template, &ctx) {
         Ok(html) => html.into_response(),
         Err(e) => e.into_response(),
     }
@@ -307,14 +304,15 @@ pub async fn render_custom_page(
 
 /// Generic message page.
 pub async fn message(
-    State(ctx): State<Arc<Ctx>>,
+    State(context): State<Arc<Ctx>>,
     Query(params): Query<MessageParams>,
 ) -> impl IntoResponse {
-    let mut context = base_context(&ctx);
-    context.insert("page_type", "message");
-    context.insert("title", &params.title.unwrap_or_default());
-    context.insert("description", &params.message.unwrap_or_default());
-    render(&ctx, "message.html", &context)
+    let mut ctx = base_context(&context);
+    ctx.insert("page_type", "message");
+    ctx.insert("title", &params.title.unwrap_or_default());
+    ctx.insert("description", &params.message.unwrap_or_default());
+
+    render(&context, "message.html", &ctx)
 }
 
 /// Handle public entry submission.
@@ -441,12 +439,13 @@ pub async fn submit_entry(
 }
 
 /// Helper to render the message template.
-fn render_message(ctx: &Ctx, title: &str, description: &str) -> impl IntoResponse {
-    let mut context = base_context(ctx);
-    context.insert("page_type", "message");
-    context.insert("title", title);
-    context.insert("description", description);
-    match render(ctx, "message.html", &context) {
+fn render_message(context: &Ctx, title: &str, description: &str) -> impl IntoResponse {
+    let mut ctx = base_context(context);
+    ctx.insert("page_type", "message");
+    ctx.insert("title", title);
+    ctx.insert("description", description);
+
+    match render(context, "message.html", &ctx) {
         Ok(html) => html.into_response(),
         Err(e) => e.into_response(),
     }

@@ -103,7 +103,7 @@ async fn main() {
                 db::exists(&cli.db_path);
 
                 let config = config::load_all(&cli.config);
-                if let Err(e) = sitemaps::generate_sitemaps(
+                if let Err(e) = sitemaps::generate(
                     &db_path,
                     &from_lang,
                     &to_lang,
