@@ -33,19 +33,19 @@
                 </header>
 
                 {% if r.relations and r.relations | length > 0 %}
-                    {% set last_type = "" %}
+                    {% set_global last_type = "" %}
                     {% for d in r.relations %}
-                        {% set types = d.relation_types | default(value=[]) | join(sep=", ") %}
+                        {% set types = d.relation.types | default(value=[]) | join(sep=", ") %}
 
                         {% if last_type != types or loop.first %}
                             {% if not loop.first %}</ol>{% endif %}
                             <ol class="defs">
                                 <li class="types">
-                                    {% for t in d.relation_types | default(value=[]) %}
+                                    {% for t in d.relation.types | default(value=[]) %}
                                         {% if t != "" %}
                                         <span>
-                                            {% if langs[r.lang] and langs[r.lang].types[t] %}{{ langs[r.lang].types[t] }} {% endif %}
-                                            {% if langs[d.lang] and langs[d.lang].types[t] %}({{ langs[d.lang].types[t] }}){% endif %}
+                                            {{ t }}
+                                            {% if langs[d.lang].types[t] %}({{ langs[d.lang].types[t] }}){% endif %}
                                         </span>
                                         {% endif %}
                                     {% endfor %}
