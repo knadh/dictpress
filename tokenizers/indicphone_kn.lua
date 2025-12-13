@@ -145,6 +145,9 @@ end
 
 -- Tokenize text for indexing: returns weighted tsvector tokens
 -- Format: {"TOKEN:weight", ...} where weight 3=highest, 1=lowest
+--
+-- IMPORTANT: This is the Postgres-style weighted token format. SQLite doesn't support this.
+-- Have to explore a hack, like repeating the tokens based on weight.
 function tokenize(text, lang)
     local tokens = {}
     for word in utils.words(text) do

@@ -37,6 +37,7 @@ nav:
   - "Introduction": index.md
   - "Installation": installation.md
   - "Data structure": data-structure.md
+  - "Tokenization": tokenization.md
   - "Templates": templates.md
   - "Importing data": import.md
   - "Admin UI": admin.md
