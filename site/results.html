@@ -47,7 +47,8 @@
                                         {% if t != "" %}
                                         <span>
                                             {{ t }}
-                                            {% if langs[d.lang].types[t] %}({{ langs[d.lang].types[t] }}){% endif %}
+                                            {% set type_label = langs[d.lang].types | get(key=t, default="") %}
+                                            {% if type_label %}({{ type_label }}){% endif %}
                                         </span>
                                         {% endif %}
                                     {% endfor %}
