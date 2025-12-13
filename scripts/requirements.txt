@@ -1,2 +1,2 @@
-psycopg2-binary
-toml
+psycopg2-binary>=2.9
+toml>=0.10
