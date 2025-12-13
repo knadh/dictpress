@@ -26,35 +26,31 @@ English and Italian definitions below them.
 
 ## CSV fields
 
-| Column | Field             |                                                                                                                                                                                                                                                                                                                                                                                                                                              |                   |        |
-|:-------|:------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------|:-------|
-| 0      | type              | `-` represents a main entry. `^` under it represents a definition entry.                                                                                                                                                                                                                                                                                                                                                                     |                   |        |
-| 1      | initial           | The uppercase first character of the entry. Eg: `A` for Apple. If left empty, it is automatically picked up.                                                                                                                                                                                                                                                                                                                                 |                   |        |
-| 2      | content           | The entry content (word or phrase).                                                                                                                                                                                                                                                                                                                                                                                                          |                   |        |
-| 3      | language          | Language of the entry (as defined in the config).                                                                                                                                                                                                                                                                                                                                                                                            |                   |        |
-| 4      | notes             | Optional notes describing the entry.                                                                                                                                                                                                                                                                                                                                                                                                         |                   |        |
-| 5      | tsvector_language | If the language has a built in Postgres fulltext tokenizer, the name of the tokenizer language. For languages that do not have Postgres tokenizers, this should be empty.                                                                                                                                                                                                                                                                    |                   |        |
-| 6      | tsVector_tokens   | Postgres fulltext search tokens for the entry (Content). If `tsvector_language` is specified, this field can be left empty as the tokens are automatically created in the database using `TO_TSVECTOR($tsvector_language, $content)`. For languages without Postgres tokenizers, the [tsvector](https://www.postgresql.org/docs/10/datatype-textsearch.html#DATATYPE-TSVECTOR) token string should be computed externally and provided here. |                   |        |
-| 7      | tags              | Optional tags describing the entry. Separate multiple tags by `\                                                                                                                                                                                                                                                                                                                                                                             | `.                |        |
-| 8      | phones            | Optional phonetic notations representing the pronunciations of the entry. Separate multiple phones by `\                                                                                                                                                                                                                                                                                                                                     | `.                |        |
-| 9      | definition-types  | This should only be set for definition entries that ar marked with `Type = ^`. One or more parts-of-speech types separated by `\                                                                                                                                                                                                                                                                                                             | `. Example `noun\ | verb`. |
-| 10     | meta              | Otional JSON metadata. Quotes inside JSON are escaped by doubling them. Eg: `{"etym": "ml"} => {""etym"": ""ml""}` |
+| Column | Field            |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| :----- | :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0      | type             | `-` represents a main entry. `^` under it represents a definition entry.                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 1      | initial          | The uppercase first character of the entry. Eg: `A` for Apple. If left empty, it is automatically picked up.                                                                                                                                                                                                                                                                                                                                                                                 |
+| 2      | content          | The entry content (word or phrase).                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 3      | language         | Language of the entry (as defined in the config).                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 4      | notes            | Optional notes describing the entry.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 5      | tokenizer        | Either `default:$language` (eg: `default:english`) from the list of supported languages or for a custom Lua tokenizer script that's loaded into dictpress, the full name, eg: `indicphone_ml.lua`. To supply custom, externally computed tokens, leave this empty and specify the tokens in the next field.                                                                                                                                                                                  |
+| 6      | tokens           | If not specifying a tokenizer above, space-separated fulltext search tokens.`.                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 7      | tags             | Optional tags describing the entry. Separate multiple tags by the pipe character &#124;                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 8      | phones           | Optional phonetic notations representing the pronunciations of the entry. Separate multiple phones by the pipe character &#124;                                                                                                                                                                                                                                                                                                                                                              |
+| 9      | definition-types | This should only be set for definition entries that ar marked with `Type = ^`. One or more parts-of-speech types separated by the pipe character &#124;                                                                                                                                                                                                                                                                                                              `. Example `noun:verb`. |
+| 10     | meta             | Optional JSON metadata. Quotes inside JSON are escaped by doubling them. Eg: `{"etym": "ml"} => {""etym"": ""ml""}`                                                                                                                                                                                                                                                                                                                                                                          |
 
 
 # Importing with SQL
 Generating SQL for dictionary data and loading that directly into the database can give fine grained control
-The following is the SQL equivalent of the above CSV. The Postgres database tables schemas are [described here](data-structure.md).
+The following is the SQL equivalent of the above CSV. The SQLite database tables schemas are [described here](data-structure.md).
 
 
 ```sql
--- If the DB is not empty, to wipe everything and get a clean slate, run:
--- TRUNCATE TABLE entries RESTART IDENTITY CASCADE; TRUNCATE TABLE relations RESTART IDENTITY CASCADE;
-
 -- Insert head words apple, application (id=1, 2)
 INSERT INTO entries (lang, content, initial, tokens, phones) VALUES
-    ('english', 'Apple', 'A', TO_TSVECTOR('apple'), '{/ˈæp.əl/, aapl}'),
-    ('english', 'Application', 'A', TO_TSVECTOR('application'), '{/aplɪˈkeɪʃ(ə)n/}');
-
+    ('english', 'Apple', 'A', 'appl', '["/ˈæp.əl/", "aapl"]'),
+    ('english', 'Application', 'A', 'applicat', '["/aplɪˈkeɪʃ(ə)n/"]');
 
 -- Insert English definitions for apple. (id=3, 4, 5)
 INSERT INTO entries (lang, content) VALUES
@@ -63,9 +59,9 @@ INSERT INTO entries (lang, content) VALUES
     ('english', 'anything resembling an apple in size and shape, as a ball, especially a baseball.');
 -- Insert English apple-definition relationships.
 INSERT INTO relations (from_id, to_id, types, weight) VALUES
-    (1, 3, '{noun}', 0),
-    (1, 4, '{noun}', 1),
-    (1, 5, '{noun}', 2);
+    (1, 3, '["noun"]', 0),
+    (1, 4, '["noun"]', 1),
+    (1, 5, '["noun"]', 2);
 
 -- Insert Italian definitions for apple. (id=6, 7)
 INSERT INTO entries (lang, content) VALUES
@@ -73,8 +69,8 @@ INSERT INTO entries (lang, content) VALUES
     ('italian', 'il pomo.');
 -- Insert Italian apple-definition relationships.
 INSERT INTO relations (from_id, to_id, types, weight) VALUES
-    (1, 6, '{noun}', 0),
-    (1, 7, '{noun}', 1);
+    (1, 6, '["noun"]', 0),
+    (1, 7, '["noun"]', 1);
 
 
 --
@@ -84,8 +80,8 @@ INSERT INTO entries (lang, content) VALUES
     ('english', 'the act of requesting.');
 -- Insert English application-definition relationships.
 INSERT INTO relations (from_id, to_id, types, weight) VALUES
-    (2, 3, '{noun}', 8),
-    (2, 4, '{noun}', 9);
+    (2, 3, '["noun"]', 8),
+    (2, 4, '["noun"]', 9);
 
 -- Insert Italian definitions for application. (id=10, 11, 12)
 INSERT INTO entries (lang, content) VALUES
@@ -94,7 +90,7 @@ INSERT INTO entries (lang, content) VALUES
     ('italian', 'la richiesta');
 -- Insert Italian application-definition relationships.
 INSERT INTO relations (from_id, to_id, types, weight) VALUES
-    (2, 10, '{noun}', 0),
-    (2, 11, '{noun}', 1),
-    (2, 12, '{noun}', 1);
+    (2, 10, '["noun"]', 0),
+    (2, 11, '["noun"]', 1),
+    (2, 12, '["noun"]', 1);
 ```

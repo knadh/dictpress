@@ -1,6 +1,6 @@
 # Search
 
-### GET /api/dictionary/:fromLang/:toLang/:searchWords
+### GET /api/dictionary/:fromLang/:toLang/:searchQuery
 Search the dictionary and retrieve paginated results. `:searchQuery` should be URL encoded.
 
 

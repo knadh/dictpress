@@ -1,6 +1,6 @@
 # dictpress
 
-dictpress is a free and open source, single binary webserver application for building and publishing fast, searchable dictionaries for any language.
+dictpress is a free and open source, single binary webserver application for building and publishing fast, searchable dictionaries for any language. It stores all data in SQLite DB files and has no dependencies.
 
 Example dictionaries:
 - [Alar](https://alar.ink/) — Kannada-English dictionary.
@@ -14,7 +14,7 @@ Example dictionaries:
 - Custom themes and templates for publishing dictionary websites.
 - Paginated A-Z (all alphabets for any language) glossaries.
 - HTTP/JSON API for search and everything else.
-- Pluggable search algorithms, eg: fulltext search, phonetic word search etc.
+- Pluggable search tokenizers (Lua scripts) and algorithms for fulltext search, phonetic search etc.
 - Admin UI for managing and curating dictionary data.
 - Admin moderation UI for crowd sourcing dictionary entries.
 - Bulk CSV to database import.
@@ -25,3 +25,6 @@ Example dictionaries:
 ## Getting started
 - [Download](https://github.com/knadh/dictpress/releases) the latest version.
 - [Read the docs](https://dict.press) for setup and usage instructions.
+
+### Important: v4 -> v5
+dictpress until v4.x was written in Go and depended on a Postgres database. dictpress v5 is a complete rewrite in Rust and uses SQLite instead.

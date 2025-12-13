@@ -62,7 +62,7 @@
 			<li>Custom themes and templates for publishing dictionary websites.</li>
 			<li>Paginated A-Z (all alphabets for any language) glossaries.</li>
 			<li>HTTP/JSON API for search and everything else.</li>
-			<li>Pluggable search algorithms, eg: fulltext search, phonetic word search etc.</li>
+			<li>Pluggable search tokenizers (Lua scripts) and algorithms for fulltext search, phonetic search etc.</li>
 			<li>Admin UI for managing and curating dictionary data.</li>
 			<li>Admin moderation UI for crowd sourcing dictionary entries.</li>
 			<li>Bulk CSV to database import.</li>
@@ -71,19 +71,17 @@
 	<section>
 		<h2>How it works</h2>
 		<p>DictPress is language agnostic and has no concept of language semantics.
-			It stores all data in a Postgres database in just two tables <code>entries</code> and <code>relations</code>.
+			It stores all data in an SQLite database file in just two tables <code>entries</code> and <code>relations</code>.
 			To make a universal dictionary interface possible,
-			it treats all dictionary entries as UTF-8 strings that can be accurately searched with Postgres DB's fulltext capabilities
-			by storing <a href="https://www.postgresql.org/docs/10/datatype-textsearch.html#DATATYPE-TSVECTOR">tsvector</a>
-			tokens alongside them. The tokens that encode and make the entries searchable
+			it treats all dictionary entries as UTF-8 strings that can be searched with SQLite's fulltext capabilities
+			on tokens alongside them. The tokens that encode and make the entries searchable
 			can be anything&mdash;simple stemmed words or phonetic hashes like Metaphone.
 		</p>
 		<p>
-			Postgres comes with built-in tokenizers
-			for two dozen languages (<code>\dFd</code> to see the full list on psql).
+			DictPress bundles a Snowball stemming algorithm library which supports [arabic, danish, dutch, english, finnish, french, german, greek, hungarian, italian, norwegian, portuguese, romanian, russian, spanish, swedish, tamil, turkish].
 		</p>
 		<p>
-			For languages that do not have Postgres fulltext tokenisation, search tokens can be generated externally and plugged in.
+			For languages that do not have fulltext tokenisation, search tokens can be generated externally using any algorithm and plugged in.
 			For example, <a href="https://olam.in">Olam</a> uses <a href="https://github.com/knadh/dictmaker/blob/master/tokenizers/indicphone/indicphone.go">MLPhone</a>,
 			a simple Metaphone like phonetic hashing algorithm that allows Malayalam words in the dictionary to be searched
 			by how they sound.
