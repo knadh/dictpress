@@ -1,6 +1,6 @@
 use std::{io::Write, path::Path};
 
-use crate::{db, init};
+use crate::db;
 
 /// Generate sitemap files for entries in the DB.
 pub async fn generate_sitemaps(

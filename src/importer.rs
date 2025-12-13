@@ -80,7 +80,7 @@ pub async fn import_csv(
         }
         n += 1;
 
-        let entry = read_entry(&record, n, &langs, &tokenizers, &re_spaces)?;
+        let entry = read_entry(&record, n, &langs, tokenizers, &re_spaces)?;
 
         // First entry is always a main entry.
         if entries.is_empty() {
@@ -98,7 +98,7 @@ pub async fn import_csv(
         }
 
         // Insert batch when reaching size limit.
-        if entries.len() % INSERT_BATCH_SIZE == 0 {
+        if entries.len().is_multiple_of(INSERT_BATCH_SIZE) {
             insert_entries(&db, &entries, num_main).await?;
             num_main += entries.len();
             entries.clear();
