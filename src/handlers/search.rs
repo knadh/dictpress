@@ -6,16 +6,7 @@ use axum::{
 };
 
 use super::{json, paginate, total_pages, ApiErr, ApiResp, Ctx, Result};
-use crate::models::{GlossaryResults, SearchQuery, SearchResults, STATUS_ENABLED};
-
-/// Glossary query params.
-#[derive(Debug, serde::Deserialize, Default)]
-pub struct GlossaryQuery {
-    #[serde(default)]
-    pub page: i32,
-    #[serde(default)]
-    pub per_page: i32,
-}
+use crate::models::{SearchQuery, SearchResults, STATUS_ENABLED};
 
 /// Search a dictionary with query in path (public API).
 pub async fn search(
@@ -124,61 +115,6 @@ pub async fn do_search(
 
     Ok(json(SearchResults {
         entries,
-        page,
-        per_page,
-        total,
-        total_pages: total_pages(total, per_page),
-    }))
-}
-
-/// Get unique initials for a language.
-pub async fn get_initials(
-    State(ctx): State<Arc<Ctx>>,
-    Path(lang): Path<String>,
-) -> Result<ApiResp<Vec<String>>> {
-    // Check if glossary is enabled.
-    if !ctx.consts.enable_glossary {
-        return Err(ApiErr::new("glossary disabled", StatusCode::NOT_FOUND));
-    }
-
-    if !ctx.langs.contains_key(&lang) {
-        return Err(ApiErr::new("unknown language", StatusCode::BAD_REQUEST));
-    }
-
-    let initials = ctx.mgr.get_initials(&lang).await?;
-    Ok(json(initials))
-}
-
-/// Get glossary words.
-pub async fn get_glossary_words(
-    State(ctx): State<Arc<Ctx>>,
-    Path((lang, initial)): Path<(String, String)>,
-    Query(query): Query<GlossaryQuery>,
-) -> Result<ApiResp<GlossaryResults>> {
-    // Check if glossary is enabled.
-    if !ctx.consts.enable_glossary {
-        return Err(ApiErr::new("glossary disabled", StatusCode::NOT_FOUND));
-    }
-
-    if !ctx.langs.contains_key(&lang) {
-        return Err(ApiErr::new("unknown language", StatusCode::BAD_REQUEST));
-    }
-
-    // Use glossary pagination config.
-    let (page, per_page, offset) = paginate(
-        query.page,
-        query.per_page,
-        ctx.consts.glossary_max_per_page,
-        ctx.consts.glossary_default_per_page,
-    );
-
-    let (words, total) = ctx
-        .mgr
-        .get_glossary_words(&lang, &initial, offset, per_page)
-        .await?;
-
-    Ok(json(GlossaryResults {
-        words,
         page,
         per_page,
         total,

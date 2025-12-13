@@ -6,7 +6,7 @@ use axum::{
     Json,
 };
 
-use super::{json, paginate, search::GlossaryQuery, total_pages, ApiErr, ApiResp, Ctx, Result};
+use super::{json, paginate, total_pages, ApiErr, ApiResp, Ctx, PaginationQuery, Result};
 use crate::models::{Comment, Entry, Relation, SearchResults, StringArray, STATUS_PENDING};
 
 /// Public submission request.
@@ -146,7 +146,7 @@ pub async fn insert_comment(
 /// Get pending entries.
 pub async fn get_pending_entries(
     State(ctx): State<Arc<Ctx>>,
-    Query(query): Query<GlossaryQuery>,
+    Query(query): Query<PaginationQuery>,
 ) -> Result<ApiResp<SearchResults>> {
     let (page, per_page, offset) = paginate(
         query.page,

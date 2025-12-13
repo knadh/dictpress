@@ -12,6 +12,7 @@ edition = "2021"
 
 [dependencies]
 axum = "0.8"
+axum-extra = { version = "0.10", features = ["form"] }
 tokio = { version = "1", features = ["full"] }
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio", "chrono"] }
 mlua = { version = "0.11", features = ["lua54", "vendored", "serialize", "send"] }

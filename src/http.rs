@@ -35,11 +35,6 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
         .route(
             "/api/dictionary/entries/{guid}",
             get(entries::get_entry_by_guid),
-        )
-        .route("/api/glossary/{lang}/initials", get(search::get_initials))
-        .route(
-            "/api/glossary/{lang}/{initial}",
-            get(search::get_glossary_words),
         );
 
     // Public submission routes (if enabled).
@@ -120,6 +115,7 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
             .route("/", get(site::index))
             .route("/dictionary/{from}/{to}/{q}", get(site::search))
             .route("/submit", get(site::render_submit_page))
+            .route("/submit", post(site::submit_entry))
             .route("/message", get(site::message))
             .route("/static/_bundle.js", get(serve_bundle))
             .route("/static/_bundle.css", get(serve_bundle))
@@ -129,8 +125,6 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
                 get(site::render_glossary_page),
             )
             .route("/page/{page}", get(site::render_custom_page));
-
-        // Conditionally add custom pages route based on config.
 
         router = router.merge(r);
         log::info!("site routes enabled (--site flag provided)");

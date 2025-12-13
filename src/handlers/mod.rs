@@ -71,9 +71,7 @@ pub struct Consts {
     pub glossary_num_page_nums: i32,
 
     // Admin assets split by type for easier template rendering.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub admin_js_assets: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub admin_css_assets: Vec<String>,
 }
 
@@ -182,4 +180,13 @@ pub fn paginate(
 
 pub fn total_pages(total: i64, per_page: i32) -> i32 {
     ((total as f64) / (per_page as f64)).ceil() as i32
+}
+
+/// Generic pagination query params.
+#[derive(Debug, serde::Deserialize, Default)]
+pub struct PaginationQuery {
+    #[serde(default)]
+    pub page: i32,
+    #[serde(default)]
+    pub per_page: i32,
 }

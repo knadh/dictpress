@@ -220,16 +220,6 @@ pub struct SearchResults {
     pub total_pages: i32,
 }
 
-/// Glossary results wrapper.
-#[derive(Debug, Clone, Serialize)]
-pub struct GlossaryResults {
-    pub words: Vec<GlossaryWord>,
-    pub page: i32,
-    pub per_page: i32,
-    pub total: i64,
-    pub total_pages: i32,
-}
-
 /// Language configuration.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Lang {

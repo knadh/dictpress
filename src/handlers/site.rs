@@ -5,9 +5,10 @@ use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
+use axum_extra::extract::Form;
 
 use super::Ctx;
-use crate::models::{SearchQuery, STATUS_ENABLED};
+use crate::models::{Entry, Relation, SearchQuery, StringArray, STATUS_ENABLED, STATUS_PENDING};
 
 #[derive(serde::Deserialize)]
 pub struct GlossaryParams {
@@ -26,6 +27,23 @@ struct GlossaryData {
 pub struct MessageParams {
     title: Option<String>,
     message: Option<String>,
+}
+
+/// Form data for public entry submission.
+#[derive(serde::Deserialize)]
+pub struct SubmitForm {
+    pub entry_lang: String,
+    pub entry_content: String,
+    #[serde(default)]
+    pub entry_phones: String,
+    #[serde(default)]
+    pub entry_notes: String,
+    #[serde(default)]
+    pub relation_lang: Vec<String>,
+    #[serde(default)]
+    pub relation_content: Vec<String>,
+    #[serde(default)]
+    pub relation_type: Vec<String>,
 }
 
 /// Build common template context.
@@ -297,4 +315,139 @@ pub async fn message(
     context.insert("title", &params.title.unwrap_or_default());
     context.insert("description", &params.message.unwrap_or_default());
     render(&ctx, "message.html", &context)
+}
+
+/// Handle public entry submission.
+pub async fn submit_entry(
+    State(ctx): State<Arc<Ctx>>,
+    Form(form): Form<SubmitForm>,
+) -> impl IntoResponse {
+    if !ctx.consts.enable_submissions {
+        return render_message(&ctx, "Error", "Submissions are disabled.");
+    }
+
+    // Validate entry content.
+    let entry_content = form.entry_content.trim();
+    if entry_content.is_empty() {
+        return render_message(&ctx, "Error", "Entry content is required.");
+    }
+
+    let rel_len = form.relation_lang.len();
+    if rel_len == 0 || rel_len != form.relation_content.len() || rel_len != form.relation_type.len()
+    {
+        return render_message(&ctx, "Error", "Invalid submission fields.");
+    }
+
+    if !ctx.langs.contains_key(&form.entry_lang) {
+        return render_message(&ctx, "Error", "Unknown entry language.");
+    }
+
+    // Validate relation languages and types.
+    for i in 0..rel_len {
+        if !ctx.langs.contains_key(&form.relation_lang[i]) {
+            return render_message(&ctx, "Error", "Unknown relation language.");
+        }
+        let rel_content = form.relation_content[i].trim();
+        if rel_content.is_empty() {
+            return render_message(&ctx, "Error", "Relation content is required.");
+        }
+    }
+
+    // Parse phones (comma-separated).
+    let phones: Vec<String> = form
+        .entry_phones
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    // Compute initial from first character.
+    let initial = entry_content
+        .chars()
+        .next()
+        .map(|c| c.to_uppercase().to_string())
+        .unwrap_or_default();
+
+    // Create main entry.
+    let entry = Entry {
+        content: vec![entry_content.to_string()].into(),
+        initial,
+        lang: form.entry_lang.clone(),
+        phones: phones.into(),
+        notes: form.entry_notes.clone(),
+        status: STATUS_PENDING.to_string(),
+        ..Default::default()
+    };
+
+    // Insert main entry.
+    let from_id = match ctx.mgr.insert_submission_entry(&entry).await {
+        Ok(Some(id)) => id,
+        Ok(None) => {
+            return render_message(&ctx, "Error", "Entry already exists.");
+        }
+        Err(e) => {
+            log::error!("error inserting submission entry: {}", e);
+            return render_message(&ctx, "Error", "Error saving entry.");
+        }
+    };
+
+    // Insert relations.
+    for i in 0..rel_len {
+        let rel_content = form.relation_content[i].trim();
+        let rel_initial = rel_content
+            .chars()
+            .next()
+            .map(|c| c.to_uppercase().to_string())
+            .unwrap_or_default();
+
+        let rel_entry = Entry {
+            content: vec![rel_content.to_string()].into(),
+            initial: rel_initial,
+            lang: form.relation_lang[i].clone(),
+            status: STATUS_PENDING.to_string(),
+            ..Default::default()
+        };
+
+        let to_id = match ctx.mgr.insert_submission_entry(&rel_entry).await {
+            Ok(Some(id)) => id,
+            Ok(None) => continue, // Entry exists, skip relation
+            Err(e) => {
+                log::error!("error inserting submission definition: {}", e);
+                return render_message(&ctx, "Error", "Error saving definition.");
+            }
+        };
+
+        let relation = Relation {
+            types: StringArray(vec![form.relation_type[i].clone()]),
+            status: STATUS_PENDING.to_string(),
+            ..Default::default()
+        };
+
+        if let Err(e) = ctx
+            .mgr
+            .insert_submission_relation(from_id, to_id, &relation)
+            .await
+        {
+            log::error!("error inserting submission relation: {}", e);
+            return render_message(&ctx, "Error", "Error saving relation.");
+        }
+    }
+
+    render_message(
+        &ctx,
+        "Submitted",
+        "Your entry has been submitted for review.",
+    )
+}
+
+/// Helper to render the message template.
+fn render_message(ctx: &Ctx, title: &str, description: &str) -> impl IntoResponse {
+    let mut context = base_context(ctx);
+    context.insert("page_type", "message");
+    context.insert("title", title);
+    context.insert("description", description);
+    match render(ctx, "message.html", &context) {
+        Ok(html) => html.into_response(),
+        Err(e) => e.into_response(),
+    }
 }
