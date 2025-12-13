@@ -242,12 +242,14 @@ pub async fn render_glossary_page(
 }
 
 /// Submit new entry page.
-pub async fn submit_form(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
+pub async fn render_submit_page(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
     if !ctx.consts.enable_submissions {
         return (StatusCode::NOT_FOUND, "submissions disabled").into_response();
     }
+
     let mut context = base_context(&ctx);
     context.insert("page_type", "submit");
+
     match render(&ctx, "submit-new.html", &context) {
         Ok(html) => html.into_response(),
         Err(e) => e.into_response(),

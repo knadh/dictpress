@@ -119,7 +119,7 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
         let r = Router::new()
             .route("/", get(site::index))
             .route("/dictionary/{from}/{to}/{q}", get(site::search))
-            .route("/submit", get(site::submit_form))
+            .route("/submit", get(site::render_submit_page))
             .route("/message", get(site::message))
             .route("/static/_bundle.js", get(serve_bundle))
             .route("/static/_bundle.css", get(serve_bundle))
@@ -131,7 +131,6 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
             .route("/page/{page}", get(site::render_custom_page));
 
         // Conditionally add custom pages route based on config.
-        
 
         router = router.merge(r);
         log::info!("site routes enabled (--site flag provided)");

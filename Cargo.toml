@@ -1,37 +1,28 @@
 [package]
 name = "dictpress"
+description = " Application for building and publishing full fledged dictionary websites and APIs for any language."
+homepage = "https://dict.press"
+repository = "https://github.com/knadh/dictpress"
+license = "AGPL-3.0"
+authors = ["Kailash Nadh <kailash@nadh.in>"]
+
 version = "0.1.0"
 rust-version = "1.91"
 edition = "2021"
 
 [dependencies]
-# Web framework
 axum = "0.8"
 tokio = { version = "1", features = ["full"] }
-
-# Database
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio", "chrono"] }
-
-# Lua scripting
 mlua = { version = "0.11", features = ["lua54", "vendored", "serialize", "send"] }
-
-# Config & CLI
 clap = { version = "4", features = ["derive"] }
 toml = "0.9"
-
-# Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
-
-# Templating
 tera = "1"
-
-# SQL query parser
 yesqlr = "0.1.1"
 yesqlr_macros = "0.2"
-
-# Utilities
 rust-embed = "8"
 uuid = { version = "1", features = ["v4", "serde"] }
 log = "0.4"
