@@ -3,6 +3,7 @@
 -- Exact content matches get extra boost via negative rank adjustment.
 -- $1: lang, $2: raw query, $3: FTS query, $4: status, $5: offset, $6: limit
 SELECT DISTINCT e.*,
+       JSON_ARRAY_LENGTH(e.content) AS content_length,
        -- Rank: weight - (50 - content_length). Shorter content = more negative = ranks first.
        -- Exact matches get extra -1000 boost to always rank highest.
        e.weight + (-1.0 * (50.0 - length(JSON_EXTRACT(e.content, '$[0]'))))
@@ -23,6 +24,7 @@ LIMIT $6 OFFSET $5;
 -- Load relations for a set of entry IDs.
 -- $1: entry IDs (JSON array), $2: to_lang, $3: types (JSON array), $4: tags (JSON array), $5: status, $6: max per type
 SELECT e.*,
+       JSON_ARRAY_LENGTH(e.content) AS content_length,
        r.from_id,
        r.id AS relation_id,
        r.types AS relation_types,
@@ -46,7 +48,7 @@ WHERE r.from_id IN (SELECT value FROM json_each($1))
 ORDER BY r.from_id, r.types, r.weight;
 
 -- name: get-entry
-SELECT * FROM entries WHERE
+SELECT *, JSON_ARRAY_LENGTH(content) AS content_length FROM entries WHERE
     CASE
         WHEN $1 > 0 THEN id = $1
         WHEN $2 != '' THEN guid = $2
@@ -133,7 +135,7 @@ SELECT json_object(
 );
 
 -- name: get-pending-entries
-SELECT e.*, COUNT(*) OVER() AS total FROM entries e
+SELECT e.*, JSON_ARRAY_LENGTH(e.content) AS content_length, COUNT(*) OVER() AS total FROM entries e
     WHERE e.id IN (
         SELECT DISTINCT from_id FROM relations WHERE status = 'pending'
         UNION

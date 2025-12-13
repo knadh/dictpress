@@ -68,6 +68,8 @@ pub struct Entry {
     pub id: i64,
     pub guid: String,
     pub content: StringArray,
+    #[sqlx(default)]
+    pub content_length: i32,
     pub initial: String,
     pub weight: f64,
     #[serde(skip_serializing_if = "String::is_empty")]

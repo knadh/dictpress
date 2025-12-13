@@ -54,7 +54,7 @@
 
                         <li><div data-guid="{{ d.guid }}" class="def">
                             {{ d.content | join(sep=", ") }}
-                            {% if d.content | length > max_content_items or d.meta.synonyms %}
+                            {% if d.content_length > max_content_items or d.meta.synonyms %}
                                 <a href="#" class="more-toggle" data-id="{{ r.guid }}-{{ d.guid }}" title="{{ i18n.public_viewMore | default(value="View more") }}"
                                     data-entry-guid="{{ d.guid }}" data-from-lang="{{ r.lang }}" data-to-lang="{{ d.lang }}"
                                     role="button" aria-expanded="false" aria-controls="{{ r.guid }}-{{ d.guid }}">
