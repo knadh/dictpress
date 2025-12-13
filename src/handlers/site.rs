@@ -49,10 +49,17 @@ fn render(
 ) -> std::result::Result<Html<String>, impl IntoResponse> {
     match &ctx.site_tpl {
         Some(tpl) => tpl.render(template, context).map(Html).map_err(|e| {
-            log::error!("template error: {}", e);
+            // Log full error chain for debugging.
+            let mut msg = e.to_string();
+            let mut source = std::error::Error::source(&e);
+            while let Some(cause) = source {
+                msg.push_str(&format!(": {}", cause));
+                source = std::error::Error::source(cause);
+            }
+            log::error!("template error: {}", msg);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("template error: {}", e),
+                format!("template error: {}", msg),
             )
         }),
         None => Err((
@@ -189,6 +196,13 @@ pub async fn render_glossary_page(
         .min(ctx.consts.glossary_max_per_page);
     let offset = (page - 1) * per_page;
 
+    // Build base URL for pagination.
+    let pg_url = format!(
+        "{}/glossary/{}/{}/{}",
+        ctx.consts.root_url, from_lang, to_lang, initial
+    );
+    context.insert("pg_url", &pg_url);
+
     match ctx
         .mgr
         .get_glossary_words(&from_lang, &initial, offset, per_page)
@@ -217,6 +231,7 @@ pub async fn render_glossary_page(
                     to_lang,
                 },
             );
+            context.insert("total_pages", &0);
         }
     }
 

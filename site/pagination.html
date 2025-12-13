@@ -1,0 +1,39 @@
+{% if total_pages > 1 %}
+    <a href="{% if page > 1 %}{{ pg_url }}?page={{ page - 1 }}&per_page={{ per_page }}{% endif %}" class="prev{% if page <= 1 %} disabled{% endif %}">&laquo; Previous</a>
+
+    {% set window = 10 %}
+    {% set half = 5 %}
+    {% set_global start = page - half %}
+    {% set_global end = start + window - 1 %}
+    {% if start < 1 %}
+        {% set_global start = 1 %}
+        {% set_global end = window %}
+    {% endif %}
+    {% if end > total_pages %}
+        {% set_global end = total_pages %}
+        {% set_global start = total_pages - window + 1 %}
+        {% if start < 1 %}{% set_global start = 1 %}{% endif %}
+    {% endif %}
+
+    <span class="pages">
+        {% if start > 1 %}
+            <a href="{{ pg_url }}?page=1&per_page={{ per_page }}" class="pg-page">1</a>
+            {% if start > 2 %}<span class="ellipsis">...</span>{% endif %}
+        {% endif %}
+
+        {% for p in range(start=start, end=end + 1) %}
+            {% if p == page %}
+                <a class="selected">{{ p }}</a>
+            {% else %}
+                <a href="{{ pg_url }}?page={{ p }}&per_page={{ per_page }}" class="pg-page">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if end < total_pages %}
+            {% if end < total_pages - 1 %}<span class="ellipsis">...</span>{% endif %}
+            <a href="{{ pg_url }}?page={{ total_pages }}&per_page={{ per_page }}" class="pg-page">{{ total_pages }}</a>
+        {% endif %}
+    </span>
+
+    <a href="{% if page < total_pages %}{{ pg_url }}?page={{ page + 1 }}&per_page={{ per_page }}{% endif %}" class="next{% if page >= total_pages %} disabled{% endif %}">Next &raquo;</a>
+{% endif %}

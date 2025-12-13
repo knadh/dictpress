@@ -12,9 +12,11 @@
             {% endfor %}
         </nav>
 
-        <nav class="pagination top">{{ pg_bar | safe }}</nav>
+        <nav class="pagination top">{% include "pagination.html" %}</nav>
+
         {% include "glossary-words.html" %}
-        <nav class="pagination bottom">{{ pg_bar | safe }}</nav>
+
+        <nav class="pagination bottom">{% include "pagination.html" %}</nav>
     {% endif %}
 </section>
 {% endblock %}

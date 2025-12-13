@@ -451,8 +451,10 @@ button:hover,
 }
 
 .glossary .index {
-  background: #f7f7f7;
+  background: #f4f4f4;
   margin-bottom: 15px;
+  border-radius: 5px;
+  padding: 5px;
 }
 
 .glossary .index a {
@@ -485,30 +487,41 @@ button:hover,
 }
 
 .pagination {
-  margin-top: 30px;
+  display: flex;
+  align-items: center;
+  margin: 30px 0;
+}
+
+.pagination .prev { margin-right: auto; }
+.pagination .next { margin-left: auto; }
+.pagination .prev.disabled,
+.pagination .next.disabled {
+  visibility: hidden;
+}
+
+.pagination .pages {
+  display: flex;
+  gap: 4px;
 }
 
 .pagination a {
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
+  padding: 0 8px;
+  min-width: 32px;
 }
 
-.pagination .pg-page {
-  padding: 0 6px;
+.pagination a:hover:not(.disabled) {
+  background: var(--lightest);
 }
 
-.pagination .pg-selected {
+.pagination .selected {
   font-weight: bold;
   border-bottom: 2px solid var(--primary);
 }
 
-.pagination.top {
-  margin-bottom: 30px;
-}
-
-.pagination.bottom {
-  margin-top: 30px;
-}
 
 /* Custom pages */
 .page.type textarea {
