@@ -91,6 +91,11 @@ impl Manager {
         // Generate FTS query.
         let fts_query = self.to_fts_query(&sq.query, &sq.from_lang)?;
 
+        // If FTS query is empty, return an error.
+        if fts_query.trim().is_empty() {
+            return Err(Error::Validation("invalid search query".to_string()));
+        }
+
         let status = if sq.status.is_empty() {
             STATUS_ENABLED.to_string()
         } else {
