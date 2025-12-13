@@ -1,38 +1,11 @@
 use std::{path::Path, sync::Mutex};
 
-use mlua::{Function, Lua, Table};
+use mlua::{Function, Lua};
 
 use super::{Tokenizer, TokenizerError};
 
 /// Lua helper functions injected into every tokenizer script.
-const LUA_HELPERS: &str = r#"
--- Helper library available as `dp` in all tokenizer scripts.
-dp = {}
-
--- Split string by whitespace, returns iterator.
-function dp.words(s)
-    return s:gmatch("%S+")
-end
-
--- Lowercase string.
-function dp.lower(s)
-    return s:lower()
-end
-
--- Trim whitespace.
-function dp.trim(s)
-    return s:match("^%s*(.-)%s*$")
-end
-
--- Split string by delimiter.
-function dp.split(s, delim)
-    local result = {}
-    for match in (s .. delim):gmatch("(.-)" .. delim) do
-        table.insert(result, match)
-    end
-    return result
-end
-"#;
+const LUA_GLOBAL: &[u8] = include_bytes!("global.lua");
 
 /// Lua-based tokenizer loaded from a .lua file.
 pub struct LuaTokenizer {
@@ -44,10 +17,7 @@ impl LuaTokenizer {
         let lua = Lua::new();
         let code = std::fs::read_to_string(path)?;
 
-        // Load helper library first.
-        lua.load(LUA_HELPERS).exec()?;
-
-        // Load user tokenizer script. Script should assign to global `M` table.
+        lua.load(LUA_GLOBAL).exec()?;
         lua.load(&code).exec()?;
 
         Ok(Self {
@@ -58,8 +28,7 @@ impl LuaTokenizer {
     fn call_tokenize(&self, text: &str, lang: &str) -> Result<Vec<String>, TokenizerError> {
         let lua = self.lua.lock().unwrap();
         let globals = lua.globals();
-        let module: Table = globals.get("M")?;
-        let func: Function = module.get("tokenize")?;
+        let func: Function = globals.get("tokenize")?;
         let tokens: Vec<String> = func.call((text, lang))?;
         Ok(tokens)
     }
@@ -67,8 +36,7 @@ impl LuaTokenizer {
     fn call_query(&self, text: &str, lang: &str) -> Result<String, TokenizerError> {
         let lua = self.lua.lock().unwrap();
         let globals = lua.globals();
-        let module: Table = globals.get("M")?;
-        let func: Function = module.get("query")?;
+        let func: Function = globals.get("to_query")?;
         let query: String = func.call((text, lang))?;
         Ok(query)
     }

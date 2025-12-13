@@ -10,13 +10,13 @@ mod models;
 mod sitemaps;
 mod tokenizer;
 
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 use clap::Parser;
 
 use cli::Commands;
 use handlers::{Consts, Ctx};
-use manager::{Manager, ManagerConfig};
+use manager::Manager;
 
 #[tokio::main]
 async fn main() {
@@ -75,14 +75,15 @@ async fn main() {
                 let config = config::load_all(&cli.config);
                 let langs = init::langs(&config);
 
-                let tokenizers_dir = if config.app.tokenizers_dir.is_empty() {
-                    "tokenizers".to_string()
-                } else {
-                    config.app.tokenizers_dir.clone()
+                let tokenizers = match init::tokenizers(&config.app.tokenizers_dir) {
+                    Ok(t) => t,
+                    Err(e) => {
+                        log::error!("error loading tokenizers: {}", e);
+                        std::process::exit(1);
+                    }
                 };
 
-                if let Err(e) = importer::import_csv(&file, &db_path, &tokenizers_dir, langs).await
-                {
+                if let Err(e) = importer::import_csv(&file, &db_path, &tokenizers, langs).await {
                     log::error!("error importing: {}", e);
                     std::process::exit(1);
                 }
@@ -185,15 +186,17 @@ async fn main() {
         std::collections::HashMap::new()
     };
 
-    // Initialize manager.
-    let tokenizers_dir = if config.app.tokenizers_dir.is_empty() {
-        "tokenizers".to_string()
-    } else {
-        config.app.tokenizers_dir.clone()
+    // Initialize tokenizers.
+    let tokenizers = match init::tokenizers(&config.app.tokenizers_dir) {
+        Ok(t) => t,
+        Err(e) => {
+            log::error!("error loading tokenizers: {}", e);
+            std::process::exit(1);
+        }
     };
 
-    let cfg = ManagerConfig { tokenizers_dir };
-    let mgr = match Manager::new(db, cfg, langs.clone(), dicts.clone()).await {
+    // Initialize manager.
+    let mgr = match Manager::new(db, tokenizers, langs.clone(), dicts.clone()).await {
         Ok(m) => Arc::new(m),
         Err(e) => {
             log::error!("error initializing manager: {}", e);

@@ -20,11 +20,9 @@ pub enum TokenizerError {
     Lua(#[from] mlua::Error),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
-    #[error("tokenizer not found: {0}")]
-    NotFound(String),
 }
 
-/// Simple whitespace tokenizer (built-in fallback).
+/// Simple whitespace tokenizer (default fallback).
 pub struct SimpleTokenizer;
 
 impl Tokenizer for SimpleTokenizer {
@@ -68,16 +66,16 @@ impl Tokenizer for DefaultTokenizer {
     }
 }
 
-pub type TokenizerMap = HashMap<String, Arc<dyn Tokenizer>>;
+pub type Tokenizers = HashMap<String, Arc<dyn Tokenizer>>;
 
 /// Load tokenizers from directory. Each .lua file becomes a tokenizer.
-pub fn load_tokenizers(dir: &Path) -> Result<TokenizerMap, TokenizerError> {
-    let mut tokenizers: TokenizerMap = HashMap::new();
+pub fn load_all(dir: &Path) -> Result<Tokenizers, TokenizerError> {
+    let mut out: Tokenizers = HashMap::new();
 
     // Always include the simple tokenizer.
-    tokenizers.insert("simple".to_string(), Arc::new(SimpleTokenizer));
+    out.insert("simple".to_string(), Arc::new(SimpleTokenizer));
 
-    // Built-in default stemmers for all supported languages.
+    // Add built-in default stemmers.
     let default_stemmers = [
         ("arabic", Algorithm::Arabic),
         ("danish", Algorithm::Danish),
@@ -98,30 +96,68 @@ pub fn load_tokenizers(dir: &Path) -> Result<TokenizerMap, TokenizerError> {
         ("tamil", Algorithm::Tamil),
         ("turkish", Algorithm::Turkish),
     ];
-
     for (name, algorithm) in default_stemmers {
-        tokenizers.insert(name.to_string(), Arc::new(DefaultTokenizer::new(algorithm)));
+        out.insert(name.to_string(), Arc::new(DefaultTokenizer::new(algorithm)));
+    }
+
+    // If no dir has been specified, skip loading from disk.
+    if dir == Path::new("") {
+        log::info!("no tokenizers directory to load");
+        return Ok(out);
     }
 
     if !dir.exists() {
-        return Ok(tokenizers);
+        log::info!("'{}' tokenizers directory does not exist", dir.display());
+        return Ok(out);
     }
 
-    for entry in std::fs::read_dir(dir)? {
-        let entry = entry?;
+    log::info!("loading tokenizers from '{}'", dir.display());
+
+    // Add .lua tokenizers from the directory.
+    for entry in std::fs::read_dir(dir)?.flatten() {
         let path = entry.path();
+        let filename = path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("<invalid>");
 
-        if path.extension().map(|e| e == "lua").unwrap_or(false) {
-            let name = path
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("unknown")
-                .to_string();
-
-            let tk = LuaTokenizer::from_file(&path)?;
-            tokenizers.insert(name, Arc::new(tk));
+        // Skip non-.lua files with logging.
+        if path.extension().is_none_or(|e| e != "lua") {
+            log::info!("skipping '{}'", filename);
+            continue;
         }
+
+        // Get tokenizer name - skip invalid filenames.
+        let name = match path.file_stem().and_then(|s| s.to_str()) {
+            Some(stem) if !stem.is_empty() => stem.to_string(),
+            _ => {
+                log::warn!("skipping invalid file '{}'", filename);
+                continue;
+            }
+        };
+
+        // Load Lua tokenizer.
+        let tokenizer = match LuaTokenizer::from_file(&path) {
+            Ok(t) => t,
+            Err(e) => {
+                log::error!("error reading '{}': {}", filename, e);
+                continue;
+            }
+        };
+
+        // Validate by calling tokenize() and to_query().
+        if let Err(e) = tokenizer.tokenize("test", "test") {
+            log::error!("error validating '{}': {}", filename, e);
+            continue;
+        }
+        if let Err(e) = tokenizer.to_query("test", "test") {
+            log::error!("error validating '{}': {}", filename, e);
+            continue;
+        }
+
+        log::info!("loaded '{}'", filename);
+        out.insert(name, Arc::new(tokenizer));
     }
 
-    Ok(tokenizers)
+    Ok(out)
 }

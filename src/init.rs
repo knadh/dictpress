@@ -1,4 +1,7 @@
+use std::path::Path;
+
 use crate::models::{Config, Dicts, Lang, LangMap};
+use crate::tokenizer::{TokenizerError, Tokenizers};
 
 /// Initialize logger.
 pub fn logger() {
@@ -162,4 +165,9 @@ pub fn i18n(
         .map(|(k, v)| (k.replace('.', "_"), v))
         .collect();
     Ok(i18n)
+}
+
+/// Initialize lua tokenizers from a given directory.
+pub fn tokenizers(dir: &str) -> Result<Tokenizers, TokenizerError> {
+    crate::tokenizer::load_all(Path::new(dir))
 }

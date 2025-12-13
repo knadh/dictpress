@@ -6,7 +6,7 @@ use sqlx::Row;
 use crate::{
     db,
     models::{LangMap, STATUS_ENABLED},
-    tokenizer::{self, TokenizerMap},
+    tokenizer::Tokenizers,
 };
 
 const INSERT_BATCH_SIZE: usize = 5000;
@@ -50,13 +50,10 @@ struct Entry {
 pub async fn import_csv(
     file_path: &Path,
     db_path: &str,
-    tokenizers_dir: &str,
+    tokenizers: &Tokenizers,
     langs: LangMap,
 ) -> Result<(), ImportError> {
     let db = db::init(db_path, 1, false).await?;
-
-    // Load tokenizers.
-    let tokenizers = tokenizer::load_tokenizers(Path::new(tokenizers_dir))?;
 
     log::info!("importing data from {} ...", file_path.display());
 
@@ -130,7 +127,7 @@ fn read_entry(
     record: &csv::StringRecord,
     line: usize,
     langs: &LangMap,
-    tokenizers: &TokenizerMap,
+    tokenizers: &Tokenizers,
     re_spaces: &Regex,
 ) -> Result<Entry, ImportError> {
     let get = |i: usize| record.get(i).unwrap_or("").to_string();

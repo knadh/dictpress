@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use sqlx::{sqlite::SqlitePool, Row};
 
@@ -7,7 +7,7 @@ use crate::{
         q, Comment, Dicts, Entry, GlossaryWord, LangMap, Relation, SearchQuery, Stats,
         STATUS_ENABLED,
     },
-    tokenizer::{self, Tokenizer, TokenizerMap},
+    tokenizer::{Tokenizer, TokenizerError, Tokenizers},
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -15,7 +15,7 @@ pub enum Error {
     #[error("database error: {0}")]
     Db(#[from] sqlx::Error),
     #[error("tokenizer error: {0}")]
-    Tokenizer(#[from] tokenizer::TokenizerError),
+    Tokenizer(#[from] TokenizerError),
     #[error("unknown language: {0}")]
     UnknownLang(String),
     #[error("not found")]
@@ -24,14 +24,10 @@ pub enum Error {
     Validation(String),
 }
 
-pub struct ManagerConfig {
-    pub tokenizers_dir: String,
-}
-
 /// Manager handles all database operations and business logic.
 pub struct Manager {
     db: SqlitePool,
-    tokenizers: TokenizerMap,
+    tokenizers: Tokenizers,
     pub langs: LangMap,
     pub dicts: Dicts,
 }
@@ -39,13 +35,10 @@ pub struct Manager {
 impl Manager {
     pub async fn new(
         db: SqlitePool,
-        cfg: ManagerConfig,
+        tokenizers: Tokenizers,
         langs: LangMap,
         dicts: Dicts,
     ) -> Result<Self, Error> {
-        // Load tokenizers.
-        let tokenizers = tokenizer::load_tokenizers(Path::new(&cfg.tokenizers_dir))?;
-
         Ok(Self {
             db,
             tokenizers,
@@ -55,9 +48,9 @@ impl Manager {
     }
 
     /// Get tokenizer for a language.
-    fn get_tokenizer(&self, lang_id: &str) -> Option<Arc<dyn Tokenizer>> {
+    fn get_tokenizer(&self, lang_id: &str) -> Option<&Arc<dyn Tokenizer>> {
         let lang = self.langs.get(lang_id)?;
-        self.tokenizers.get(&lang.tokenizer).cloned()
+        self.tokenizers.get(&lang.tokenizer)
     }
 
     /// Tokenize content for a given language.
