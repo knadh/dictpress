@@ -73,9 +73,9 @@ select,
 button,
 textarea,
 .button {
-  padding: 10px 15px;
+  padding: 10px;
   font-family: "Helvetica Neue", "Segoe UI", Helvetica, sans-serif;
-  font-size: 1.2rem;
+  font-size: 1rem;
   line-height: 1;
   color: var(--primary);
   border-radius: 5px;
@@ -99,7 +99,9 @@ button,
   color: var(--white);
   width: auto;
   cursor: pointer;
-  padding: 10px 20px;
+  line-height: 1;
+  padding: 15px 20px;
+  font-weight: bold;
 }
 
 .button-outline {
@@ -116,6 +118,18 @@ button:hover,
 .button:hover {
   border-color: #444;
   background: #444;
+}
+
+.buttons {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.buttons > * {
+  flex: 1;
 }
 
 .noul {
@@ -209,6 +223,7 @@ button:hover,
   padding: 10px 15px;
   border-width: 1px 0px;
   border-radius: 0;
+  font-size: 1.2rem;
 }
 
 .search-form select {
@@ -356,7 +371,6 @@ button:hover,
 }
 
 .entry .edit {
-  color: var(--white);
   padding: 3px 10px;
   margin-left: 15px;
   display: none;
@@ -366,6 +380,10 @@ button:hover,
   line-height: 1;
   text-shadow: 0px 3px 3px #fff;
   font-size: 0.8rem;
+}
+.entry .edit img {
+  max-height: 12px;
+  width: auto;
 }
 
 .entries .defs li:hover .edit {
@@ -443,11 +461,6 @@ button:hover,
 
 .form-comments h3 {
   margin: 0 0 15px 0;
-}
-
-.form-comments button {
-  margin: 0 10px 10px 0;
-  width: 100%;
 }
 
 .glossary .index {

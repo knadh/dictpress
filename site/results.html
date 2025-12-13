@@ -11,7 +11,9 @@
                     <div>
                         <h3 class="title">{{ r.content | join(sep=", ") }}
                             {% if consts.enable_submissions %}
-                                <a href="#" data-from="{{ r.guid }}" class="edit" title="{{ i18n.public_suggestEdit | default(value="Suggest edit") }}">&#9998;</a>
+                                <a href="#" data-from="{{ r.guid }}" class="edit" title="{{ i18n.public_suggestEdit }}">
+                                    <img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ i18n.public_suggestEdit }}">
+                                </a>
                             {% endif %}
                         </h3>
 
@@ -61,7 +63,9 @@
                                 </a>
                             {% endif %}
                             {% if consts.enable_submissions %}
-                                <a href="#" data-from="{{ r.guid }}" data-to="{{ d.guid }}" class="edit" title="{{ i18n.public_suggestEdit | default(value="Suggest edit") }}">&#9998;</a>
+                                <a href="#" data-from="{{ r.guid }}" data-to="{{ d.guid }}" class="edit" title="{{ i18n.public_suggestEdit | default(value="Suggest edit") }}">
+                                    <img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ i18n.public_suggestEdit }}">
+                                </a>
                             {% endif %}
 
                             <!-- This is dynamically populated by JS when the "more" link is clicked -->

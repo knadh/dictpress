@@ -92,10 +92,10 @@
 <div>
   <h4>{{ i18n.public_submitTitle | default(value="Comments") }}</h4>
   <textarea name="comments" autofocus maxlength="500"></textarea>
-  <p>
+  <div class="buttons">
     <button type="submit">{{ i18n.public_suggestSubmitBtn | default(value="Submit") }}</button>
     <button class="button-outline close">{{ i18n.global_btnClose | default(value="Close") }}</button>
-  </p>
+  </div>
 </div>
 </form>
 
