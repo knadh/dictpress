@@ -6,7 +6,7 @@ use axum::{
 };
 
 use super::{json, paginate, total_pages, ApiErr, ApiResp, Ctx, Result};
-use crate::models::{SearchQuery, SearchResults, STATUS_ENABLED};
+use crate::models::{RelationsQuery, SearchQuery, SearchResults, STATUS_ENABLED};
 
 /// Search a dictionary with query in path (public API).
 pub async fn search(
@@ -92,12 +92,14 @@ pub async fn do_search(
     ctx.mgr
         .load_relations(
             &mut entries,
-            &to_lang,
-            &query.types,
-            &query.tags,
-            status,
-            query.max_relations,
-            query.max_content_items,
+            &RelationsQuery {
+                to_lang,
+                types: query.types.clone(),
+                tags: query.tags.clone(),
+                status: status.to_string(),
+                max_per_type: query.max_relations,
+                max_content_items: query.max_content_items,
+            },
         )
         .await?;
 

@@ -4,8 +4,8 @@ use sqlx::{sqlite::SqlitePool, Row};
 
 use crate::{
     models::{
-        q, Comment, Dicts, Entry, GlossaryWord, LangMap, Relation, SearchQuery, Stats,
-        STATUS_ENABLED,
+        q, Comment, Dicts, Entry, GlossaryWord, LangMap, Relation, RelationsQuery, SearchQuery,
+        Stats, STATUS_ENABLED,
     },
     tokenizer::{Tokenizer, TokenizerError, Tokenizers},
 };
@@ -117,17 +117,12 @@ impl Manager {
     }
 
     /// Load relations for a set of entries.
-    /// max_per_type: 0 = load all relations, >0 = limit relations per type per entry.
-    /// max_content_items: 0 = no truncation, >0 = truncate content array.
+    /// rel_query.max_per_type: 0 = load all relations, >0 = limit relations per type per entry.
+    /// rel_query.max_content_items: 0 = no truncation, >0 = truncate content array.
     pub async fn load_relations(
         &self,
         entries: &mut [Entry],
-        to_lang: &str,
-        types: &[String],
-        tags: &[String],
-        status: &str,
-        max_per_type: i32,
-        max_content_items: i32,
+        rel_query: &RelationsQuery,
     ) -> Result<(), Error> {
         if entries.is_empty() {
             return Ok(());
@@ -143,16 +138,18 @@ impl Manager {
             id_map.insert(e.id, i);
         }
 
-        let types_json = serde_json::to_string(types).unwrap_or_else(|_| "[]".to_string());
-        let tags_json = serde_json::to_string(tags).unwrap_or_else(|_| "[]".to_string());
+        let types_json =
+            serde_json::to_string(&rel_query.types).unwrap_or_else(|_| "[]".to_string());
+        let tags_json =
+            serde_json::to_string(&rel_query.tags).unwrap_or_else(|_| "[]".to_string());
 
         let rel_entries: Vec<Entry> = sqlx::query_as(&q.search_relations.query)
             .bind(&id_json)
-            .bind(to_lang)
+            .bind(&rel_query.to_lang)
             .bind(&types_json)
             .bind(&tags_json)
-            .bind(status)
-            .bind(max_per_type)
+            .bind(&rel_query.status)
+            .bind(rel_query.max_per_type)
             .fetch_all(&self.db)
             .await?;
 
@@ -179,10 +176,10 @@ impl Manager {
         for e in entries.iter_mut() {
             e.total_relations = e.relations.len() as i32;
 
-            if max_content_items > 0 {
+            if rel_query.max_content_items > 0 {
                 for rel in &mut e.relations {
-                    if rel.content.len() > max_content_items as usize {
-                        rel.content.0.truncate(max_content_items as usize);
+                    if rel.content.len() > rel_query.max_content_items as usize {
+                        rel.content.0.truncate(rel_query.max_content_items as usize);
                     }
                 }
             }

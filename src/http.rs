@@ -127,7 +127,7 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
             .route("/page/{page}", get(site::render_custom_page));
 
         router = router.merge(site_routes);
-        log::info!("site routes enabled (--site flag provided)");
+        log::info!("site routes enabled");
     } else {
         log::info!("site routes disabled (no --site flag, API-only mode)");
     }

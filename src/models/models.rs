@@ -203,6 +203,17 @@ pub struct Comment {
     pub to_guid: Option<String>,
 }
 
+/// Query parameters for loading relations.
+#[derive(Debug, Clone, Default)]
+pub struct RelationsQuery {
+    pub to_lang: String,
+    pub types: Vec<String>,
+    pub tags: Vec<String>,
+    pub status: String,
+    pub max_per_type: i32,
+    pub max_content_items: i32,
+}
+
 /// Search query parameters.
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct SearchQuery {
