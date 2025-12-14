@@ -140,8 +140,7 @@ impl Manager {
 
         let types_json =
             serde_json::to_string(&rel_query.types).unwrap_or_else(|_| "[]".to_string());
-        let tags_json =
-            serde_json::to_string(&rel_query.tags).unwrap_or_else(|_| "[]".to_string());
+        let tags_json = serde_json::to_string(&rel_query.tags).unwrap_or_else(|_| "[]".to_string());
 
         let rel_entries: Vec<Entry> = sqlx::query_as(&q.search_relations.query)
             .bind(&id_json)
@@ -150,6 +149,7 @@ impl Manager {
             .bind(&tags_json)
             .bind(&rel_query.status)
             .bind(rel_query.max_per_type)
+            .bind(rel_query.max_content_items)
             .fetch_all(&self.db)
             .await?;
 
@@ -172,16 +172,10 @@ impl Manager {
             }
         }
 
-        // Retain the total_relations count and truncate relations.
+        // Set total_relations from query results (computed per from_id via window function).
         for e in entries.iter_mut() {
-            e.total_relations = e.relations.len() as i32;
-
-            if rel_query.max_content_items > 0 {
-                for rel in &mut e.relations {
-                    if rel.content.len() > rel_query.max_content_items as usize {
-                        rel.content.0.truncate(rel_query.max_content_items as usize);
-                    }
-                }
+            if let Some(first_rel) = e.relations.first() {
+                e.total_relations = first_rel.total_relations;
             }
         }
 

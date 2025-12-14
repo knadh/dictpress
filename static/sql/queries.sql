@@ -22,30 +22,52 @@ LIMIT $6 OFFSET $5;
 
 -- name: search-relations
 -- Load relations for a set of entry IDs.
--- $1: entry IDs (JSON array), $2: to_lang, $3: types (JSON array), $4: tags (JSON array), $5: status, $6: max per type
-SELECT e.*,
+-- $1: entry IDs (JSON array), $2: to_lang, $3: types (JSON array), $4: tags (JSON array),
+-- $5: status, $6: max per type, $7: max content items (0 = no truncation)
+SELECT e.id, e.guid, e.initial, e.weight, e.tokens, e.lang,
+       e.tags, e.phones, e.notes, e.meta, e.status, e.created_at, e.updated_at,
+       -- Truncate content array if $7 > 0
+       CASE WHEN $7 > 0
+            THEN (SELECT JSON_GROUP_ARRAY(value) FROM (SELECT value FROM JSON_EACH(e.content) LIMIT $7))
+            ELSE e.content
+       END AS content,
        JSON_ARRAY_LENGTH(e.content) AS content_length,
-       r.from_id,
-       r.id AS relation_id,
-       r.types AS relation_types,
-       r.tags AS relation_tags,
-       r.notes AS relation_notes,
-       r.weight AS relation_weight,
-       r.status AS relation_status,
-       r.created_at AS relation_created_at,
-       r.updated_at AS relation_updated_at
+       sub.from_id,
+       sub.relation_id,
+       sub.relation_types,
+       sub.relation_tags,
+       sub.relation_notes,
+       sub.relation_weight,
+       sub.relation_status,
+       sub.relation_created_at,
+       sub.relation_updated_at,
+       sub.total_relations
 FROM entries e
-INNER JOIN relations r ON r.to_id = e.id
-WHERE r.from_id IN (SELECT value FROM json_each($1))
-  AND ($2 = '' OR e.lang = $2)
-  AND ($5 = '' OR r.status = $5)
-  AND ($3 = '[]' OR EXISTS (
-      SELECT 1 FROM json_each(r.types) rt, json_each($3) qt WHERE rt.value = qt.value
-  ))
-  AND ($4 = '[]' OR EXISTS (
-      SELECT 1 FROM json_each(r.tags) rt, json_each($4) qt WHERE rt.value = qt.value
-  ))
-ORDER BY r.from_id, r.types, r.weight;
+INNER JOIN (
+    SELECT r.to_id,
+           r.from_id,
+           r.id AS relation_id,
+           r.types AS relation_types,
+           r.tags AS relation_tags,
+           r.notes AS relation_notes,
+           r.weight AS relation_weight,
+           r.status AS relation_status,
+           r.created_at AS relation_created_at,
+           r.updated_at AS relation_updated_at,
+           ROW_NUMBER() OVER (PARTITION BY r.from_id, r.types ORDER BY r.weight) AS rn,
+           COUNT(*) OVER (PARTITION BY r.from_id) AS total_relations
+    FROM relations r
+    WHERE r.from_id IN (SELECT value FROM JSON_EACH($1))
+      AND ($5 = '' OR r.status = $5)
+      AND ($3 = '[]' OR EXISTS (
+          SELECT 1 FROM JSON_EACH(r.types) rt, JSON_EACH($3) qt WHERE rt.value = qt.value
+      ))
+      AND ($4 = '[]' OR EXISTS (
+          SELECT 1 FROM JSON_EACH(r.tags) rt, JSON_EACH($4) qt WHERE rt.value = qt.value
+      ))
+) sub ON sub.to_id = e.id AND ($6 = 0 OR sub.rn <= $6)
+WHERE ($2 = '' OR e.lang = $2)
+ORDER BY sub.from_id, sub.relation_types, sub.relation_weight;
 
 -- name: get-entry
 SELECT *, JSON_ARRAY_LENGTH(content) AS content_length FROM entries WHERE
@@ -118,10 +140,10 @@ DELETE FROM relations WHERE id = $1;
 -- Update weights based on array position.
 UPDATE relations SET weight = (
     SELECT idx FROM (
-        SELECT value, row_number() OVER () AS idx FROM json_each($1)
+        SELECT value, row_number() OVER () AS idx FROM JSON_EACH($1)
     ) WHERE value = relations.id
 )
-WHERE id IN (SELECT value FROM json_each($1));
+WHERE id IN (SELECT value FROM JSON_EACH($1));
 
 -- name: get-stats
 SELECT json_object(
@@ -162,7 +184,7 @@ INSERT INTO relations (from_id, to_id, types, tags, notes, weight, status)
     WHERE NOT EXISTS (
         SELECT 1 FROM relations
         WHERE from_id = $1 AND to_id = $2
-        AND EXISTS (SELECT 1 FROM json_each(types) rt, json_each($3) nt WHERE rt.value = nt.value)
+        AND EXISTS (SELECT 1 FROM JSON_EACH(types) rt, JSON_EACH($3) nt WHERE rt.value = nt.value)
     )
     RETURNING id;
 
