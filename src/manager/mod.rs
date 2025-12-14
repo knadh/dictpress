@@ -130,17 +130,15 @@ impl Manager {
 
         // Build ID list and index map.
         let ids: Vec<i64> = entries.iter().map(|e| e.id).collect();
+
+        entries.iter_mut().for_each(|e| e.relations = Vec::new());
+        let id_map: HashMap<i64, usize> =
+            entries.iter().enumerate().map(|(i, e)| (e.id, i)).collect();
+
+        // Serialize array types for SQLite query.
         let id_json = serde_json::to_string(&ids).unwrap_or_default();
-
-        let mut id_map: HashMap<i64, usize> = HashMap::new();
-        for (i, e) in entries.iter_mut().enumerate() {
-            e.relations = Vec::new();
-            id_map.insert(e.id, i);
-        }
-
-        let types_json =
-            serde_json::to_string(&rel_query.types).unwrap_or_else(|_| "[]".to_string());
-        let tags_json = serde_json::to_string(&rel_query.tags).unwrap_or_else(|_| "[]".to_string());
+        let types_json = serde_json::to_string(&rel_query.types).unwrap_or_default();
+        let tags_json = serde_json::to_string(&rel_query.tags).unwrap_or_default();
 
         let rel_entries: Vec<Entry> = sqlx::query_as(&q.search_relations.query)
             .bind(&id_json)
@@ -167,15 +165,12 @@ impl Manager {
                 updated_at: r.relation_updated_at.take(),
             });
 
-            if let Some(idx) = id_map.get(&r.from_id) {
-                entries[*idx].relations.push(r);
-            }
-        }
-
-        // Set total_relations from query results (computed per from_id via window function).
-        for e in entries.iter_mut() {
-            if let Some(first_rel) = e.relations.first() {
-                e.total_relations = first_rel.total_relations;
+            if let Some(&idx) = id_map.get(&r.from_id) {
+                let entry = &mut entries[idx];
+                if entry.relations.is_empty() {
+                    entry.total_relations = r.total_relations;
+                }
+                entry.relations.push(r);
             }
         }
 
