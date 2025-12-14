@@ -117,8 +117,8 @@ impl Manager {
     }
 
     /// Load relations for a set of entries.
-    /// max_per_type: 0 = load all relations.
-    /// > 0 = limit relations per type per entry.
+    /// max_per_type: 0 = load all relations, >0 = limit relations per type per entry.
+    /// max_content_items: 0 = no truncation, >0 = truncate content array.
     pub async fn load_relations(
         &self,
         entries: &mut [Entry],
@@ -127,6 +127,7 @@ impl Manager {
         tags: &[String],
         status: &str,
         max_per_type: i32,
+        max_content_items: i32,
     ) -> Result<(), Error> {
         if entries.is_empty() {
             return Ok(());
@@ -174,9 +175,17 @@ impl Manager {
             }
         }
 
-        // Set total_relations count.
+        // Retain the total_relations count and truncate relations.
         for e in entries.iter_mut() {
             e.total_relations = e.relations.len() as i32;
+
+            if max_content_items > 0 {
+                for rel in &mut e.relations {
+                    if rel.content.len() > max_content_items as usize {
+                        rel.content.0.truncate(max_content_items as usize);
+                    }
+                }
+            }
         }
 
         Ok(())

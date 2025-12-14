@@ -18,7 +18,19 @@ pub async fn search(
     query.from_lang = from_lang;
     query.to_lang = to_lang;
 
-    do_search(ctx, query, false, 0, 0).await
+    // Pagination.
+    let (page, per_page, offset) = paginate(
+        query.page,
+        query.per_page,
+        ctx.consts.api_max_per_page,
+        ctx.consts.api_default_per_page,
+    );
+
+    query.page = page;
+    query.offset = offset;
+    query.limit = per_page;
+
+    do_search(ctx, query, false).await
 }
 
 /// Admin search (response includes internal IDs also).
@@ -30,18 +42,25 @@ pub async fn search_admin(
     query.from_lang = from_lang;
     query.to_lang = to_lang;
 
-    do_search(ctx, query, true, 0, 0).await
+    // Pagination.
+    let (page, per_page, offset) = paginate(
+        query.page,
+        query.per_page,
+        ctx.consts.api_max_per_page,
+        ctx.consts.api_default_per_page,
+    );
+    query.page = page;
+    query.offset = offset;
+    query.limit = per_page;
+
+    do_search(ctx, query, true).await
 }
 
-/// Perform search with configurable limits on relations and content items.
-/// max_relations: 0 = unlimited, >0 = limit per type.
-/// max_content_items: 0 = unlimited, >0 = truncate content array.
+/// Perform search. Reads offset/limit and max_relations/max_content_items from query.
 pub async fn do_search(
     ctx: Arc<Ctx>,
     query: SearchQuery,
     is_admin: bool,
-    max_relations: i32,
-    max_content_items: i32,
 ) -> Result<ApiResp<SearchResults>> {
     if query.query.is_empty() {
         return Err(ApiErr::new("query is required", StatusCode::BAD_REQUEST));
@@ -61,16 +80,8 @@ pub async fn do_search(
         query.to_lang.clone()
     };
 
-    // Figure out pagination (use API pagination config for API endpoints).
-    let (page, per_page, offset) = paginate(
-        query.page,
-        query.per_page,
-        ctx.consts.api_max_per_page,
-        ctx.consts.api_default_per_page,
-    );
-
     // Search entries in the DB.
-    let (mut entries, total) = ctx.mgr.search(&query, offset, per_page).await?;
+    let (mut entries, total) = ctx.mgr.search(&query, query.offset, query.limit).await?;
 
     // Load relations for results.
     let status = if query.status.is_empty() {
@@ -85,20 +96,10 @@ pub async fn do_search(
             &query.types,
             &query.tags,
             status,
-            max_relations,
+            query.max_relations,
+            query.max_content_items,
         )
         .await?;
-
-    // Apply content item limit if specified.
-    if max_content_items > 0 {
-        for entry in &mut entries {
-            for rel in &mut entry.relations {
-                if rel.content.len() > max_content_items as usize {
-                    rel.content.0.truncate(max_content_items as usize);
-                }
-            }
-        }
-    }
 
     // Hide internal IDs for non-admin requests.
     if !is_admin {
@@ -115,9 +116,9 @@ pub async fn do_search(
 
     Ok(json(SearchResults {
         entries,
-        page,
-        per_page,
+        page: query.page,
+        per_page: query.limit,
         total,
-        total_pages: total_pages(total, per_page),
+        total_pages: total_pages(total, query.limit),
     }))
 }

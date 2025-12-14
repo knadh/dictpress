@@ -64,7 +64,7 @@ pub async fn get_entry(State(ctx): State<Arc<Ctx>>, Path(id): Path<i64>) -> Resu
     // Load relations (0 = no limit).
     let mut out = vec![entry];
     ctx.mgr
-        .load_relations(&mut out, "", &[], &[], "", 0)
+        .load_relations(&mut out, "", &[], &[], "", 0, 0)
         .await?;
     entry = out.remove(0);
 
@@ -87,7 +87,7 @@ pub async fn get_entry_by_guid(
     // Load relations (0 = no limit).
     let mut out = vec![entry];
     ctx.mgr
-        .load_relations(&mut out, "", &[], &[], "", 0)
+        .load_relations(&mut out, "", &[], &[], "", 0, 0)
         .await?;
     entry = out.remove(0);
 

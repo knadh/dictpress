@@ -229,6 +229,19 @@ pub struct SearchQuery {
 
     #[serde(default)]
     pub per_page: i32,
+
+    // Internal fields (not from HTTP query).
+    #[serde(skip)]
+    pub offset: i32,
+
+    #[serde(skip)]
+    pub limit: i32,
+
+    #[serde(skip)]
+    pub max_relations: i32, // 0 = no limit.
+
+    #[serde(skip)]
+    pub max_content_items: i32, // 0 = no limit.
 }
 
 /// Search results wrapper.

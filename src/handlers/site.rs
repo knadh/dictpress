@@ -7,8 +7,9 @@ use axum::{
 };
 use axum_extra::extract::Form;
 
-use super::Ctx;
-use crate::models::{Entry, Relation, SearchQuery, StringArray, STATUS_ENABLED, STATUS_PENDING};
+use super::search::do_search;
+use super::{paginate, Ctx};
+use crate::models::{Entry, Relation, SearchQuery, SearchResults, StringArray, STATUS_PENDING};
 
 #[derive(serde::Deserialize)]
 pub struct GlossaryParams {
@@ -93,90 +94,56 @@ pub async fn index(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
 
 /// Search page.
 pub async fn search(
-    State(context): State<Arc<Ctx>>,
+    State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang, query)): Path<(String, String, String)>,
 ) -> impl IntoResponse {
-    let mut ctx = base_context(&context);
-    ctx.insert("page_type", "search");
-    ctx.insert("query", &query);
+    let mut tpl_ctx = base_context(&ctx);
+    tpl_ctx.insert("page_type", "search");
+    tpl_ctx.insert("query", &query);
 
-    // Perform search
+    // Pagination.
+    let (page, per_page, offset) = paginate(
+        0,
+        0,
+        ctx.consts.site_max_per_page,
+        ctx.consts.site_default_per_page,
+    );
+
+    // Build query with site-specific limits.
     let q = SearchQuery {
         query: query.clone(),
         from_lang: from_lang.clone(),
         to_lang: to_lang.clone(),
+        page,
+        offset,
+        limit: per_page,
+        max_relations: ctx.consts.site_max_relations_per_type,
+        max_content_items: ctx.consts.site_max_content_items,
         ..Default::default()
     };
 
-    let per_page = context.consts.site_default_per_page;
-    let max_relations = context.consts.site_max_relations_per_type;
-    let max_content_items = context.consts.site_max_content_items;
-
-    match context.mgr.search(&q, 0, per_page).await {
-        Ok((mut entries, total)) => {
-            // Load relations for all entries with site-specific limits.
-            if let Err(e) = context
-                .mgr
-                .load_relations(
-                    &mut entries,
-                    &to_lang,
-                    &[],
-                    &[],
-                    STATUS_ENABLED,
-                    max_relations,
-                )
-                .await
-            {
-                log::error!("error loading relations: {}", e);
-            }
-
-            // Apply content item limit.
-            if max_content_items > 0 {
-                for entry in &mut entries {
-                    for rel in &mut entry.relations {
-                        if rel.content.len() > max_content_items as usize {
-                            rel.content.0.truncate(max_content_items as usize);
-                        }
-                    }
-                }
-            }
-
-            // Hide internal IDs for public site.
-            for e in &mut entries {
-                e.id = 0;
-                for r in &mut e.relations {
-                    r.id = 0;
-                    if let Some(rel) = &mut r.relation {
-                        rel.id = 0;
-                    }
-                }
-            }
-
-            let results = crate::models::SearchResults {
-                entries,
+    let results = match do_search(ctx.clone(), q, false).await {
+        Ok(resp) => resp.data.unwrap_or_else(|| SearchResults {
+            entries: vec![],
+            page: 1,
+            per_page,
+            total: 0,
+            total_pages: 0,
+        }),
+        Err(e) => {
+            log::error!("error searching: {}", e.message);
+            SearchResults {
+                entries: vec![],
                 page: 1,
                 per_page,
-                total,
-                total_pages: ((total as f64) / (per_page as f64)).ceil() as i32,
-            };
-            ctx.insert("results", &results);
+                total: 0,
+                total_pages: 0,
+            }
         }
-        Err(e) => {
-            log::error!("error searching: {}", e);
-            ctx.insert(
-                "results",
-                &crate::models::SearchResults {
-                    entries: vec![],
-                    page: 1,
-                    per_page,
-                    total: 0,
-                    total_pages: 0,
-                },
-            );
-        }
-    }
+    };
 
-    render(&context, "search.html", &ctx)
+    tpl_ctx.insert("results", &results);
+    render(&ctx, "search.html", &tpl_ctx)
 }
 
 /// Glossary page.
