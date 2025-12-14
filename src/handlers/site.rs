@@ -123,13 +123,7 @@ pub async fn search(
     };
 
     let results = match do_search(ctx.clone(), q, false).await {
-        Ok(resp) => resp.data.unwrap_or_else(|| SearchResults {
-            entries: vec![],
-            page: 1,
-            per_page,
-            total: 0,
-            total_pages: 0,
-        }),
+        Ok(results) => results,
         Err(e) => {
             log::error!("error searching: {}", e.message);
             SearchResults {

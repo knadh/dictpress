@@ -11,26 +11,26 @@ use crate::models::{RelationsQuery, SearchQuery, SearchResults, STATUS_ENABLED};
 /// Search a dictionary with query in path (public API).
 pub async fn search(
     State(ctx): State<Arc<Ctx>>,
-    Path((from_lang, to_lang, q)): Path<(String, String, String)>,
-    Query(mut query): Query<SearchQuery>,
+    Path((from_lang, to_lang, query)): Path<(String, String, String)>,
+    Query(mut q): Query<SearchQuery>,
 ) -> Result<ApiResp<SearchResults>> {
-    query.query = q;
-    query.from_lang = from_lang;
-    query.to_lang = to_lang;
+    q.query = query;
+    q.from_lang = from_lang;
+    q.to_lang = to_lang;
 
     // Pagination.
     let (page, per_page, offset) = paginate(
-        query.page,
-        query.per_page,
+        q.page,
+        q.per_page,
         ctx.consts.api_max_per_page,
         ctx.consts.api_default_per_page,
     );
 
-    query.page = page;
-    query.offset = offset;
-    query.limit = per_page;
+    q.page = page;
+    q.offset = offset;
+    q.limit = per_page;
 
-    do_search(ctx, query, false).await
+    Ok(json(do_search(ctx, q, false).await?))
 }
 
 /// Admin search (response includes internal IDs also).
@@ -53,15 +53,11 @@ pub async fn search_admin(
     query.offset = offset;
     query.limit = per_page;
 
-    do_search(ctx, query, true).await
+    Ok(json(do_search(ctx, query, true).await?))
 }
 
 /// Perform search. Reads offset/limit and max_relations/max_content_items from query.
-pub async fn do_search(
-    ctx: Arc<Ctx>,
-    query: SearchQuery,
-    is_admin: bool,
-) -> Result<ApiResp<SearchResults>> {
+pub async fn do_search(ctx: Arc<Ctx>, query: SearchQuery, is_admin: bool) -> Result<SearchResults> {
     if query.query.is_empty() {
         return Err(ApiErr::new("query is required", StatusCode::BAD_REQUEST));
     }
@@ -116,11 +112,11 @@ pub async fn do_search(
         }
     }
 
-    Ok(json(SearchResults {
+    Ok(SearchResults {
         entries,
         page: query.page,
         per_page: query.limit,
         total,
         total_pages: total_pages(total, query.limit),
-    }))
+    })
 }
