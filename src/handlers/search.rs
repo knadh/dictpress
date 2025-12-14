@@ -6,6 +6,7 @@ use axum::{
 };
 
 use super::{json, paginate, total_pages, ApiErr, ApiResp, Ctx, Result};
+use crate::cache::make_search_cache_key;
 use crate::models::{RelationsQuery, SearchQuery, SearchResults, STATUS_ENABLED};
 
 /// Search a dictionary with query in path (public API).
@@ -76,6 +77,27 @@ pub async fn do_search(ctx: Arc<Ctx>, query: SearchQuery, is_admin: bool) -> Res
         query.to_lang.clone()
     };
 
+    // Check cache for non-admin requests.
+    let cache_key = if !is_admin && ctx.cache.is_some() {
+        let key = make_search_cache_key(&query);
+        if let Some(cache) = &ctx.cache {
+            if let Some(cached) = cache.get(&key).await {
+                match rmp_serde::from_slice::<SearchResults>(&cached) {
+                    Ok(results) => {
+                        log::debug!("cache hit for search key={}", key);
+                        return Ok(results);
+                    }
+                    Err(e) => {
+                        log::warn!("failed to deserialize cached search results: {}", e);
+                    }
+                }
+            }
+        }
+        Some(key)
+    } else {
+        None
+    };
+
     // Search entries in the DB.
     let (mut entries, total) = ctx.mgr.search(&query, query.offset, query.limit).await?;
 
@@ -112,11 +134,27 @@ pub async fn do_search(ctx: Arc<Ctx>, query: SearchQuery, is_admin: bool) -> Res
         }
     }
 
-    Ok(SearchResults {
+    let results = SearchResults {
         entries,
         page: query.page,
         per_page: query.limit,
         total,
         total_pages: total_pages(total, query.limit),
-    })
+    };
+
+    // Cache the results for non-admin requests.
+    if let Some(key) = cache_key {
+        if let Some(cache) = &ctx.cache {
+            match rmp_serde::to_vec_named(&results) {
+                Ok(encoded) => {
+                    cache.put(&key, &encoded);
+                }
+                Err(e) => {
+                    log::warn!("failed to serialize search results for caching: {}", e);
+                }
+            }
+        }
+    }
+
+    Ok(results)
 }

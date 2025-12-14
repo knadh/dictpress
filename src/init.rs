@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use crate::cache::{Cache, CacheConfig, CacheError};
 use crate::models::{Config, Dicts, Lang, LangMap};
 use crate::tokenizer::{TokenizerError, Tokenizers};
 
@@ -173,4 +174,17 @@ pub fn i18n(
 /// Initialize lua tokenizers from a given directory.
 pub fn tokenizers(dir: &str) -> Result<Tokenizers, TokenizerError> {
     crate::tokenizer::load_all(Path::new(dir))
+}
+
+/// Initialize cache from configuration.
+pub async fn cache(cfg: &CacheConfig) -> Result<Cache, CacheError> {
+    log::info!(
+        "cache: mode={}, memory={}MB, disk={}MB, ttl={}, dir={}",
+        cfg.mode,
+        cfg.max_memory_mb,
+        cfg.max_disk_mb,
+        cfg.ttl,
+        cfg.dir
+    );
+    Cache::new(cfg).await
 }

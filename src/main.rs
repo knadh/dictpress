@@ -1,3 +1,4 @@
+mod cache;
 mod cli;
 mod config;
 mod db;
@@ -9,6 +10,11 @@ mod manager;
 mod models;
 mod sitemaps;
 mod tokenizer;
+
+// Use mimalloc for musl builds (musl's default malloc is very slow).
+#[cfg(target_env = "musl")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use std::sync::Arc;
 
@@ -204,6 +210,19 @@ async fn main() {
         }
     };
 
+    // Initialize cache controller if enabled.
+    let cache = if config.cache.enabled {
+        match init::cache(&config.cache).await {
+            Ok(c) => Some(Arc::new(c)),
+            Err(e) => {
+                log::error!("error initializing cache: {}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     // Preload static files (JS & CSS) for bundling.
     let static_files = http::preload_static_files(&cli.site);
 
@@ -212,6 +231,7 @@ async fn main() {
         mgr,
         langs,
         dicts,
+        cache,
         admin_tpl,
         site_tpl,
         site_path: cli.site.clone(),

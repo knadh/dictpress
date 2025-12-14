@@ -9,6 +9,8 @@ use sqlx::{
     Decode, Encode, FromRow, Sqlite, Type,
 };
 
+pub use crate::cache::CacheConfig;
+
 pub const STATUS_PENDING: &str = "pending";
 pub const STATUS_ENABLED: &str = "enabled";
 #[allow(dead_code)]
@@ -58,10 +60,79 @@ impl<'r> Decode<'r, Sqlite> for StringArray {
     }
 }
 
+/// JSON object stored as a String internally, but serialized as raw JSON.
+/// Kind of emulates json.RawMessage behaviour in Go.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(from = "serde_json::Value")]
+pub struct JsonString(pub String);
+
+impl From<serde_json::Value> for JsonString {
+    fn from(v: serde_json::Value) -> Self {
+        Self(v.to_string())
+    }
+}
+
+impl From<String> for JsonString {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl From<&str> for JsonString {
+    fn from(s: &str) -> Self {
+        Self(s.to_string())
+    }
+}
+
+impl serde::Serialize for JsonString {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if self.0.is_empty() || self.0 == "{}" {
+            // Serialize as empty object.
+            use serde::ser::SerializeMap;
+            serializer.serialize_map(Some(0))?.end()
+        } else {
+            // Parse the string as JSON and then serialize it.
+            let value: serde_json::Value = serde_json::from_str(&self.0)
+                .unwrap_or(serde_json::Value::Object(Default::default()));
+            value.serialize(serializer)
+        }
+    }
+}
+
+impl Type<Sqlite> for JsonString {
+    fn type_info() -> SqliteTypeInfo {
+        <String as Type<Sqlite>>::type_info()
+    }
+}
+
+impl<'q> Encode<'q, Sqlite> for JsonString {
+    fn encode_by_ref(
+        &self,
+        buf: &mut Vec<SqliteArgumentValue<'q>>,
+    ) -> std::result::Result<IsNull, BoxDynError> {
+        let s = if self.0.is_empty() {
+            "{}".to_string()
+        } else {
+            self.0.clone()
+        };
+        <String as Encode<Sqlite>>::encode(s, buf)
+    }
+}
+
+impl<'r> Decode<'r, Sqlite> for JsonString {
+    fn decode(value: SqliteValueRef<'r>) -> std::result::Result<Self, BoxDynError> {
+        let s = <String as Decode<Sqlite>>::decode(value)?;
+        Ok(Self(s))
+    }
+}
+
 /// Dictionary entry.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, FromRow)]
 pub struct Entry {
-    #[serde(skip_serializing_if = "is_zero")]
+    #[serde(default, skip_serializing_if = "is_zero")]
     pub id: i64,
 
     pub guid: String,
@@ -73,17 +144,14 @@ pub struct Entry {
     pub initial: String,
     pub weight: f64,
 
-    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub tokens: String,
 
     pub lang: String,
     pub tags: StringArray,
     pub phones: StringArray,
     pub notes: String,
-
-    #[sqlx(try_from = "String")]
-    pub meta: serde_json::Value,
-
+    pub meta: JsonString,
     pub status: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -94,7 +162,7 @@ pub struct Entry {
     pub relations: Vec<Entry>,
 
     #[sqlx(default)]
-    #[serde(skip_serializing_if = "is_zero_i32")]
+    #[serde(default, skip_serializing_if = "is_zero_i32")]
     pub total_relations: i32,
 
     // Pagination total (not serialized).
@@ -141,7 +209,7 @@ pub struct Entry {
 
     // Relation metadata (populated from relation_* fields).
     #[sqlx(skip)]
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub relation: Option<Relation>,
 }
 
@@ -156,7 +224,7 @@ fn is_zero_i32(v: &i32) -> bool {
 /// Relation between two entries.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Relation {
-    #[serde(skip_serializing_if = "is_zero")]
+    #[serde(default, skip_serializing_if = "is_zero")]
     pub id: i64,
     pub types: StringArray,
     pub tags: StringArray,
@@ -164,10 +232,10 @@ pub struct Relation {
     pub weight: f64,
     pub status: String,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<DateTime<Utc>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<DateTime<Utc>>,
 }
 
@@ -256,7 +324,7 @@ pub struct SearchQuery {
 }
 
 /// Search results wrapper.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchResults {
     pub entries: Vec<Entry>,
     pub page: i32,
@@ -295,6 +363,9 @@ pub type Dicts = Vec<DictPair>;
 pub struct Config {
     pub app: AppConfig,
     pub db: DbConfig,
+
+    #[serde(default)]
+    pub cache: CacheConfig,
 
     #[serde(default)]
     pub api_results: ApiResultsConfig,

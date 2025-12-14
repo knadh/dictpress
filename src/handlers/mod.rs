@@ -17,6 +17,7 @@ use serde::Serialize;
 use tera::Tera;
 
 use crate::{
+    cache::Cache,
     manager::Manager,
     models::{Dicts, LangMap},
 };
@@ -28,6 +29,7 @@ pub struct Ctx {
     pub mgr: Arc<Manager>,
     pub langs: LangMap,
     pub dicts: Dicts,
+    pub cache: Option<Arc<Cache>>,
 
     /// Admin templates (always loaded, embedded in binary).
     pub admin_tpl: Arc<Tera>,

@@ -228,7 +228,11 @@ impl Manager {
         let content_json = serde_json::to_string(&e.content.0).unwrap_or_else(|_| "[]".to_string());
         let tags_json = serde_json::to_string(&e.tags.0).unwrap_or_else(|_| "[]".to_string());
         let phones_json = serde_json::to_string(&e.phones.0).unwrap_or_else(|_| "[]".to_string());
-        let meta_json = serde_json::to_string(&e.meta).unwrap_or_else(|_| "{}".to_string());
+        let meta_json = if e.meta.0.is_empty() {
+            "{}".to_string()
+        } else {
+            e.meta.0.clone()
+        };
 
         let row = sqlx::query(&q.insert_entry.query)
             .bind(&guid)
@@ -260,7 +264,11 @@ impl Manager {
         let content_json = serde_json::to_string(&e.content.0).unwrap_or_else(|_| "[]".to_string());
         let tags_json = serde_json::to_string(&e.tags.0).unwrap_or_else(|_| "[]".to_string());
         let phones_json = serde_json::to_string(&e.phones.0).unwrap_or_else(|_| "[]".to_string());
-        let meta_json = serde_json::to_string(&e.meta).unwrap_or_else(|_| "{}".to_string());
+        let meta_json = if e.meta.0.is_empty() {
+            "{}".to_string()
+        } else {
+            e.meta.0.clone()
+        };
 
         sqlx::query(&q.update_entry.query)
             .bind(id)
@@ -432,7 +440,11 @@ impl Manager {
         let content_json = serde_json::to_string(&e.content.0).unwrap_or_else(|_| "[]".to_string());
         let tags_json = serde_json::to_string(&e.tags.0).unwrap_or_else(|_| "[]".to_string());
         let phones_json = serde_json::to_string(&e.phones.0).unwrap_or_else(|_| "[]".to_string());
-        let meta_json = serde_json::to_string(&e.meta).unwrap_or_else(|_| "{}".to_string());
+        let meta_json = if e.meta.0.is_empty() {
+            "{}".to_string()
+        } else {
+            e.meta.0.clone()
+        };
 
         let row: Option<(i64,)> = sqlx::query_as(&q.insert_submission_entry.query)
             .bind(&guid)

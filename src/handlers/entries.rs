@@ -7,7 +7,7 @@ use axum::{
 };
 
 use super::{json, ApiErr, ApiResp, Ctx, Result};
-use crate::models::{Entry, RelationsQuery};
+use crate::models::{Entry, JsonString, RelationsQuery};
 
 /// Entry creation/update request.
 #[derive(Debug, serde::Deserialize)]
@@ -28,7 +28,7 @@ pub struct EntryReq {
     #[serde(default)]
     pub notes: String,
     #[serde(default)]
-    pub meta: serde_json::Value,
+    pub meta: JsonString,
     #[serde(default)]
     pub status: String,
 }

@@ -35,6 +35,17 @@ regex = "1"
 csv = "1"
 base64 = "0.22"
 rust-stemmers = "1.2"
+foyer = "0.21"
+bytes = "1"
+bincode = "1"
+rmp-serde = "1"
+md5 = "0.8"
+mimalloc = { version = "0.1", default-features = false }
+
+[features]
+default = []
+# Use mimalloc for musl builds (musl's malloc is very slow)
+musl = []
 
 [profile.release]
 strip = true

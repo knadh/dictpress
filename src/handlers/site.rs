@@ -9,7 +9,10 @@ use axum_extra::extract::Form;
 
 use super::search::do_search;
 use super::{paginate, Ctx};
-use crate::models::{Entry, Relation, SearchQuery, SearchResults, StringArray, STATUS_PENDING};
+use crate::cache::make_glossary_cache_key;
+use crate::models::{
+    Entry, GlossaryWord, Relation, SearchQuery, SearchResults, StringArray, STATUS_PENDING,
+};
 
 #[derive(serde::Deserialize)]
 pub struct GlossaryParams {
@@ -19,9 +22,16 @@ pub struct GlossaryParams {
 
 #[derive(serde::Serialize)]
 struct GlossaryData {
-    words: Vec<crate::models::GlossaryWord>,
+    words: Vec<GlossaryWord>,
     from_lang: String,
     to_lang: String,
+}
+
+/// Cached glossary response (words + total).
+#[derive(serde::Serialize, serde::Deserialize)]
+struct CachedGlossary {
+    words: Vec<GlossaryWord>,
+    total: i64,
 }
 
 #[derive(serde::Deserialize)]
@@ -179,37 +189,41 @@ pub async fn render_glossary_page(
     );
     ctx.insert("pg_url", &pg_url);
 
-    match context
-        .mgr
-        .get_glossary_words(&from_lang, &initial, offset, per_page)
-        .await
-    {
-        Ok((words, total)) => {
-            let g = GlossaryData {
-                words,
-                from_lang: from_lang.clone(),
-                to_lang: to_lang.clone(),
-            };
-            ctx.insert("glossary", &g);
-            ctx.insert("page", &page);
-            ctx.insert("per_page", &per_page);
-            ctx.insert("total", &total);
-            let total_pages = ((total as f64) / (per_page as f64)).ceil() as i32;
-            ctx.insert("total_pages", &total_pages);
-        }
-        Err(e) => {
-            log::error!("glossary error: {}", e);
-            ctx.insert(
-                "glossary",
-                &GlossaryData {
-                    words: vec![],
-                    from_lang,
-                    to_lang,
-                },
-            );
-            ctx.insert("total_pages", &0);
-        }
-    }
+    // Fetch glossary words (from cache or DB).
+    let (words, total) =
+        match get_glossary_words(&context, &from_lang, &initial, offset, per_page).await {
+            Ok(result) => result,
+            Err(e) => {
+                log::error!("glossary error: {}", e);
+                ctx.insert(
+                    "glossary",
+                    &GlossaryData {
+                        words: vec![],
+                        from_lang,
+                        to_lang,
+                    },
+                );
+                ctx.insert("total_pages", &0);
+                return match render(&context, "glossary.html", &ctx) {
+                    Ok(html) => html.into_response(),
+                    Err(e) => e.into_response(),
+                };
+            }
+        };
+
+    let total_pages = ((total as f64) / (per_page as f64)).ceil() as i32;
+    ctx.insert(
+        "glossary",
+        &GlossaryData {
+            words,
+            from_lang: from_lang.clone(),
+            to_lang: to_lang.clone(),
+        },
+    );
+    ctx.insert("page", &page);
+    ctx.insert("per_page", &per_page);
+    ctx.insert("total", &total);
+    ctx.insert("total_pages", &total_pages);
 
     match render(&context, "glossary.html", &ctx) {
         Ok(html) => html.into_response(),
@@ -397,6 +411,45 @@ pub async fn submit_entry(
         "Submitted",
         "Your entry has been submitted for review.",
     )
+}
+
+/// Fetch glossary words from cache or DB. Caches result if cache is enabled.
+async fn get_glossary_words(
+    ctx: &Ctx,
+    lang: &str,
+    initial: &str,
+    offset: i32,
+    limit: i32,
+) -> Result<(Vec<GlossaryWord>, i64), Box<dyn std::error::Error + Send + Sync>> {
+    // Try cache first if it's enabled.
+    if let Some(cache) = &ctx.cache {
+        let key = make_glossary_cache_key(lang, initial, offset, limit);
+        if let Some(data) = cache.get(&key).await {
+            if let Ok(cached) = rmp_serde::from_slice::<CachedGlossary>(&data) {
+                return Ok((cached.words, cached.total));
+            }
+        }
+    }
+
+    // Fetch from DB.
+    let (words, total) = ctx
+        .mgr
+        .get_glossary_words(lang, initial, offset, limit)
+        .await?;
+
+    // Cache the result if caching is enabled.
+    if let Some(cache) = &ctx.cache {
+        let key = make_glossary_cache_key(lang, initial, offset, limit);
+        let cached = CachedGlossary {
+            words: words.clone(),
+            total,
+        };
+        if let Ok(encoded) = rmp_serde::to_vec_named(&cached) {
+            cache.put(&key, &encoded);
+        }
+    }
+
+    Ok((words, total))
 }
 
 /// Helper to render the message template.

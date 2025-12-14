@@ -41,6 +41,28 @@ dicts = [["english", "english"]]
 max_conns = 100
 
 
+[cache]
+# Cache public search results to speed up repeated queries. On large dictionary
+# databases that get a lot of public traffic, enabling caching can significantly
+# reduce the load on the database and speed up response times.
+enabled = false
+
+# How long cached entries should live (e.g., "72h", "30m", "1d").
+ttl = "72h"
+
+# Cache mode: "memory" (RAM only) or "hybrid" (RAM + disk).
+mode = "hybrid"
+
+# Maximum memory (in MB) for the in-memory cache.
+max_memory_mb = 128
+
+# Maximum disk size (in MB) for the disk cache (hybrid mode only).
+max_disk_mb = 512
+
+# Directory for disk cache storage (hybrid mode only).
+dir = "/tmp/dictpress-cache"
+
+
 [api_results]
 # Default number of entries to return per page when paginated.
 per_page = 10
