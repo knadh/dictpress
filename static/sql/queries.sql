@@ -2,7 +2,7 @@
 -- FTS5 search with length-based ranking (shorter content ranks higher).
 -- Exact content matches get extra boost via negative rank adjustment.
 -- $1: lang, $2: raw query, $3: FTS query, $4: status, $5: offset, $6: limit
-SELECT DISTINCT e.*,
+SELECT e.*,
        JSON_ARRAY_LENGTH(e.content) AS content_length,
        -- Rank: weight - (50 - content_length). Shorter content = more negative = ranks first.
        -- Exact matches get extra -1000 boost to always rank highest.
@@ -12,11 +12,10 @@ SELECT DISTINCT e.*,
        COUNT(*) OVER() AS total
 FROM entries e
 INNER JOIN entries_fts fts ON fts.rowid = e.id
-INNER JOIN relations r ON e.id = r.from_id
 WHERE entries_fts MATCH $3
+  AND EXISTS (SELECT 1 FROM relations r WHERE r.from_id = e.id)
   AND ($1 = '' OR e.lang = $1)
   AND ($4 = '' OR e.status = $4)
-  AND $2 != ''
 ORDER BY rank
 LIMIT $6 OFFSET $5;
 
@@ -70,12 +69,8 @@ WHERE ($2 = '' OR e.lang = $2)
 ORDER BY sub.from_id, sub.relation_types, sub.relation_weight;
 
 -- name: get-entry
-SELECT *, JSON_ARRAY_LENGTH(content) AS content_length FROM entries WHERE
-    CASE
-        WHEN $1 > 0 THEN id = $1
-        WHEN $2 != '' THEN guid = $2
-        ELSE 0
-    END;
+SELECT *, JSON_ARRAY_LENGTH(content) AS content_length FROM entries
+WHERE ($1 > 0 AND id = $1) OR ($1 <= 0 AND $2 != '' AND guid = $2);
 
 -- name: get-parent-relations
 SELECT e.*, r.id AS relation_id FROM entries e
@@ -150,7 +145,7 @@ SELECT json_object(
     'entries', (SELECT COUNT(*) FROM entries),
     'relations', (SELECT COUNT(*) FROM relations),
     'languages', (
-        SELECT json_group_object(lang, cnt) FROM (
+        SELECT JSON_GROUP_OBJECT(lang, cnt) FROM (
             SELECT lang, COUNT(*) AS cnt FROM entries GROUP BY lang
         )
     )
@@ -172,7 +167,7 @@ INSERT INTO entries (guid, content, initial, weight, tokens, lang, tags, phones,
     SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
     WHERE NOT EXISTS (
         SELECT 1 FROM entries
-        WHERE lower(substr(json_extract(content, '$[0]'), 1, 50)) = lower(substr(json_extract($2, '$[0]'), 1, 50))
+        WHERE content_head = LOWER(SUBSTR(JSON_EXTRACT($2, '$[0]'), 1, 50))
         AND lang = $6 AND status != 'disabled'
     )
     RETURNING id;

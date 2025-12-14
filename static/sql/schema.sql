@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS entries (
 ) STRICT;
 
 CREATE INDEX IF NOT EXISTS idx_entries_initial ON entries(initial);
-CREATE INDEX IF NOT EXISTS idx_entries_lang ON entries(lang);
 CREATE INDEX IF NOT EXISTS idx_entries_status ON entries(status);
+CREATE INDEX IF NOT EXISTS idx_entries_lang_status ON entries(lang, status);
 
 CREATE INDEX IF NOT EXISTS idx_entries_content_head ON entries(content_head);
 
@@ -69,8 +69,9 @@ CREATE TABLE IF NOT EXISTS relations (
     UNIQUE(from_id, to_id)
 ) STRICT;
 
-CREATE INDEX IF NOT EXISTS idx_relations_from ON relations(from_id);
 CREATE INDEX IF NOT EXISTS idx_relations_to ON relations(to_id);
+CREATE INDEX IF NOT EXISTS idx_relations_status ON relations(status);
+CREATE INDEX IF NOT EXISTS idx_relations_from_status ON relations(from_id, status);
 
 CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
