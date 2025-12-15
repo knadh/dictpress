@@ -40,12 +40,10 @@ bytes = "1"
 bincode = "1"
 rmp-serde = "1"
 md5 = "0.8"
-mimalloc = { version = "0.1", default-features = false }
 
-[features]
-default = []
-# Use mimalloc for musl builds (musl's malloc is very slow)
-musl = []
+# Use mimalloc for musl builds (musl's default malloc is very slow).
+[target.'cfg(target_env = "musl")'.dependencies]
+mimalloc = { version = "0.1", default-features = false }
 
 [profile.release]
 strip = true
