@@ -1,52 +1,58 @@
-<section x-data="relationComponent()"
+<div x-data="relationComponent()"
     @open-relation-form.window="onOpen"
     @keyup.escape.window="onClose"
     @close-relation-form.window="onClose">
     <template x-if="isVisible">
-        <div class="panel relation-form">
-            <h3>Edit relation</h3>
+        <aside class="side-panel">
+            <header>
+                <h3>Edit relation</h3>
+                <button class="outline secondary" @click.prevent="onClose">&times;</button>
+            </header>
+
             <form @submit.prevent="onSave">
-                <div x-text="entry.parent.content"></div>
-                <div>&darr;</div>
-                <div x-text="entry.content"></div>
-                <hr />
+                <figure class="relation-diagram">
+                    <div x-text="entry.parent.content"></div>
+                    <span>&darr;</span>
+                    <div x-text="entry.content"></div>
+                </figure>
+
                 <template x-if="Object.keys(config.languages[entry.lang].types).length > 0">
-                    <fieldset class="row">
-                        <div class="column six">
-                            <label>Relation types</label>
-                            <select name="lang" x-model="entry.relation.types" multiple>
+                    <div>
+                        <label>
+                            Relation type
+                            <select x-model="entry.relation.types" multiple>
                                 <template x-for="[id, typ] in Object.entries(config.languages[entry.lang].types)" :key="id">
-                                  <option :value="id" x-text="typ" x-bind:selected="entry.relation.types.indexOf(id) > -1"></option>
+                                    <option :value="id" x-text="typ" x-bind:selected="entry.relation.types.indexOf(id) > -1"></option>
                                 </template>
                             </select>
-                            <span class="help">Ctrl+click to select multiple values</span>
-                        </div>
-                        <div class="column six">
-                            <label>Relation tags</label>
-                            <textarea name="tags" x-model="entry.relation.tags"></textarea>
-                            <span class="help">One per line</span>
-                        </div>
-                    </fieldset>
+                        </label>
+
+                        <label>
+                            Tags
+                            <textarea x-model="entry.relation.tags" rows="2" placeholder="One per line"></textarea>
+                        </label>
+                    </div>
                 </template>
 
-                <fieldset>
-                    <label>Relation notes</label>
-                    <textarea name="notes" x-model="entry.relation.notes"></textarea>
-                </fieldset>
+                <label>
+                    Notes
+                    <textarea x-model="entry.relation.notes" rows="2"></textarea>
+                </label>
 
-                <fieldset class="buttons">
-                    <button type="submit" class="button">Save</button>
-                    <button type="button" class="button button-outline" @click.prevent="onClose">Close</button>
+                <fieldset role="group">
+                    <button type="submit">Save</button>
+                    <button type="button" class="secondary" @click.prevent="onClose">Cancel</button>
                 </fieldset>
             </form>
 
-            <ul class="no meta">
-                <li><label>Created</label> <span x-text="entry.relation.created_at.slice(0, 16).replace('T', ' ')"></span></li>
-                <li><label>Updated</label> <span x-text="entry.relation.created_at.slice(0, 16).replace('T', ' ')"></span></li>
-                <li><label>Relation ID</label> <span x-text="entry.relation.id"></span></li>
-                <li><label>Parent ID</label> <span x-text="entry.parent.id"></span></li>
-                <li><label>Definition ID</label> <span x-text="entry.id"></span></li>
-            </ul>
-        </div>
+            <footer>
+                <small>
+                    <strong>Relation ID:</strong> <code x-text="entry.relation.id"></code> &middot;
+                    <strong>Parent ID:</strong> <code x-text="entry.parent.id"></code><br>
+                    <strong>Definition ID:</strong> <code x-text="entry.id"></code> &middot;
+                    <strong>Created:</strong> <span x-text="entry.relation.created_at.slice(0, 16).replace('T', ' ')"></span>
+                </small>
+            </footer>
+        </aside>
     </template>
-</section>
+</div>

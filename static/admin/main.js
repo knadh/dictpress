@@ -353,7 +353,7 @@ function entryComponent() {
                 content: Array.isArray(data.content) ? [...data.content] : [data.content || ''],
                 phones: data.phones.join('\n'),
                 tags: data.tags.join('\n'),
-                tokens: data.tokens.split(' ').join('\n'),
+                tokens: data.tokens ? data.tokens.split(' ').join('\n') : '',
                 meta_str: JSON.stringify(data.meta, null, 2)
             };
             this.parentEntries = [];
