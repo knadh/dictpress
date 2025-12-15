@@ -3,7 +3,7 @@
 <head>
 	<title>{{ title }}{% if title %} |{% endif %} DictPress</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<link rel="stylesheet" type="text/css" href="/admin/static/grid.css?v={{ asset_ver }}">
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<link rel="stylesheet" type="text/css" href="/admin/static/style.css?v={{ asset_ver }}">
 	<link rel="shortcut icon" href="/admin/static/favicon.png?v={{ asset_ver }}" type="image/x-icon" />
 
@@ -11,7 +11,6 @@
 	<script defer src="/admin/static/main.js?v={{ asset_ver }}"></script>
 	<script defer src="/admin/static/alpine.js?v={{ asset_ver }}"></script>
 
-	{# Load additional admin assets from config #}
 	{% for asset in consts.admin_css_assets %}
 	<link rel="stylesheet" type="text/css" href="{{ asset }}">
 	{% endfor %}
@@ -21,48 +20,39 @@
 </head>
 <body x-init="onLoad()" x-data="globalComponent()">
 <template x-if="ready">
-	<div class="container wrap">
+	<div class="app">
 		<header class="header">
-			<div class="row">
-				<div class="three columns logo">
-					<a href="/admin"><img src="/admin/static/logo.svg?v={{ asset_ver }}" alt="logo" /></a>
-					<template x-if="Object.keys(loading).length > 0"><span class="loading"></span></template>
-				</div>
-				<nav class="eight columns nav">
-					<a href="" @click.prevent="onNewEntry">Add new</a>
-					<a href="/admin/pending">Pending</a>
-				</nav>
-			</div>
+			<a href="/admin" class="logo">
+				<img src="/admin/static/logo.svg?v={{ asset_ver }}" alt="DictPress" />
+			</a>
+			<template x-if="Object.keys(loading).length > 0"><span class="spinner"></span></template>
+			<nav>
+				<a href="" @click.prevent="onNewEntry">+ New entry</a>
+				<a href="/admin/pending">Pending</a>
+			</nav>
 		</header>
 
-		<form class="search" action="/admin/search" x-data="searchFormComponent()" @submit="onSearch">
-			<fieldset class="row">
-				<div class="column four">
-	    			<select name="from_lang" x-model="fromLang">
-	    				<option value="*id">*ID</option>
-					    <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
-					      <option :value="id" x-text="l.name" x-bind:selected="id === fromLang"></option>
-					    </template>
-	    			</select>
-	    		</div>
-				<div class="column six">
-	    			<input type="text" name="query" x-model="query" placeholder="Search" required autofocus="true" />
-	    		</div>
-				<div class="column two">
-	    			<button class="button" type="submit" x-bind:disabled="loading['entries.search'] === true">Search</button>
-	    		</div>
-			</fieldset>
-		</form>
+		<main>
+			<form class="search-box" action="/admin/search" x-data="searchFormComponent()" @submit="onSearch">
+				<select name="from_lang" x-model="fromLang">
+					<option value="*id">ID</option>
+					<template x-for="[id, l] in Object.entries(config.languages)" :key="id">
+						<option :value="id" x-text="l.name" x-bind:selected="id === fromLang"></option>
+					</template>
+				</select>
+				<input type="text" name="query" x-model="query" placeholder="Search entries..." required autofocus />
+				<button type="submit" x-bind:disabled="loading['entries.search'] === true">Search</button>
+			</form>
 
-		{% block content %}{% endblock %}
+			{% block content %}{% endblock %}
+		</main>
 
 		{% include "admin/entry.html" %}
+
+		<footer>
+			<a href="https://dict.press">DictPress <span x-text="config.version"></span></a>
+		</footer>
 	</div>
 </template>
-<footer class="footer">
-	<a href="https://dict.press">
-		DictPress <span x-text="config.version"></span>
-	</a>
-</footer>
 </body>
 </html>

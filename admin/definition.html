@@ -3,65 +3,71 @@
     @keyup.escape.window="onClose"
     @close-definition-form.window="onClose">
     <template x-if="isVisible">
-        <div class="panel relation-form">
-            <h3>Add definition</h3>
-            <form @submit.prevent="onSave">
-                <div>
-                    <template x-for="(item, idx) in parent.content" :key="idx">
-                        <span x-text="item" style="display: block;"></span>
-                    </template>
+        <aside class="panel">
+            <div class="panel-header">
+                <h2>Add definition</h2>
+                <button class="panel-close" @click.prevent="onClose">&times;</button>
+            </div>
+
+            <form @submit.prevent="onSave" class="panel-body">
+                <div class="relation-preview">
+                    <div class="from-entry">
+                        <template x-for="(item, idx) in parent.content" :key="idx">
+                            <span x-text="item"></span>
+                        </template>
+                    </div>
+                    <span class="arrow">↓</span>
                 </div>
-                <div>&darr;</div>
-                <div>
+
+                <div class="form-group">
                     <label>Definition</label>
                     <template x-for="(item, idx) in def.content" :key="idx">
-                        <div style="margin-bottom: 0.5rem;">
-                            <textarea required x-model="def.content[idx]" x-ref="contentInput" :autofocus="idx === 0" style="width: calc(100% - 60px); display: inline-block;"></textarea>
-                            <a href="#" @click.prevent="onDeleteDefContentItem(idx)" x-show="def.content.length > 1" style="margin-left: 0.5rem;">Delete</a>
+                        <div class="input-with-action">
+                            <textarea x-model="def.content[idx]" required :autofocus="idx === 0" rows="2"></textarea>
+                            <button type="button" class="remove-btn" @click.prevent="onDeleteDefContentItem(idx)" x-show="def.content.length > 1">&times;</button>
                         </div>
                     </template>
-                    <a href="#" @click.prevent="onAddDefContentItem">+ Add</a>
+                    <button type="button" class="add-btn" @click.prevent="onAddDefContentItem">+ Add variant</button>
                 </div>
-                <br />
+
                 <template x-if="Object.keys(config.languages[parent.lang].types).length > 0">
-                    <fieldset class="row">
-                        <div class="column four">
-                            <label>Language</label>
-                            <select name="lang" x-model="def.lang">
-                                <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
-                                  <option :value="id" x-text="l.name"></option>
-                                </template>
-                            </select>
+                    <div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Language</label>
+                                <select x-model="def.lang">
+                                    <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
+                                        <option :value="id" x-text="l.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Relation type</label>
+                                <select x-model="def.types" multiple required>
+                                    <template x-for="[id, typ] in Object.entries(config.languages[def.lang].types)" :key="id">
+                                        <option :value="id" x-text="typ"></option>
+                                    </template>
+                                </select>
+                            </div>
                         </div>
 
-                        <div class="column four">
-                            <label>Relation types</label>
-                            <select name="lang" x-model="def.types" multiple required>
-                                <template x-for="[id, typ] in Object.entries(config.languages[def.lang].types)" :key="id">
-                                  <option :value="id" x-text="typ"></option>
-                                </template>
-                            </select>
-                            <span class="help">Ctrl+click to select multiple values</span>
+                        <div class="form-group">
+                            <label>Tags</label>
+                            <textarea x-model="def.tags" rows="2" placeholder="One per line"></textarea>
                         </div>
-
-                        <div class="column four">
-                            <label>Relation tags</label>
-                            <textarea name="tags" x-model="def.tags"></textarea>
-                            <span class="help">One per line</span>
-                        </div>
-                    </fieldset>
+                    </div>
                 </template>
 
-                <fieldset>
+                <div class="form-group">
                     <label>Notes</label>
-                    <textarea name="notes" x-model="def.notes"></textarea>
-                </fieldset>
+                    <textarea x-model="def.notes" rows="2"></textarea>
+                </div>
 
-                <fieldset class="buttons">
-                    <button type="submit" class="button">Save</button>
-                    <button type="button" class="button button-outline" @click.prevent="onClose">Close</button>
-                </fieldset>
+                <div class="panel-actions">
+                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" class="btn-secondary" @click.prevent="onClose">Cancel</button>
+                </div>
             </form>
-        </div>
+        </aside>
     </template>
 </section>

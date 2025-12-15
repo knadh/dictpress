@@ -3,128 +3,126 @@
     @keyup.escape.window="onClose"
     @close-entry-form.window="onClose">
     <template x-if="isVisible">
-        <div class="panel entry-form">
-            <h3 x-text="isNew ? 'New entry' : 'Edit entry'"></h3>
-            <form @submit.prevent="onSave">
-                <fieldset class="box">
-                    <div class="row">
-                        <div class="column nine">
-                            <label>Content</label>
-                            <template x-for="(item, idx) in entry.content" :key="idx">
-                                <div style="margin-bottom: 0.5rem;">
-                                    <textarea required x-model="entry.content[idx]" x-ref="contentInput" :autofocus="idx === 0"></textarea>
-                                    <a href="#" @click.prevent="onDeleteContentItem(idx)" x-show="entry.content.length > 1" class="text-xsmall float-right">Delete</a>
-                                </div>
-                            </template>
-                            <a href="#" @click.prevent="onAddContentItem">+ Add</a>
+        <aside class="panel">
+            <div class="panel-header">
+                <h2 x-text="isNew ? 'New entry' : 'Edit entry'"></h2>
+                <button class="panel-close" @click.prevent="onClose">&times;</button>
+            </div>
+
+            <form @submit.prevent="onSave" class="panel-body">
+                <div class="form-group">
+                    <label>Content</label>
+                    <template x-for="(item, idx) in entry.content" :key="idx">
+                        <div class="input-with-action">
+                            <textarea x-model="entry.content[idx]" required :autofocus="idx === 0" rows="2"></textarea>
+                            <button type="button" class="remove-btn" @click.prevent="onDeleteContentItem(idx)" x-show="entry.content.length > 1">&times;</button>
                         </div>
-                        <div class="column three">
-                            <label>Initial</label>
-                            <input required type="text" name="initial" x-model="entry.initial" @focus="onFocusInitial" />
-                            <span class="help">First letter</span>
-                        </div>
-                    </div>
-                    <div>
+                    </template>
+                    <button type="button" class="add-btn" @click.prevent="onAddContentItem">+ Add variant</button>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
                         <label>Language</label>
-                        <select name="lang" x-model="entry.lang" required>
+                        <select x-model="entry.lang" required>
                             <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
-                              <option :value="id" x-text="l.name" x-bind:selected="id === entry.lang"></option>
+                                <option :value="id" x-text="l.name" x-bind:selected="id === entry.lang"></option>
                             </template>
                         </select>
                     </div>
-                </fieldset>
+                    <div class="form-group" style="flex: 0 0 100px;">
+                        <label>Initial</label>
+                        <input type="text" x-model="entry.initial" @focus="onFocusInitial" required />
+                    </div>
+                </div>
 
-                <p>
-                    <a href="" @click.prevent="onToggleOptions">
-                        <span x-text="!isFormOpen ? 'More options +' : 'Hide options -'"></span>
-                    </a>
-                </p>
-                <template x-if="isFormOpen">
-                    <div class="box">
-                        <fieldset class="row">
-                            <div class="column six">
+                <details class="options-section">
+                    <summary>Advanced options</summary>
+                    <div class="options-content">
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label>Status</label>
-                                <select name="status" x-model="entry.status" required>
+                                <select x-model="entry.status" required>
                                     <option value="enabled">Enabled</option>
                                     <option value="disabled">Disabled</option>
                                 </select>
+                                <small class="help">Disabled entries are hidden from public view</small>
                             </div>
-                            <div class="column six">
+                            <div class="form-group">
                                 <label>Weight</label>
-                                <input type="number" step="0.01" x-model="entry.weight" />
-                                <span class="help">Sort order. Enter 0 to automatically set.</span>
+                                <input type="number" step="0.01" x-model="entry.weight" placeholder="0 = auto" />
+                                <small class="help">Smaller (negative) values rank higher in search results. 0 = automatic</small>
                             </div>
-                        </fieldset>
+                        </div>
 
-                        <fieldset class="row">
-                            <div class="column four">
-                                <label>Phonetic notations</label>
-                                <textarea name="phones" x-model="entry.phones" cols="10"></textarea>
-                                <span class="help">One per line</span>
-                            </div>
-                            <div class="column four">
-                                <label>Tags</label>
-                                <textarea name="tags" x-model="entry.tags"></textarea>
-                                <span class="help">One per line</span>
-                            </div>
-                            <div class="column four">
-                                <label>Search tokens</label>
-                                <textarea name="tokens" x-model="entry.tokens"></textarea>
-                                <span class="help">FTS tokens. One per line. Leave empty to auto-generate.</span>
-                            </div>
-                        </fieldset>
+                        <div class="form-group">
+                            <label>Phonetic notations</label>
+                            <textarea x-model="entry.phones" rows="2" placeholder="One per line"></textarea>
+                            <small class="help">IPA or other phonetic transcriptions for pronunciation</small>
+                        </div>
 
-                        <fieldset>
+                        <div class="form-group">
+                            <label>Tags</label>
+                            <textarea x-model="entry.tags" rows="2" placeholder="One per line"></textarea>
+                            <small class="help">Custom strings to categorize entries (e.g., formal, archaic, source:somedict)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Search tokens</label>
+                            <textarea x-model="entry.tokens" rows="2" placeholder="One per line (blank = auto)"></textarea>
+                            <small class="help">Fulltext (stemmed) search tokens for search indexing</small>
+                        </div>
+
+                        <div class="form-group">
                             <label>Notes</label>
-                            <textarea name="notes" x-model="entry.notes"></textarea>
-                        </fieldset>
+                            <textarea x-model="entry.notes" rows="2"></textarea>
+                            <small class="help">Optional notes describing the entry</small>
+                        </div>
 
-                        <fieldset>
-                            <label>Meta</label>
-                            <textarea name="meta" x-model="entry.meta_str"></textarea>
-                        </fieldset>
+                        <div class="form-group">
+                            <label>Meta (JSON)</label>
+                            <textarea x-model="entry.meta_str" rows="2" class="mono"></textarea>
+                            <small class="help">Custom metadata as a JSON object. Can be used in templating.</small>
+                        </div>
                     </div>
-                </template>
-                <br />
-                <fieldset class="buttons">
-                    <button class="button button-outline float-right" @click.prevent="onDeleteEntry"
-                        x-bind:disabled="loading['entries.delete'] === true">Delete</button>
-                    <button type="submit" class="button"
-                        x-bind:disabled="loading['entries.update'] === true || loading['entries.create'] === true">Save</button>
-                    <button class="button button-outline" @click.prevent="onClose">Close</button>
-                </fieldset>
+                </details>
+
+                <div class="panel-actions">
+                    <button type="submit" class="btn-primary" x-bind:disabled="loading['entries.update'] === true || loading['entries.create'] === true">
+                        Save
+                    </button>
+                    <button type="button" class="btn-secondary" @click.prevent="onClose">Cancel</button>
+                    <button type="button" class="btn-danger" @click.prevent="onDeleteEntry" x-show="!isNew" x-bind:disabled="loading['entries.delete'] === true">
+                        Delete
+                    </button>
+                </div>
             </form>
 
             <template x-if="!isNew">
-                <ul class="no meta">
-                    <li><label>ID</label> <span x-text="entry.id"></span></li>
-                    <li><label>GUID</label> <span x-text="entry.guid"></span></li>
-                    <li><label>Created</label> <span x-text="entry.created_at.slice(0, 16).replace('T', ' ')"></span></li>
-                    <li><label>Updated</label> <span x-text="entry.updated_at.slice(0, 16).replace('T', ' ')"></span></li>
-                </ul>
+                <div class="panel-meta">
+                    <p><span>ID</span> <code x-text="entry.id"></code></p>
+                    <p><span>GUID</span> <code x-text="entry.guid"></code></p>
+                    <p><span>Created</span> <span x-text="entry.created_at.slice(0, 16).replace('T', ' ')"></span></p>
+                    <p><span>Updated</span> <span x-text="entry.updated_at.slice(0, 16).replace('T', ' ')"></span></p>
+                </div>
             </template>
 
             <template x-if="!isNew && parentEntries.length > 0">
-                <div class="parents">
+                <div class="panel-section">
                     <h3>Parent entries (<span x-text="parentEntries.length"></span>)</h3>
-                    <ol class="relations">
+                    <ul class="parent-list">
                         <template x-for="r in parentEntries" :key="r.id">
-                            <li class="rel">
-                                <p>
-                                    <a x-bind:href="makeURL({'id': r.id})" class="content">
-                                        <template x-for="(item, idx) in r.content" :key="idx">
-                                            <span><span x-text="item"></span><span x-show="idx < r.content.length - 1">, </span></span>
-                                        </template>
-                                    </a>
-                                    <template x-if="r.phones.length > 0">
-                                        <span class="phones" x-text="r.phones.join(', ')"></span>
+                            <li>
+                                <a x-bind:href="makeURL({'id': r.id})">
+                                    <template x-for="(item, idx) in r.content" :key="idx">
+                                        <span><span x-text="item"></span><span x-show="idx < r.content.length - 1">, </span></span>
                                     </template>
-                                </p>
+                                </a>
                             </li>
                         </template>
-                    </ol>
+                    </ul>
                 </div>
             </template>
-        </div>
+        </aside>
     </template>
 </section>
