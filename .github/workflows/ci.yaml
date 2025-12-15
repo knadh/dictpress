@@ -1,17 +1,30 @@
+name: CI
+
 on:
   push:
-    branches:
-      - master
+    branches: [master]
   pull_request:
-    branches:
-    - master
+    branches: [master]
 
 jobs:
-  unittests:
-    name: Run Unit Tests
+  test:
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v2
-      - name: run unit tests
-        run: make test
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Run tests
+        run: cargo test
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -W clippy::all

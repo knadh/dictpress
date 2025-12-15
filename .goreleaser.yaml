@@ -1,0 +1,49 @@
+version: 2
+project_name: dictpress
+
+before:
+  hooks:
+    - rustup default stable
+    - cargo install --locked cargo-zigbuild
+    - cargo fetch --locked
+
+builds:
+  - builder: rust
+    targets:
+      - x86_64-unknown-linux-gnu
+      - x86_64-unknown-linux-musl
+      - aarch64-unknown-linux-gnu
+      # NOTE: macOS/Windows targets excluded due to mimalloc cross-compilation issues
+      # The mimalloc C library can't cross-compile with cargo-zigbuild:
+      # - macOS: Missing CommonCrypto headers
+      # - Windows: -Werror,-Wdate-time fails on __DATE__/__TIME__ macros
+      #
+      # To enable macOS/Windows targets, make mimalloc optional in Cargo.toml:
+      #   mimalloc = { version = "0.1", default-features = false, optional = true }
+      #   [features]
+      #   musl = ["mimalloc"]
+
+archives:
+  - format: tar.gz
+    # Include Target to differentiate gnu vs musl builds
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Target }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+# universal_binaries disabled: no macOS targets currently
+# universal_binaries:
+#   - replace: true
+
+release:
+  footer: |
+    ---
+    Released with [GoReleaser](https://goreleaser.com).
