@@ -47,11 +47,11 @@ CREATE TRIGGER IF NOT EXISTS trg_entries_ai AFTER INSERT ON entries BEGIN
 END;
 
 CREATE TRIGGER IF NOT EXISTS trg_entries_ad AFTER DELETE ON entries BEGIN
-    DELETE FROM entries_fts WHERE rowid = OLD.id;
+    INSERT INTO entries_fts(entries_fts, rowid, tokens) VALUES('delete', OLD.id, OLD.tokens);
 END;
 
 CREATE TRIGGER IF NOT EXISTS trg_entries_au AFTER UPDATE OF tokens ON entries BEGIN
-    DELETE FROM entries_fts WHERE rowid = OLD.id;
+    INSERT INTO entries_fts(entries_fts, rowid, tokens) VALUES('delete', OLD.id, OLD.tokens);
     INSERT INTO entries_fts(rowid, tokens) VALUES (NEW.id, NEW.tokens);
 END;
 
