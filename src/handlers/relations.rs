@@ -13,6 +13,8 @@ use crate::models::{Relation, StringArray};
 #[derive(Debug, serde::Deserialize)]
 pub struct RelationReq {
     #[serde(default)]
+    pub to_id: i64,
+    #[serde(default)]
     pub types: Vec<String>,
     #[serde(default)]
     pub tags: Vec<String>,
@@ -46,16 +48,17 @@ pub struct ReorderReq {
 /// Create relation.
 pub async fn insert_relation(
     State(ctx): State<Arc<Ctx>>,
-    Path((from_id, to_id)): Path<(i64, i64)>,
+    Path(from_id): Path<i64>,
     Json(req): Json<RelationReq>,
 ) -> Result<ApiResp<i64>> {
-    if from_id == to_id {
+    if from_id == req.to_id {
         return Err(ApiErr::new(
             "from_id and to_id cannot be the same",
             StatusCode::BAD_REQUEST,
         ));
     }
 
+    let to_id = req.to_id;
     let relation: Relation = req.into();
     let id = ctx.mgr.insert_relation(from_id, to_id, &relation).await?;
 
@@ -65,7 +68,7 @@ pub async fn insert_relation(
 /// Update relation.
 pub async fn update_relation(
     State(ctx): State<Arc<Ctx>>,
-    Path(rel_id): Path<i64>,
+    Path((_from_id, rel_id)): Path<(i64, i64)>,
     Json(req): Json<RelationReq>,
 ) -> Result<ApiResp<bool>> {
     let relation: Relation = req.into();
@@ -77,7 +80,7 @@ pub async fn update_relation(
 /// Delete relation.
 pub async fn delete_relation(
     State(ctx): State<Arc<Ctx>>,
-    Path(rel_id): Path<i64>,
+    Path((_entry_id, rel_id)): Path<(i64, i64)>,
 ) -> Result<ApiResp<bool>> {
     ctx.mgr.delete_relation(rel_id).await?;
     Ok(json(true))
