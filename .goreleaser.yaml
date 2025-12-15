@@ -10,9 +10,8 @@ before:
 builds:
   - builder: rust
     targets:
-      - x86_64-unknown-linux-gnu
       - x86_64-unknown-linux-musl
-      - aarch64-unknown-linux-gnu
+      - aarch64-unknown-linux-musl
       # NOTE: macOS/Windows targets excluded due to mimalloc cross-compilation issues
       # The mimalloc C library can't cross-compile with cargo-zigbuild:
       # - macOS: Missing CommonCrypto headers
