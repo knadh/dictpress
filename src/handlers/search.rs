@@ -39,9 +39,10 @@ pub async fn search(
 /// Admin search (response includes internal IDs also).
 pub async fn search_admin(
     State(ctx): State<Arc<Ctx>>,
-    Path((from_lang, to_lang)): Path<(String, String)>,
+    Path((from_lang, to_lang, q)): Path<(String, String, String)>,
     Query(mut query): Query<SearchQuery>,
 ) -> Result<ApiResp<SearchResults>> {
+    query.query = q;
     query.from_lang = from_lang;
     query.to_lang = to_lang;
 

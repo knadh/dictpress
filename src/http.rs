@@ -58,7 +58,7 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
         // Admin API.
         .route("/api/stats", get(admin::get_stats))
         .route(
-            "/api/entries/{fromLang}/{toLang}",
+            "/api/entries/{fromLang}/{toLang}/{q}",
             get(search::search_admin),
         )
         .route(
