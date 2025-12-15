@@ -539,11 +539,12 @@ function definitionComponent() {
             this.api('entries.create', `/entries`, 'POST', params).then((data) => {
                 // Add the relation.
                 const rel = {
+                    to_id: data.id,
                     types: this.def.types,
                     tags: linesToList(this.def.tags),
                     notes: this.def.notes,
                 };
-                this.api('relations.add', `/entries/${this.parent.id}/relations/${data.id}`, 'POST', rel).then(() => {
+                this.api('relations.add', `/entries/${this.parent.id}/relations`, 'POST', rel).then(() => {
                     this.$dispatch('search');
                     this.onClose();
                 });

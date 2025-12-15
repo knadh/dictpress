@@ -81,15 +81,21 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
         .route("/api/entries", post(entries::insert_entry))
         .route("/api/entries/{id}", put(entries::update_entry))
         .route("/api/entries/{id}", delete(entries::delete_entry))
-        // Relation routes with separate path to avoid conflicts.
+        // Relation routes.
         .route(
-            "/api/relations/{fromId}/{toId}",
+            "/api/entries/{fromId}/relations",
             post(relations::insert_relation),
         )
-        .route("/api/relations/{relId}", put(relations::update_relation))
-        .route("/api/relations/{relId}", delete(relations::delete_relation))
         .route(
-            "/api/entries/{id}/relations/weights",
+            "/api/entries/{fromId}/relations/{relId}",
+            put(relations::update_relation),
+        )
+        .route(
+            "/api/entries/{fromId}/relations/{relId}",
+            delete(relations::delete_relation),
+        )
+        .route(
+            "/api/entries/{fromId}/relations/weights",
             put(relations::reorder_relations),
         )
         .route(
