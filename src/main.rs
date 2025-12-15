@@ -16,7 +16,7 @@ mod tokenizer;
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use clap::Parser;
 
@@ -79,15 +79,18 @@ async fn main() {
                 db::exists(&cli.db_path);
 
                 let config = config::load_all(&cli.config);
-                let langs = init::langs(&config);
 
-                let tokenizers = match init::tokenizers(&config.app.tokenizers_dir) {
+                // Load tokenizers first for validation.
+                let tokenizers = match tokenizer::load_all(Path::new(&config.app.tokenizers_dir)) {
                     Ok(t) => t,
                     Err(e) => {
                         log::error!("error loading tokenizers: {}", e);
                         std::process::exit(1);
                     }
                 };
+
+                // Load languages with tokenizer validation.
+                let langs = init::langs(&config, &tokenizers);
 
                 if let Err(e) = importer::import_csv(&file, &db_path, &tokenizers, langs).await {
                     log::error!("error importing: {}", e);
@@ -136,8 +139,17 @@ async fn main() {
     // Load config.
     let config = config::load_all(&cli.config);
 
-    // Initialize languages and dicts config.
-    let langs = init::langs(&config);
+    // Initialize tokenizers first for validation.
+    let tokenizers = match tokenizer::load_all(Path::new(&config.app.tokenizers_dir)) {
+        Ok(t) => t,
+        Err(e) => {
+            log::error!("error loading tokenizers: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    // Initialize languages with tokenizer validation.
+    let langs = init::langs(&config, &tokenizers);
     let dicts = init::dicts(&langs, &config);
 
     // Create database pool.
@@ -190,15 +202,6 @@ async fn main() {
         })
     } else {
         std::collections::HashMap::new()
-    };
-
-    // Initialize tokenizers.
-    let tokenizers = match init::tokenizers(&config.app.tokenizers_dir) {
-        Ok(t) => t,
-        Err(e) => {
-            log::error!("error loading tokenizers: {}", e);
-            std::process::exit(1);
-        }
     };
 
     // Initialize manager.

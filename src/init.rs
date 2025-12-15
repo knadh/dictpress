@@ -1,8 +1,6 @@
-use std::path::Path;
-
 use crate::cache::{Cache, CacheConfig, CacheError};
-use crate::models::{Config, Dicts, Lang, LangMap};
-use crate::tokenizer::{TokenizerError, Tokenizers};
+use crate::models::{Config, Dicts, Lang, LangMap, DEFAULT_TOKENIZER};
+use crate::tokenizer::Tokenizers;
 
 /// Initialize logger.
 pub fn logger() {
@@ -29,27 +27,38 @@ pub fn logger() {
         .init();
 }
 
-/// Initialize languages from config.
-pub fn langs(config: &Config) -> LangMap {
+/// Initialize languages from config, validating tokenizers against loaded tokenizers.
+pub fn langs(config: &Config, tokenizers: &Tokenizers) -> LangMap {
     let mut langs = LangMap::new();
 
     for (id, cfg) in &config.lang {
-        // Validate tokenizer_type.
-        let typ = if cfg.tokenizer_type.is_empty() {
-            "default".to_string()
+        let tokenizer = if cfg.tokenizer.is_empty() {
+            // If the tokenizer is not specified, use default.
+            DEFAULT_TOKENIZER.to_string()
+        } else if (!cfg.tokenizer.starts_with("default:")) && (!cfg.tokenizer.starts_with("lua:")) {
+            // Tokenizer name must start with "default:" or "lua:".
+            log::error!(
+                "invalid tokenizer format '{}' for language '{}'. defaulting to '{}'",
+                cfg.tokenizer,
+                id,
+                DEFAULT_TOKENIZER
+            );
+            DEFAULT_TOKENIZER.to_string()
+        } else if tokenizers.contains_key(&cfg.tokenizer) {
+            // Yep, it's valid.
+            cfg.tokenizer.clone()
         } else {
-            cfg.tokenizer_type.clone()
+            // Unknown tokenizer.
+            log::error!(
+                "tokenizer '{}' not found for language '{}'. defaulting to '{}'",
+                cfg.tokenizer,
+                id,
+                DEFAULT_TOKENIZER
+            );
+            DEFAULT_TOKENIZER.to_string()
         };
 
-        if typ != "default" && typ != "lua" {
-            log::error!(
-                "unknown tokenizer_type '{}' for language '{}'. Must be 'default' or 'lua'.",
-                typ,
-                id
-            );
-            std::process::exit(1);
-        }
-
+        // Create the language instance.
         let lang = Lang {
             id: id.clone(),
             name: if cfg.name.is_empty() {
@@ -58,20 +67,10 @@ pub fn langs(config: &Config) -> LangMap {
                 cfg.name.clone()
             },
             types: cfg.types.clone(),
-            tokenizer: if cfg.tokenizer.is_empty() {
-                "simple".to_string()
-            } else {
-                cfg.tokenizer.clone()
-            },
-            tokenizer_type: typ,
+            tokenizer: tokenizer.clone(),
         };
 
-        log::info!(
-            "language: {} (tokenizer: {}, type: {})",
-            id,
-            lang.tokenizer,
-            lang.tokenizer_type
-        );
+        log::info!("language: {} (tokenizer: {})", id, tokenizer);
 
         langs.insert(id.clone(), lang);
     }
@@ -169,11 +168,6 @@ pub fn i18n(
         .collect();
 
     Ok(i18n)
-}
-
-/// Initialize lua tokenizers from a given directory.
-pub fn tokenizers(dir: &str) -> Result<Tokenizers, TokenizerError> {
-    crate::tokenizer::load_all(Path::new(dir))
 }
 
 /// Initialize cache from configuration.

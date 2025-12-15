@@ -16,6 +16,9 @@ pub const STATUS_ENABLED: &str = "enabled";
 #[allow(dead_code)]
 pub const STATUS_DISABLED: &str = "disabled";
 
+/// Default tokenizer used when none specified or when configured tokenizer is invalid.
+pub const DEFAULT_TOKENIZER: &str = "default:simple";
+
 /// JSON array wrapper for SQLite TEXT columns storing JSON arrays.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct StringArray(pub Vec<String>);
@@ -347,9 +350,6 @@ pub struct Lang {
 
     #[serde(default)]
     pub tokenizer: String,
-
-    #[serde(default)]
-    pub tokenizer_type: String,
 }
 
 pub type LangMap = HashMap<String, Lang>;
@@ -533,9 +533,6 @@ pub struct LangConfig {
 
     #[serde(default)]
     pub tokenizer: String,
-
-    #[serde(default)]
-    pub tokenizer_type: String,
 
     #[serde(default)]
     pub types: HashMap<String, String>,

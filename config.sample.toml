@@ -35,6 +35,8 @@ tokenizers_dir = "tokenizers"
 dicts = [["english", "english"]]
 
 
+################################################################################
+
 
 [db]
 # Maximum connections.
@@ -61,6 +63,9 @@ max_disk_mb = 512
 
 # Directory for disk cache storage (hybrid mode only).
 dir = "/tmp/dictpress-cache"
+
+
+################################################################################
 
 
 [api_results]
@@ -101,22 +106,16 @@ max_per_page = 100
 num_page_nums = 10
 
 
-# Tokenizer-specific configuration.
-# Passed to Lua tokenizers as `config` table.
-[tokenizer.indicphone]
-kn_num_keys = 2
-ml_num_keys = 2
-
+################################################################################
 
 [lang.english]
 name = "English"
 
-# Either 'default' or 'lua'.
-tokenizer_type = "default"
-
-# For 'default' tokenizer_type, supported = arabic, danish, dutch, english, finnish, french, german, greek, hungarian, italian, norwegian, portuguese, romanian, russian, spanish, swedish, tamil, turkish
-# For 'lua', path to the Lua script file in the tokenizers_dir, eg: malayalam.lua
-tokenizer = "english"
+# Format: "default:$lang" or "lua:filename.lua"
+# For "default", built-in languages are: simple, arabic, danish, dutch, english, finnish, french, german, greek, hungarian, italian, norwegian, portuguese, romanian, russian, spanish, swedish, tamil, turkish
+# Example: "default:english"
+# For 'lua': path to a Lua script in tokenizers_dir, eg: "lua:malayalam.lua"
+tokenizer = "default:english"
 
 [lang.english.types]
 noun = "Noun"

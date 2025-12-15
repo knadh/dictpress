@@ -5,6 +5,8 @@ pub use lua::LuaTokenizer;
 use rust_stemmers::{Algorithm, Stemmer};
 use std::{collections::HashMap, path::Path, sync::Arc};
 
+use crate::models::DEFAULT_TOKENIZER;
+
 /// Tokenizer trait for converting text to searchable tokens.
 pub trait Tokenizer: Send + Sync {
     /// Convert text to tokens for indexing.
@@ -68,12 +70,13 @@ impl Tokenizer for DefaultTokenizer {
 
 pub type Tokenizers = HashMap<String, Arc<dyn Tokenizer>>;
 
-/// Load tokenizers from directory. Each .lua file becomes a tokenizer.
+/// Load all tokenizers into a map, the default bundled ones and the Lua
+/// ones from the given directory. Each .lua file becomes a tokenizer.
 pub fn load_all(dir: &Path) -> Result<Tokenizers, TokenizerError> {
     let mut out: Tokenizers = HashMap::new();
 
     // Always include the simple tokenizer.
-    out.insert("simple".to_string(), Arc::new(SimpleTokenizer));
+    out.insert(DEFAULT_TOKENIZER.to_string(), Arc::new(SimpleTokenizer));
 
     // Add built-in default stemmers.
     let default_stemmers = [
@@ -97,7 +100,10 @@ pub fn load_all(dir: &Path) -> Result<Tokenizers, TokenizerError> {
         ("turkish", Algorithm::Turkish),
     ];
     for (name, algorithm) in default_stemmers {
-        out.insert(name.to_string(), Arc::new(DefaultTokenizer::new(algorithm)));
+        out.insert(
+            format!("default:{}", name),
+            Arc::new(DefaultTokenizer::new(algorithm)),
+        );
     }
 
     // If no dir has been specified, skip loading from disk.
@@ -156,8 +162,28 @@ pub fn load_all(dir: &Path) -> Result<Tokenizers, TokenizerError> {
         }
 
         log::info!("loaded '{}'", fname);
-        out.insert(name, Arc::new(tk));
+        out.insert(format!("lua:{}", name), Arc::new(tk));
     }
 
     Ok(out)
+}
+
+/// Parse and validate tokenizer field in format "default:name" or "lua:filename.lua".
+/// Returns the validated tokenizer string for lookup in the tokenizers map.
+pub fn parse_tokenizer_field(tokenizer: &str) -> Option<String> {
+    if tokenizer.is_empty() {
+        return None;
+    }
+
+    if tokenizer.starts_with("default:") && tokenizer.len() > 8 {
+        Some(tokenizer.to_string())
+    } else if tokenizer.starts_with("lua:") && tokenizer.len() > 4 {
+        Some(tokenizer.to_string())
+    } else {
+        log::warn!(
+            "unknown tokenizer format '{}'. expected 'default:name' or 'lua:filename.lua'",
+            tokenizer
+        );
+        None
+    }
 }

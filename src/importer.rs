@@ -6,7 +6,7 @@ use sqlx::Row;
 use crate::{
     db,
     models::{LangMap, STATUS_ENABLED},
-    tokenizer::Tokenizers,
+    tokenizer::{parse_tokenizer_field, Tokenizers},
 };
 
 const INSERT_BATCH_SIZE: usize = 5000;
@@ -357,26 +357,4 @@ fn split_string(s: &str) -> Vec<String> {
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
         .collect()
-}
-
-/// Parse tokenizer field and return the tokenizer name for lookup.
-fn parse_tokenizer_field(tokenizer: &str) -> Option<String> {
-    if tokenizer.is_empty() {
-        return None;
-    }
-
-    if let Some(name) = tokenizer.strip_prefix("default:") {
-        // default:english -> "english"
-        Some(name.to_string())
-    } else if let Some(filename) = tokenizer.strip_prefix("lua:") {
-        // lua:indicphone_kn.lua -> "indicphone_kn.lua"
-        Some(filename.to_string())
-    } else {
-        // Unknown format.
-        log::warn!(
-            "unknown tokenizer format '{}'. expected 'default:name' or 'lua:filename.lua'",
-            tokenizer
-        );
-        None
-    }
 }
