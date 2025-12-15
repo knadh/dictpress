@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use axum::{
     extract::State,
@@ -11,7 +11,7 @@ use crate::models::Stats;
 
 #[derive(serde::Serialize)]
 pub struct ConfigResp {
-    pub languages: Vec<LangResp>,
+    pub languages: HashMap<String, LangResp>,
     pub dicts: Vec<[String; 2]>,
 }
 
@@ -34,10 +34,15 @@ pub async fn get_config(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<ConfigRes
         languages: ctx
             .langs
             .iter()
-            .map(|(id, l)| LangResp {
-                id: id.clone(),
-                name: l.name.clone(),
-                types: l.types.clone(),
+            .map(|(id, l)| {
+                (
+                    id.clone(),
+                    LangResp {
+                        id: id.clone(),
+                        name: l.name.clone(),
+                        types: l.types.clone(),
+                    },
+                )
             })
             .collect(),
         dicts: ctx
