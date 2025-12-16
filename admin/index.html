@@ -1,28 +1,34 @@
 {% extends "admin/base.html" %}
 
 {% block content %}
-<section class="dashboard" x-data="homeComponent()" x-init="onLoad">
+<section x-data="homeComponent()" x-init="onLoad">
+    <hgroup>
+        <h2>Dashboard</h2>
+    </hgroup>
+
     <template x-if="stats">
-        <div class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-value" x-text="formatNumber(stats.entries)"></span>
-                <span class="stat-label">Entries</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-value" x-text="formatNumber(stats.relations)"></span>
-                <span class="stat-label">Definitions</span>
-            </div>
-            <div class="stat-card languages">
-                <span class="stat-label">Languages</span>
-                <ul>
-                    <template x-for="[l, num] in Object.entries(stats.languages)" :key="l">
-                        <li>
-                            <span x-text="config.languages[l].name"></span>
-                            <span class="count" x-text="formatNumber(num)"></span>
-                        </li>
-                    </template>
-                </ul>
-            </div>
+        <div class="grid">
+            <article class="stat-card">
+                <data x-text="formatNumber(stats.entries)"></data>
+                <small>Entries</small>
+            </article>
+            <article class="stat-card">
+                <data x-text="formatNumber(stats.relations)"></data>
+                <small>Definitions</small>
+            </article>
+            <article>
+                <header>Languages</header>
+                <table role="grid">
+                    <tbody>
+                        <template x-for="[l, num] in Object.entries(stats.languages)" :key="l">
+                            <tr>
+                                <td x-text="config.languages[l].name"></td>
+                                <td x-text="formatNumber(num)"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </article>
         </div>
     </template>
 </section>

@@ -1,128 +1,126 @@
-<section x-data="entryComponent()"
+<div x-data="entryComponent()"
     @open-entry-form.window="onOpen"
     @keyup.escape.window="onClose"
-    @close-entry-form.window="onClose">
+    @close-entry-form.window="onClose" class="entry-form">
     <template x-if="isVisible">
-        <aside class="panel">
-            <div class="panel-header">
-                <h2 x-text="isNew ? 'New entry' : 'Edit entry'"></h2>
-                <button class="panel-close" @click.prevent="onClose">&times;</button>
-            </div>
+        <aside class="side-panel">
+            <header>
+                <h3 x-text="isNew ? 'New entry' : 'Edit entry'"></h3>
+                <button class="outline secondary" @click.prevent="onClose">&times;</button>
+            </header>
 
-            <form @submit.prevent="onSave" class="panel-body">
-                <div class="form-group">
-                    <label>Content</label>
+            <form @submit.prevent="onSave">
+                <label>
+                    Content
                     <template x-for="(item, idx) in entry.content" :key="idx">
-                        <div class="input-with-action">
-                            <textarea x-model="entry.content[idx]" required :autofocus="idx === 0" rows="2"></textarea>
-                            <button type="button" class="remove-btn" @click.prevent="onDeleteContentItem(idx)" x-show="entry.content.length > 1">&times;</button>
-                        </div>
+                        <fieldset role="group" class="content-input">
+                            <textarea x-model="entry.content[idx]" required :autofocus="idx === 0" rows="2" autofocus></textarea>
+                            <button type="button" class="secondary" @click.prevent="onDeleteContentItem(idx)" x-show="entry.content.length > 1">&times;</button>
+                        </fieldset>
                     </template>
-                    <button type="button" class="add-btn" @click.prevent="onAddContentItem">+ Add variant</button>
-                </div>
+                </label>
+                <p><a href="#" @click.prevent="onAddContentItem">+ Add variant</a></p>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Language</label>
+                <div class="grid">
+                    <label>
+                        Language
                         <select x-model="entry.lang" required>
                             <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
                                 <option :value="id" x-text="l.name" x-bind:selected="id === entry.lang"></option>
                             </template>
                         </select>
-                    </div>
-                    <div class="form-group" style="flex: 0 0 100px;">
-                        <label>Initial</label>
+                    </label>
+                    <label>
+                        Initial
                         <input type="text" x-model="entry.initial" @focus="onFocusInitial" required />
-                    </div>
+                        <small class="help">Initial alphabet/character of the word for the A-Z glossary.</small>
+                    </label>
                 </div>
 
-                <details class="options-section">
-                    <summary>Advanced options</summary>
-                    <div class="options-content">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Status</label>
-                                <select x-model="entry.status" required>
-                                    <option value="enabled">Enabled</option>
-                                    <option value="disabled">Disabled</option>
-                                </select>
-                                <small class="help">Disabled entries are hidden from public view</small>
-                            </div>
-                            <div class="form-group">
-                                <label>Weight</label>
-                                <input type="number" step="0.01" x-model="entry.weight" placeholder="0 = auto" />
-                                <small class="help">Smaller (negative) values rank higher in search results. 0 = automatic</small>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Phonetic notations</label>
-                            <textarea x-model="entry.phones" rows="2" placeholder="One per line"></textarea>
-                            <small class="help">IPA or other phonetic transcriptions for pronunciation</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Tags</label>
-                            <textarea x-model="entry.tags" rows="2" placeholder="One per line"></textarea>
-                            <small class="help">Custom strings to categorize entries (e.g., formal, archaic, source:somedict)</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Search tokens</label>
-                            <textarea x-model="entry.tokens" rows="2" placeholder="One per line (blank = auto)"></textarea>
-                            <small class="help">Fulltext (stemmed) search tokens for search indexing</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Notes</label>
-                            <textarea x-model="entry.notes" rows="2"></textarea>
-                            <small class="help">Optional notes describing the entry</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Meta (JSON)</label>
-                            <textarea x-model="entry.meta_str" rows="2" class="mono"></textarea>
-                            <small class="help">Custom metadata as a JSON object. Can be used in templating.</small>
-                        </div>
+                <details>
+                    <summary>
+                        <span class="icon-link">
+                            <img class="icon" src="/admin/static/settings.svg?v={{ asset_ver }}" alt="" /> Advanced options
+                        </span>
+                    </summary>
+                    <div class="grid">
+                        <label>
+                            Status
+                            <select x-model="entry.status" required>
+                                <option value="enabled">Enabled</option>
+                                <option value="disabled">Disabled</option>
+                            </select>
+                            <small class="help">Disabled entries are hidden from public</small>
+                        </label>
+                        <label>
+                            Weight
+                            <input type="number" step="0.01" x-model="entry.weight" placeholder="0 = auto" />
+                            <small class="help">Smaller values rank higher</small>
+                        </label>
                     </div>
+
+                    <label>
+                        Phonetic notations
+                        <textarea x-model="entry.phones" rows="2" placeholder="One per line"></textarea>
+                        <small class="help">Pronunciation, IPA etc.</small>
+                    </label>
+
+                    <label>
+                        Tags
+                        <textarea x-model="entry.tags" rows="2" placeholder="One per line"></textarea>
+                        <small class="help">One or more tags categorizing the entry. One per line.</small>
+                    </label>
+
+                    <label>
+                        Search tokens
+                        <textarea x-model="entry.tokens" rows="2" placeholder="One per line (blank = auto)"></textarea>
+                        <small class="help">Fulltext / stemmed tokens for fulltext search. One per line.</small>
+                    </label>
+
+                    <label>
+                        Notes
+                        <textarea x-model="entry.notes" rows="2"></textarea>
+                        <small class="help">Optional description</small>
+                    </label>
+
+                    <label>
+                        Meta (JSON)
+                        <textarea x-model="entry.meta_str" rows="2"></textarea>
+                        <small class="help">Optional JSON attributes that can be used in templates</small>
+                    </label>
                 </details>
 
-                <div class="panel-actions">
-                    <button type="submit" class="btn-primary" x-bind:disabled="loading['entries.update'] === true || loading['entries.create'] === true">
-                        Save
-                    </button>
-                    <button type="button" class="btn-secondary" @click.prevent="onClose">Cancel</button>
-                    <button type="button" class="btn-danger" @click.prevent="onDeleteEntry" x-show="!isNew" x-bind:disabled="loading['entries.delete'] === true">
-                        Delete
-                    </button>
-                </div>
+                <fieldset role="group" class="buttons">
+                    <button type="submit" x-bind:aria-busy="loading['entries.update'] === true || loading['entries.create'] === true">Save</button>
+                    <button type="button" class="secondary" @click.prevent="onClose">Cancel</button>
+                </fieldset>
+                <p x-show="!isNew"><a href="#" class="contrast icon-link" @click.prevent="onDeleteEntry"><img class="icon" src="/admin/static/delete.svg?v={{ asset_ver }}" alt="" />Delete this entry</a></p>
             </form>
 
-            <template x-if="!isNew">
-                <div class="panel-meta">
-                    <p><span>ID</span> <code x-text="entry.id"></code></p>
-                    <p><span>GUID</span> <code x-text="entry.guid"></code></p>
-                    <p><span>Created</span> <span x-text="entry.created_at.slice(0, 16).replace('T', ' ')"></span></p>
-                    <p><span>Updated</span> <span x-text="entry.updated_at.slice(0, 16).replace('T', ' ')"></span></p>
-                </div>
-            </template>
-
-            <template x-if="!isNew && parentEntries.length > 0">
-                <div class="panel-section">
-                    <h3>Parent entries (<span x-text="parentEntries.length"></span>)</h3>
-                    <ul class="parent-list">
-                        <template x-for="r in parentEntries" :key="r.id">
-                            <li>
-                                <a x-bind:href="makeURL({'id': r.id})">
-                                    <template x-for="(item, idx) in r.content" :key="idx">
-                                        <span><span x-text="item"></span><span x-show="idx < r.content.length - 1">, </span></span>
-                                    </template>
-                                </a>
-                            </li>
-                        </template>
-                    </ul>
-                </div>
-            </template>
+            <footer x-show="!isNew">
+                <ul class="meta">
+                    <li><strong>ID:</strong> <code x-text="entry.id"></code></li>
+                    <li><strong>GUID:</strong> <code x-text="entry.guid"></code><br></li>
+                    <li><strong>Created:</strong> <span x-text="entry.created_at?.slice(0, 16).replace('T', ' ')"></span></li>
+                    <li><strong>Updated:</strong> <span x-text="entry.updated_at?.slice(0, 16).replace('T', ' ')"></span></li>
+                </ul>
+                <template x-if="parentEntries.length > 0">
+                    <div>
+                        <p><strong>Parent entries (<span x-text="parentEntries.length"></span>)</strong></p>
+                        <ul class="meta">
+                            <template x-for="r in parentEntries" :key="r.id">
+                                <li>
+                                    <a x-bind:href="makeURL({'id': r.id})">
+                                        <template x-for="(item, idx) in r.content" :key="idx">
+                                            <span><span x-text="item"></span><span x-show="idx < r.content.length - 1">, </span></span>
+                                        </template>
+                                    </a>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+            </footer>
         </aside>
     </template>
-</section>
+</div>

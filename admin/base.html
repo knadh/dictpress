@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 	<title>{{ title }}{% if title %} |{% endif %} DictPress</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="stylesheet" type="text/css" href="/admin/static/pico.min.css">
 	<link rel="stylesheet" type="text/css" href="/admin/static/style.css?v={{ asset_ver }}">
 	<link rel="shortcut icon" href="/admin/static/favicon.png?v={{ asset_ver }}" type="image/x-icon" />
 
@@ -20,38 +21,45 @@
 </head>
 <body x-init="onLoad()" x-data="globalComponent()">
 <template x-if="ready">
-	<div class="app">
-		<header class="header">
-			<a href="/admin" class="logo">
-				<img src="/admin/static/logo.svg?v={{ asset_ver }}" alt="DictPress" />
-			</a>
-			<template x-if="Object.keys(loading).length > 0"><span class="spinner"></span></template>
-			<nav>
-				<a href="" @click.prevent="onNewEntry">+ New entry</a>
-				<a href="/admin/pending">Pending</a>
-			</nav>
-		</header>
+	<div class="admin-shell">
+		<aside class="admin-sidebar">
+			<header class="logo">
+				<a href="/admin">
+					<img src="/admin/static/logo.svg?v={{ asset_ver }}" alt="DictPress" />
+				</a>
+			</header>
 
-		<main>
-			<form class="search-box" action="/admin/search" x-data="searchFormComponent()" @submit="onSearch">
-				<select name="from_lang" x-model="fromLang">
-					<option value="*id">ID</option>
-					<template x-for="[id, l] in Object.entries(config.languages)" :key="id">
-						<option :value="id" x-text="l.name" x-bind:selected="id === fromLang"></option>
-					</template>
-				</select>
-				<input type="text" name="query" x-model="query" placeholder="Search entries..." required autofocus />
-				<button type="submit" x-bind:disabled="loading['entries.search'] === true">Search</button>
-			</form>
+			<nav>
+				<ul>
+					<li><a href="/admin"><img class="icon icon-primary" src="/admin/static/home.svg?v={{ asset_ver }}" alt="" /> Dashboard</a></li>
+					<li><a href="#" @click.prevent="onNewEntry"><img class="icon icon-primary" src="/admin/static/add.svg?v={{ asset_ver }}" alt="" /> New Entry</a></li>
+					<li><a href="/admin/pending"><img class="icon icon-primary" src="/admin/static/list.svg?v={{ asset_ver }}" alt="" /> Pending</a></li>
+				</ul>
+			</nav>
+
+			<footer>
+				<small><a href="https://dict.press">DictPress</a> <span x-text="config.version"></span></small>
+			</footer>
+		</aside>
+
+		<main class="admin-main container-fluid">
+			<nav aria-label="Search" class="admin-search">
+				<form role="search" action="/admin/search" x-data="searchFormComponent()" @submit="onSearch">
+					<select name="from_lang" x-model="fromLang" aria-label="Language">
+						<option value="*id">ID</option>
+						<template x-for="[id, l] in Object.entries(config.languages)" :key="id">
+							<option :value="id" x-text="l.name" x-bind:selected="id === fromLang"></option>
+						</template>
+					</select>
+					<input type="search" name="query" x-model="query" placeholder="Search entries..." required />
+					<button type="submit" x-bind:aria-busy="loading['entries.search'] === true">Search</button>
+				</form>
+			</nav>
 
 			{% block content %}{% endblock %}
 		</main>
 
 		{% include "admin/entry.html" %}
-
-		<footer>
-			<a href="https://dict.press">DictPress <span x-text="config.version"></span></a>
-		</footer>
 	</div>
 </template>
 </body>

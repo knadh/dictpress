@@ -1,113 +1,115 @@
 {% extends "admin/base.html" %}
 
 {% block content %}
-<section class="results pending" x-data="searchResultsComponent('pending')" x-init="onLoad" @search.window="onSearch">
+<section x-data="searchResultsComponent('pending')" x-init="onLoad" @search.window="onSearch">
     <template x-if="!id && loading['entries.search'] !== true">
-        <div class="results-header">
-            <p class="results-summary"><strong x-text="total"></strong> pending entries</p>
+        <header class="pending-header">
+            <hgroup>
+                <h2><span x-text="total"></span> pending entries</h2>
+                <p>Entries awaiting review</p>
+            </hgroup>
             <template x-if="total > 0">
-                <a href="" @click.prevent="onClearPending()" class="clear-all">Clear all</a>
+                <a href="#" role="button" class="outline contrast" @click.prevent="onClearPending()">Clear all</a>
             </template>
-        </div>
+        </header>
     </template>
     <template x-if="loading['entries.search'] === true">
-        <div class="loading-state"><span class="spinner"></span></div>
+        <article aria-busy="true"></article>
     </template>
 
-    <div class="entries-list">
-        <template x-for="e in entries" :key="e.id">
-            <article class="entry-card">
-                <header>
-                    <h2>
-                        <template x-if="e.status === 'pending'">
-                            <span class="badge new">New</span>
-                        </template>
-                        <a x-bind:href="makeURL({id: e.id})" @click.prevent="onEditEntry(e)">
+    <template x-for="e in entries" :key="e.id">
+        <article>
+            <header>
+                <hgroup>
+                    <h3>
+                        <template x-if="e.status === 'pending'"><mark>New</mark></template>
+                        <a href="#" @click.prevent="onEditEntry(e)">
                             <template x-for="(item, idx) in e.content" :key="idx">
                                 <span><span x-text="item"></span><span x-show="idx < e.content.length - 1">, </span></span>
                             </template>
                         </a>
-                        <small x-text="config.languages[e.lang].name"></small>
-                    </h2>
-                    <div class="entry-actions">
-                        <a x-bind:href="makeURL({id: e.id})" @click.prevent="onEditEntry(e)">Edit</a>
-                        <a href="#" @click.prevent="onDeleteEntry(e.id)" class="danger">Delete</a>
-                    </div>
-                </header>
+                    </h3>
+                    <p x-text="config.languages[e.lang].name"></p>
+                </hgroup>
+                <nav>
+                    <ul>
+                        <li><a href="#" @click.prevent="onEditEntry(e)" class="secondary">Edit</a></li>
+                        <li><a href="#" @click.prevent="onDeleteEntry(e.id)" class="contrast">Delete</a></li>
+                    </ul>
+                </nav>
+            </header>
 
-                <template x-if="e.id in comments && 'null' in comments[e.id]">
-                    <template x-for="(c, n) in comments[e.id]['null']" :key="c.id">
-                        <div class="comment-box">
-                            <p x-text="c.comments"></p>
-                            <button class="btn-secondary btn-sm" @click.prevent="onClearComments(c.id)">Clear</button>
+            <template x-if="e.id in comments && 'null' in comments[e.id]">
+                <template x-for="(c, n) in comments[e.id]['null']" :key="c.id">
+                    <blockquote>
+                        <p x-text="c.comments"></p>
+                        <footer>
+                            <button class="outline secondary small" @click.prevent="onClearComments(c.id)">Clear</button>
+                        </footer>
+                    </blockquote>
+                </template>
+            </template>
+
+            <template x-if="e.phones.length > 0">
+                <p><em x-text="e.phones.join(', ')"></em></p>
+            </template>
+
+            <div class="definitions-list">
+                <template x-for="(r, n) in e.relations" :key="r.id">
+                    <div class="definition-row" :class="{ 'is-reordered': order[e.id] && order[e.id].changedRels[r.id] }">
+                        <div>
+                            <small class="secondary">
+                                <template x-if="r.status === 'pending'"><mark>New</mark></template>
+                                <template x-if="r.relation.status === 'pending'"><ins>Pending</ins></template>
+                                <span x-text="config.languages[r.lang].name + (r.relation.types ? ' · ' + r.relation.types : '')"></span>
+                            </small>
+                            <p>
+                                <template x-for="(item, idx) in r.content" :key="idx">
+                                    <span><span x-text="item"></span><span x-show="idx < r.content.length - 1">, </span></span>
+                                </template>
+                            </p>
                         </div>
-                    </template>
-                </template>
-
-                <template x-if="e.phones.length > 0">
-                    <p class="pronunciation" x-text="e.phones.join(', ')"></p>
-                </template>
-
-                <ul class="definitions">
-                    <template x-for="(r, n) in e.relations" :key="r.id">
-                        <li :class="{ reordered: order[e.id] && order[e.id].changedRels[r.id] }">
-                            <div class="definition-content">
-                                <template x-if="r.status === 'pending'">
-                                    <span class="badge new">New</span>
-                                </template>
-                                <template x-if="r.relation.status === 'pending'">
-                                    <span class="badge pending">Pending</span>
-                                </template>
-                                <span class="def-meta">
-                                    <span x-text="config.languages[r.lang].name"></span>
-                                    <span x-text="r.relation.types" x-show="r.relation.types"></span>
-                                </span>
-                                <span class="def-text">
-                                    <template x-for="(item, idx) in r.content" :key="idx">
-                                        <span><span x-text="item"></span><span x-show="idx < r.content.length - 1">, </span></span>
-                                    </template>
-                                </span>
-                            </div>
-                            <template x-if="e.id in comments && r.id in comments[e.id]">
-                                <template x-for="(c, n) in comments[e.id][r.id]" :key="c.id">
-                                    <div class="comment-box">
-                                        <pre x-text="c.comments"></pre>
-                                        <button class="btn-secondary btn-sm" @click.prevent="onClearComments(c.id)">Clear</button>
-                                    </div>
-                                </template>
+                        <template x-if="e.id in comments && r.id in comments[e.id]">
+                            <template x-for="(c, n) in comments[e.id][r.id]" :key="c.id">
+                                <blockquote>
+                                    <p x-text="c.comments"></p>
+                                    <footer>
+                                        <button class="outline secondary small" @click.prevent="onClearComments(c.id)">Clear</button>
+                                    </footer>
+                                </blockquote>
                             </template>
-                            <div class="definition-actions">
-                                <a href="#" @click.prevent="onEditRelation(r, e)">Relation</a>
-                                <a href="#" @click.prevent="onEditEntry(r, e)">Edit</a>
-                                <a href="#" @click.prevent="onDetatchRelation(e.id, r.relation.id)">Detach</a>
-                                <a href="#" @click.prevent="onDeleteRelationEntry(r.id)" class="danger">Delete</a>
-                                <span class="reorder-btns">
-                                    <a href="#" @click.prevent="onReorderRelation(e, r, n, -1)" title="Move up">&uarr;</a>
-                                    <a href="#" @click.prevent="onReorderRelation(e, r, n, 1)" title="Move down">&darr;</a>
-                                </span>
-                            </div>
-                        </li>
-                    </template>
-                </ul>
+                        </template>
+                        <nav class="def-actions">
+                            <a href="#" @click.prevent="onEditRelation(r, e)">Relation</a>
+                            <a href="#" @click.prevent="onEditEntry(r, e)">Edit</a>
+                            <a href="#" @click.prevent="onDetatchRelation(e.id, r.relation.id)">Detach</a>
+                            <a href="#" @click.prevent="onDeleteRelationEntry(r.id)" class="contrast">Delete</a>
+                            <span role="group">
+                                <button class="outline secondary" @click.prevent="onReorderRelation(e, r, n, -1)">&uarr;</button>
+                                <button class="outline secondary" @click.prevent="onReorderRelation(e, r, n, 1)">&darr;</button>
+                            </span>
+                        </nav>
+                    </div>
+                </template>
+            </div>
 
-                <footer>
-                    <a href="" @click.prevent="onAddDefinition(e)" class="add-def">+ Add definition</a>
-                    <template x-if="order[e.id]">
-                        <div class="order-actions">
-                            <button class="btn-secondary btn-sm" @click.prevent="onResetRelationOrder(e)">Reset</button>
-                            <button class="btn-primary btn-sm" @click.prevent="onSaveRelationOrder(e)">Save order</button>
-                        </div>
-                    </template>
-                    <template x-if="!(e.id in comments)">
-                        <div class="approval-actions">
-                            <button class="btn-primary" @click.prevent="onApproveSubmission(e.id)">Approve all</button>
-                            <button class="btn-secondary" @click.prevent="onRejectSubmission(e.id)">Reject all</button>
-                        </div>
-                    </template>
-                </footer>
-            </article>
-        </template>
-    </div>
+            <footer>
+                <a href="#" role="button" class="outline" @click.prevent="onAddDefinition(e)">+ Add definition</a>
+                <template x-if="order[e.id]">
+                    <div role="group">
+                        <button class="secondary" @click.prevent="onResetRelationOrder(e)">Reset</button>
+                        <button @click.prevent="onSaveRelationOrder(e)">Save order</button>
+                    </div>
+                </template>
+                <template x-if="!(e.id in comments)">
+                    <div role="group">
+                        <button @click.prevent="onApproveSubmission(e.id)">Approve all</button>
+                        <button class="secondary" @click.prevent="onRejectSubmission(e.id)">Reject all</button>
+                    </div>
+                </template>
+            </footer>
+        </article>
+    </template>
 </section>
 
 {% include "admin/relation.html" %}
