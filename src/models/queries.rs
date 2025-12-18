@@ -15,6 +15,8 @@ pub struct Schema {
 #[derive(Default, ScanQueries)]
 pub struct Queries {
     pub search: yesqlr::Query,
+    #[name = "search-words"]
+    pub search_words: yesqlr::Query,
     #[name = "search-relations"]
     pub search_relations: yesqlr::Query,
     #[name = "get-entry"]
@@ -39,6 +41,8 @@ pub struct Queries {
     pub delete_relation: yesqlr::Query,
     #[name = "reorder-relations"]
     pub reorder_relations: yesqlr::Query,
+    #[name = "get-all-words"]
+    pub get_all_words: yesqlr::Query,
     #[name = "get-stats"]
     pub get_stats: yesqlr::Query,
     #[name = "get-pending-entries"]

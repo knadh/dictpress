@@ -40,6 +40,7 @@ bytes = "1"
 bincode = "1"
 rmp-serde = "1"
 md5 = "0.8"
+trie-rs = "0.4.2"
 
 # Use mimalloc for musl builds (musl's default malloc is very slow).
 [target.'cfg(target_env = "musl")'.dependencies]

@@ -9,6 +9,7 @@ mod init;
 mod manager;
 mod models;
 mod sitemaps;
+mod suggestions;
 mod tokenizer;
 
 // Use mimalloc for musl builds (musl's default malloc is very slow).
@@ -226,6 +227,19 @@ async fn main() {
         None
     };
 
+    // Initialize trie suggestions if enabled.
+    let suggestions = if config.suggestions.enabled {
+        match init::suggestions(&mgr, &langs).await {
+            Ok(s) => Some(Arc::new(s)),
+            Err(e) => {
+                log::error!("error initializing suggestions module: {}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     // Preload static files (JS & CSS) for bundling.
     let static_files = http::preload_static_files(&cli.site);
 
@@ -235,6 +249,7 @@ async fn main() {
         langs,
         dicts,
         cache,
+        suggestions,
         admin_tpl,
         site_tpl,
         site_path: cli.site.clone(),
@@ -262,6 +277,9 @@ async fn main() {
             glossary_default_per_page: config.glossary.default_per_page,
             glossary_max_per_page: config.glossary.max_per_page,
             glossary_num_page_nums: config.glossary.num_page_nums,
+
+            suggestions_enabled: config.suggestions.enabled,
+            num_suggestions: config.suggestions.num,
 
             // Split admin assets by file extension for template rendering.
             admin_js_assets: config

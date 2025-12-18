@@ -252,6 +252,12 @@ pub struct GlossaryWord {
     pub total: i64,
 }
 
+/// Suggestion result for autocomplete - just the word content.
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct Suggestion {
+    pub content: StringArray,
+}
+
 /// Database statistics.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Stats {
@@ -366,6 +372,9 @@ pub struct Config {
 
     #[serde(default)]
     pub cache: CacheConfig,
+
+    #[serde(default)]
+    pub suggestions: SuggestionsConfig,
 
     #[serde(default)]
     pub api_results: ApiResultsConfig,
@@ -516,6 +525,27 @@ impl Default for GlossaryConfig {
             default_per_page: default_glossary_per_page(),
             max_per_page: default_glossary_max_per_page(),
             num_page_nums: default_num_page_nums(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SuggestionsConfig {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_suggestions_num")]
+    pub num: i32,
+}
+
+fn default_suggestions_num() -> i32 {
+    10
+}
+
+impl Default for SuggestionsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            num: default_suggestions_num(),
         }
     }
 }

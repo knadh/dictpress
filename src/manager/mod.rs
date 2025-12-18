@@ -5,7 +5,7 @@ use sqlx::{sqlite::SqlitePool, Row};
 use crate::{
     models::{
         q, Comment, Dicts, Entry, GlossaryWord, LangMap, Relation, RelationsQuery, SearchQuery,
-        Stats, STATUS_ENABLED,
+        Stats, Suggestion, STATUS_ENABLED,
     },
     tokenizer::{Tokenizer, TokenizerError, Tokenizers},
 };
@@ -114,6 +114,33 @@ impl Manager {
 
         let total = results.first().map(|e| e.total).unwrap_or(0);
         Ok((results, total))
+    }
+
+    /// Get word suggestions for autocomplete.
+    pub async fn get_suggestions(
+        &self,
+        lang: &str,
+        query: &str,
+        limit: i32,
+    ) -> Result<Vec<Suggestion>, Error> {
+        if !self.langs.contains_key(lang) {
+            return Err(Error::UnknownLang(lang.to_string()));
+        }
+
+        let fts_query = self.to_fts_query(query, lang)?;
+        if fts_query.trim().is_empty() {
+            return Err(Error::Validation("invalid search query".to_string()));
+        }
+
+        let results: Vec<Suggestion> = sqlx::query_as(&q.search_words.query)
+            .bind(lang)
+            .bind(query)
+            .bind(&fts_query)
+            .bind(limit)
+            .fetch_all(&self.db)
+            .await?;
+
+        Ok(results)
     }
 
     /// Load relations for a set of entries.
@@ -581,5 +608,20 @@ impl Manager {
             .await?;
         let stats: Stats = serde_json::from_str(&row.0).unwrap_or_default();
         Ok(stats)
+    }
+
+    /// Get all normalized words for a given language (for building suggestions trie).
+    pub async fn get_all_words(&self, lang: &str) -> Result<Vec<String>, Error> {
+        let rows: Vec<(String,)> = sqlx::query_as(&q.get_all_words.query)
+            .bind(lang)
+            .fetch_all(&self.db)
+            .await?;
+
+        // Filter out empty strings and collect
+        Ok(rows
+            .into_iter()
+            .map(|(s,)| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect())
     }
 }

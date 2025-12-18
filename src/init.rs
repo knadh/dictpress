@@ -1,5 +1,7 @@
 use crate::cache::{Cache, CacheConfig, CacheError};
+use crate::manager::Manager;
 use crate::models::{Config, Dicts, Lang, LangMap, DEFAULT_TOKENIZER};
+use crate::suggestions::Suggestions;
 use crate::tokenizer::Tokenizers;
 
 /// Initialize logger.
@@ -181,4 +183,21 @@ pub async fn cache(cfg: &CacheConfig) -> Result<Cache, CacheError> {
         cfg.dir
     );
     Cache::new(cfg).await
+}
+
+/// Initialize suggestions trie from database.
+pub async fn suggestions(
+    mgr: &Manager,
+    langs: &LangMap,
+) -> Result<Suggestions, Box<dyn std::error::Error>> {
+    let mut sugg = Suggestions::new();
+
+    for lang_id in langs.keys() {
+        let words = mgr.get_all_words(lang_id).await?;
+        let num = words.len();
+        sugg.build(lang_id, words);
+        log::info!("suggestions: loaded {} words for {}", num, lang_id);
+    }
+
+    Ok(sugg)
 }
