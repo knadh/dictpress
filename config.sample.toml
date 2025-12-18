@@ -65,6 +65,15 @@ max_disk_mb = 512
 dir = "/tmp/dictpress-cache"
 
 
+[suggestions]
+# Enable autocomplete suggestions for search queries on the frontend.
+# This loads all dictionary words into memory for fast lookup.
+enabled = false
+
+# Number of suggestions to return.
+num = 10
+
+
 ################################################################################
 
 

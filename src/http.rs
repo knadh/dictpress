@@ -35,7 +35,8 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
         .route(
             "/api/dictionary/entries/{guid}",
             get(entries::get_entry_by_guid),
-        );
+        )
+        .route("/api/suggestions/{lang}/{q}", get(search::get_suggestions));
 
     // Public submission routes (if enabled).
     let submit_routes = Router::new()

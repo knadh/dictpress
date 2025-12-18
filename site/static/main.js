@@ -265,14 +265,13 @@ async function screenshotElement(element) {
       clearTimeout(debounce);
       return new Promise(resolve => {
         debounce = setTimeout(async () => {
-          const response = await fetch(`${_ROOT_URL}/atl/${langCode}/${val.toLowerCase()}`);
-          const data = await response.json();
+            const response = await fetch(`${_ROOT_URL}/api/suggestions/${langCode}/${val}`);
+            const data = await response.json();
 
-          const a = data.greedy_tokenized.map(item => item.word).slice(0, 3).sort((a, b) => a.length - b.length);
-          const b = data.dictionary_suggestions.map(item => item.word).slice(0, 6).sort((a, b) => a.length - b.length);
+            const suggestions = data.data.map(item => item.content[0]);
 
-          debounce = null;
-          resolve([...new Set(a.concat(b))]);
+            debounce = null;
+            resolve(suggestions);
         }, 50);
       });
     },

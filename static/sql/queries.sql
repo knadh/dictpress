@@ -6,7 +6,7 @@ SELECT e.*,
        JSON_ARRAY_LENGTH(e.content) AS content_length,
        -- Rank: weight - (50 - content_length). Shorter content = more negative = ranks first.
        -- Exact matches get extra -1000 boost to always rank highest.
-       e.weight + (-1.0 * (50.0 - length(JSON_EXTRACT(e.content, '$[0]'))))
+       e.weight + (-1.0 * (50.0 - LENGTH(e.content_head)))
        + CASE WHEN e.content_head = LOWER(SUBSTR($2, 1, 50)) THEN -1000.0 ELSE 0.0 END
        AS rank,
        COUNT(*) OVER() AS total
@@ -18,6 +18,19 @@ WHERE entries_fts MATCH $3
   AND ($4 = '' OR e.status = $4)
 ORDER BY rank
 LIMIT $6 OFFSET $5;
+
+-- name: search-words
+-- Return word suggestions (for autocomplete).
+-- $1: lang, $2: raw query string, $3: FTS query, $4: limit
+SELECT e.content
+FROM entries e
+INNER JOIN entries_fts fts ON fts.rowid = e.id
+WHERE entries_fts MATCH $3
+  AND ($1 = '' OR e.lang = $1)
+  AND e.status = 'enabled'
+  AND EXISTS (SELECT 1 FROM relations r WHERE r.from_id = e.id)
+ORDER BY LENGTH(e.content_head)
+LIMIT $4;
 
 -- name: search-relations
 -- Load relations for a set of entry IDs.
@@ -139,6 +152,16 @@ UPDATE relations SET weight = (
     ) WHERE value = relations.id
 )
 WHERE id IN (SELECT value FROM JSON_EACH($1));
+
+-- name: get-all-words
+-- Fetch all words for a given language that have at least one relation.
+-- Used for pre-loading auto suggestion tries.
+-- $1: lang
+SELECT DISTINCT LOWER(j.value) AS word
+FROM entries, JSON_EACH(entries.content) AS j
+WHERE entries.lang = $1 AND entries.status = 'enabled'
+  AND EXISTS (SELECT 1 FROM relations r WHERE r.from_id = entries.id)
+ORDER BY word ASC;
 
 -- name: get-stats
 SELECT json_object(

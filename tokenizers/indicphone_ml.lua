@@ -157,6 +157,194 @@ end
 
 
 -- #############################################################################
+-- (Manglish) English chars to Indicphone transliteration mappings
+
+-- Placeholders for uppercase retroflex markers (captured before lowercasing)
+local RETROFLEX_N = "\1"  -- N → N1
+local RETROFLEX_L = "\2"  -- L → L1
+local RETROFLEX_R = "\3"  -- R → R1
+
+-- English compound patterns (longest-first).
+-- For patterns with same length, order in the list takes priority.
+local en_compounds_list = {
+    {"ntha", "N0"},   {"njch", "NC"},   {"ksha", "KS1"},  {"nkha", "NK"},
+    {"zhla", "L1"},   {"zhna", "N1"},   {"zhra", "R1"},
+
+
+    {"kka", "K2"},    {"gga", "K"},     {"cca", "C2"},    {"cha", "C"},
+    {"tta", "T2"},    {"dda", "T2"},    {"ppa", "P2"},    {"mma", "M2"},
+    {"lla", "L2"},    {"nna", "NN"},    {"rra", "T"},     {"yya", "Y"},
+    {"vva", "V"},     {"ssa", "S"},
+    {"sha", "S1"},    {"zha", "Z"},     {"nga", "NG"},    {"nja", "NJ"},
+    {"nda", "N1T"},   {"nta", "NT"},    {"mpa", "MP"},    {"nka", "NK"},
+    {"tth", "0"},     {"nth", "N0"},    {"nch", "NC"},    {"ksh", "KS1"},
+    {"zhl", "L1"},    {"zhn", "N1"},    {"zhr", "R1"},
+    {"zl", "L1"},     {"zn", "N1"},     {"zr", "R1"},
+
+    {"kk", "K2"},     {"gg", "K"},      {"cc", "C2"},     {"ch", "C"},
+    {"tt", "T2"},     {"dd", "T2"},     {"pp", "P2"},     {"mm", "M2"},
+    {"ll", "L2"},     {"nn", "NN"},     {"rr", "T"},      {"yy", "Y"},
+    {"vv", "V"},      {"ss", "S"},
+    {"sh", "S1"},     {"zh", "Z"},      {"ng", "NG"},     {"nj", "NJ"},
+    {"th", "0"},      {"dh", "0"},      {"nd", "N1T"},    {"nt", "NT"},
+    {"mp", "MP"},     {"nk", "NK"},     {"ph", "F"},      {"bh", "B"},
+    {"kh", "K"},      {"gh", "K"},      {"jh", "J"},
+}
+
+-- Build a lookup table from list
+local en_compounds = {}
+for _, pair in ipairs(en_compounds_list) do
+    en_compounds[pair[1]] = pair[2]
+end
+
+-- Single English consonants
+local en_consonants = {
+    ["k"] = "K",  ["g"] = "K",  ["c"] = "C",  ["j"] = "J",
+    ["t"] = "T",  ["d"] = "T",  -- retroflex (standard Manglish convention)
+    ["n"] = "N",  ["p"] = "P",  ["f"] = "F",  ["b"] = "B",  ["m"] = "M",
+    ["y"] = "Y",  ["r"] = "R",  ["l"] = "L",  ["v"] = "V",
+    ["s"] = "S",  ["h"] = "H",  ["z"] = "Z",
+    -- Retroflex placeholders (from uppercase N/L/R)
+    [RETROFLEX_N] = "N1",  [RETROFLEX_L] = "L1",  [RETROFLEX_R] = "R1",
+}
+
+-- English vowels - standalone (at word start or after another vowel)
+local en_vowels_standalone = {
+    ["aa"] = "A",  ["ai"] = "AI", ["au"] = "O",  ["ou"] = "O",
+    ["ee"] = "I",  ["ii"] = "I",  ["oo"] = "U",  ["uu"] = "U",
+    ["ea"] = "I",  ["ie"] = "I",  ["oa"] = "O",
+    ["a"] = "A",   ["i"] = "I",   ["u"] = "U",   ["e"] = "E",  ["o"] = "O",
+}
+
+-- English vowels - modifiers (after consonants)
+local en_vowels_modifier = {
+    ["aa"] = "",   ["ai"] = "7",  ["au"] = "9",  ["ou"] = "9",
+    ["ee"] = "4",  ["ii"] = "4",  ["oo"] = "5",  ["uu"] = "5",
+    ["ea"] = "4",  ["ie"] = "4",  ["oa"] = "8",
+    ["a"] = "",    ["i"] = "4",   ["u"] = "5",   ["e"] = "6",  ["o"] = "8",
+}
+
+-- Sorted pattern lengths for English matching
+local en_compound_lengths = {4, 3, 2}
+local en_vowel_lengths = {2, 1}
+
+-- Preprocess English input: handle uppercase retroflex markers, then lowercase
+local function preprocess_en(input)
+    -- 1. First, replace uppercase retroflex markers with placeholders
+    --    This must happen BEFORE lowercasing to preserve the distinction
+    input = string_gsub(input, "N", RETROFLEX_N)
+    input = string_gsub(input, "L", RETROFLEX_L)
+    input = string_gsub(input, "R", RETROFLEX_R)
+
+    -- 2. Now lowercase the rest
+    input = string.lower(input)
+
+    -- 3. Normalize common variations
+    input = string_gsub(input, "w", "v")
+    input = string_gsub(input, "x", "ks")
+    input = string_gsub(input, "q", "k")
+
+    -- 4. Remove non-alphabetic characters (but keep our placeholders)
+    input = string_gsub(input, "[^a-z\1\2\3]", "")
+
+    return input
+end
+
+-- Core transliteration processing: English input → phonetic string
+local function transliterate(input)
+    input = preprocess_en(input)
+
+    local output = {}
+    local pos = 1
+    local len = #input
+    local after_consonant = false
+
+    while pos <= len do
+        local matched = false
+        local char = string_sub(input, pos, pos)
+
+        -- Try compound consonants first (longest match)
+        for _, plen in ipairs(en_compound_lengths) do
+            if pos + plen - 1 <= len and not matched then
+                local substr = string_sub(input, pos, pos + plen - 1)
+                if en_compounds[substr] then
+                    output[#output + 1] = en_compounds[substr]
+                    pos = pos + plen
+                    after_consonant = true
+                    matched = true
+                end
+            end
+        end
+
+        if not matched then
+            -- Try vowel patterns (longest first)
+            for _, vlen in ipairs(en_vowel_lengths) do
+                if pos + vlen - 1 <= len and not matched then
+                    local substr = string_sub(input, pos, pos + vlen - 1)
+
+                    if after_consonant and en_vowels_modifier[substr] then
+                        -- Vowel modifier after consonant
+                        local mod = en_vowels_modifier[substr]
+                        if mod ~= "" then
+                            output[#output + 1] = mod
+                        end
+                        pos = pos + vlen
+                        after_consonant = false
+                        matched = true
+                    elseif en_vowels_standalone[substr] then
+                        -- Standalone vowel (word start or after vowel)
+                        output[#output + 1] = en_vowels_standalone[substr]
+                        pos = pos + vlen
+                        after_consonant = false
+                        matched = true
+                    end
+                end
+            end
+        end
+
+        if not matched then
+            -- Try single consonants (including retroflex placeholders)
+            if en_consonants[char] then
+                output[#output + 1] = en_consonants[char]
+                pos = pos + 1
+                after_consonant = true
+                matched = true
+            end
+        end
+
+        if not matched then
+            -- Skip unrecognized character
+            pos = pos + 1
+        end
+    end
+
+    local result = table_concat(output)
+
+    -- Apply phonetic exception: uthsavam -> ulsavam pattern
+    result = string_gsub(result, "^([AVTSUMO])L([KS])", "%10%2")
+
+    -- Handle word-final anusvara: final M after consonant becomes nasal marker (3)
+    -- This handles common patterns like "malayalam" → "malayaLaM" (മലയാളം)
+    result = string_gsub(result, "([^AEIOU])M$", "%13")
+
+    return result
+end
+
+-- Encode English transliteration to three phonetic keys
+local function encode_en(input)
+    local key2 = transliterate(input)
+    local key1 = string_gsub(key2, "[24-9]", "")
+    local key0 = string_gsub(key2, "[1-24-9]", "")
+    return key0, key1, key2
+end
+
+-- Check if string contains Malayalam characters (U+0D00-U+0D7F range)
+local function has_native(text)
+    return string_find(text, "[\xE0\xB4\x80-\xE0\xB5\xBF]") ~= nil
+end
+
+-- #################
+-- Public functions
 
 -- Tokenize text for indexing: returns weighted tsvector tokens
 -- Format: {"TOKEN:weight", ...} where weight 3=highest, 1=lowest
@@ -179,9 +367,17 @@ function tokenize(text, lang)
 end
 
 -- Convert search query to FTS5 query string
+-- Auto-detects Malayalam vs Manglish input
 -- Returns keys joined with " OR " for SQLite FTS5 OR matching
 function to_query(text, lang)
-    local key0, key1, key2 = encode(text)
+    local key0, key1, key2
+
+    -- If no Malayalam chars, use English transliteration
+    if not has_native(text) then
+        key0, key1, key2 = encode_en(text)
+    else
+        key0, key1, key2 = encode(text)
+    end
 
     if key0 == "" then
         return ""
