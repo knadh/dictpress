@@ -193,6 +193,17 @@ pub fn total_pages(total: i64, per_page: i32) -> i32 {
     ((total as f64) / (per_page as f64)).ceil() as i32
 }
 
+/// Clean and normalize a query string by replacing punctuation chars with spaces.
+/// Collapses multiple spaces into single spaces.
+pub fn clean_query(q: &str) -> String {
+    q.chars()
+        .map(|c| if c.is_ascii_punctuation() { ' ' } else { c })
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 /// Generic pagination query params.
 #[derive(Debug, serde::Deserialize, Default)]
 pub struct PaginationQuery {

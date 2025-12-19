@@ -51,6 +51,7 @@ impl DefaultTokenizer {
     }
 }
 
+// The default tokenizer for stemmers in the `rust-stemmers` lib.
 impl Tokenizer for DefaultTokenizer {
     fn tokenize(&self, text: &str, _lang: &str) -> Result<Vec<String>, TokenizerError> {
         Ok(text
@@ -175,9 +176,9 @@ pub fn parse_tokenizer_field(tokenizer: &str) -> Option<String> {
         return None;
     }
 
-    if tokenizer.starts_with("default:") && tokenizer.len() > 8 {
-        Some(tokenizer.to_string())
-    } else if tokenizer.starts_with("lua:") && tokenizer.len() > 4 {
+    if (tokenizer.starts_with("default:") && tokenizer.len() > 8)
+        || (tokenizer.starts_with("lua:") && tokenizer.len() > 4)
+    {
         Some(tokenizer.to_string())
     } else {
         log::warn!(

@@ -5,7 +5,7 @@ use axum::{
     http::StatusCode,
 };
 
-use super::{json, paginate, total_pages, ApiErr, ApiResp, Ctx, Result};
+use super::{clean_query, json, paginate, total_pages, ApiErr, ApiResp, Ctx, Result};
 use crate::cache::make_search_cache_key;
 use crate::models::{
     RelationsQuery, SearchQuery, SearchResults, StringArray, Suggestion, STATUS_ENABLED,
@@ -60,7 +60,10 @@ pub async fn search_admin(
 }
 
 /// Perform search. Reads offset/limit and max_relations/max_content_items from query.
-pub async fn do_search(ctx: Arc<Ctx>, query: SearchQuery, is_admin: bool) -> Result<SearchResults> {
+pub async fn do_search(ctx: Arc<Ctx>, mut query: SearchQuery, is_admin: bool) -> Result<SearchResults> {
+    // Clean and normalize the query string.
+    query.query = clean_query(&query.query);
+
     if query.query.is_empty() {
         return Err(ApiErr::new("query is required", StatusCode::BAD_REQUEST));
     }
@@ -166,6 +169,9 @@ pub async fn get_suggestions(
     State(ctx): State<Arc<Ctx>>,
     Path((lang, q)): Path<(String, String)>,
 ) -> Result<ApiResp<Vec<Suggestion>>> {
+    // Clean and normalize the query string.
+    let q = clean_query(&q);
+
     if q.is_empty() {
         return Err(ApiErr::new("`q` is required", StatusCode::BAD_REQUEST));
     }

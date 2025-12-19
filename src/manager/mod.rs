@@ -71,7 +71,11 @@ impl Manager {
             .get_tokenizer(lang_id)
             .ok_or_else(|| Error::UnknownLang(lang_id.to_string()))?;
 
-        Ok(tk.to_query(query, lang_id)?)
+        let out = tk.to_query(query, lang_id)?;
+
+        log::debug!("lang={}, query='{}', fts='{}'", lang_id, query, out);
+
+        Ok(out)
     }
 
     // #########################

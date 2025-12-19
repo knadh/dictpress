@@ -34,7 +34,7 @@ async function screenshotElement(element) {
     let val = q.trim();
 
     const uri = elForm.getAttribute("action");
-    document.location.href = `${uri}/${encodeURIComponent(val).replace(/%20/g, "+")}`;
+    document.location.href = `${uri}/${encodeURIComponent(val).replace(/%20/g, "-")}`;
   }
 
   // ===================================

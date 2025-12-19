@@ -8,7 +8,7 @@ use axum::{
 use axum_extra::extract::Form;
 
 use super::search::do_search;
-use super::{paginate, Ctx};
+use super::{clean_query, paginate, Ctx};
 use crate::cache::make_glossary_cache_key;
 use crate::models::{
     Entry, GlossaryWord, Relation, SearchQuery, SearchResults, StringArray, STATUS_PENDING,
@@ -107,6 +107,9 @@ pub async fn search(
     State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang, query)): Path<(String, String, String)>,
 ) -> impl IntoResponse {
+    // Clean the query for display in the template.
+    let query = clean_query(&query);
+
     let mut tpl_ctx = base_context(&ctx);
     tpl_ctx.insert("page_type", "search");
     tpl_ctx.insert("query", &query);
