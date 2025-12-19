@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS entries (
     created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
 
-    -- Generated column for direct word matching (first 50 chars, lowercased).
-    content_head TEXT GENERATED ALWAYS AS (LOWER(SUBSTR(JSON_EXTRACT(content, '$[0]'), 1, 50))) STORED
+    -- Generated column for direct word matching (first 20 chars, lowercased).
+    content_head TEXT GENERATED ALWAYS AS (LOWER(SUBSTR(JSON_EXTRACT(content, '$[0]'), 1, 20))) STORED
 ) STRICT;
 
 CREATE INDEX IF NOT EXISTS idx_entries_initial ON entries(lang, status, initial);

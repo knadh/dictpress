@@ -4,10 +4,11 @@
 -- $1: lang, $2: raw query, $3: FTS query, $4: status, $5: offset, $6: limit
 SELECT e.*,
        JSON_ARRAY_LENGTH(e.content) AS content_length,
-       -- Rank: weight - (50 - content_length). Shorter content = more negative = ranks first.
+       -- Rank: weight - (20 - content_length). Shorter content = more negative = ranks first.
+       --       20 as that's the max length of the generated content_head column.
        -- Exact matches get extra -1000 boost to always rank highest.
-       e.weight + (-1.0 * (50.0 - LENGTH(e.content_head)))
-       + CASE WHEN e.content_head = LOWER(SUBSTR($2, 1, 50)) THEN -1000.0 ELSE 0.0 END
+       e.weight + (-1.0 * (20.0 - LENGTH(e.content_head)))
+       + CASE WHEN e.content_head = LOWER(SUBSTR($2, 1, 20)) THEN -1000.0 ELSE 0.0 END
        AS rank,
        COUNT(*) OVER() AS total
 FROM entries e
@@ -189,7 +190,7 @@ INSERT INTO entries (guid, content, initial, weight, tokens, lang, tags, phones,
     SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
     WHERE NOT EXISTS (
         SELECT 1 FROM entries
-        WHERE content_head = LOWER(SUBSTR(JSON_EXTRACT($2, '$[0]'), 1, 50))
+        WHERE content_head = LOWER(SUBSTR(JSON_EXTRACT($2, '$[0]'), 1, 20))
         AND lang = $6 AND status != 'disabled'
     )
     RETURNING id;
