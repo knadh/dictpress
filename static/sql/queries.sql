@@ -86,10 +86,9 @@ SELECT *, JSON_ARRAY_LENGTH(content) AS content_length FROM entries
 WHERE ($1 > 0 AND id = $1) OR ($1 <= 0 AND $2 != '' AND guid = $2);
 
 -- name: get-parent-relations
-SELECT e.*, r.id AS relation_id FROM entries e
-    LEFT JOIN relations r ON r.from_id = e.id
-    WHERE r.to_id = $1
-    ORDER BY e.weight;
+SELECT e.*, r.id AS relation_id FROM relations r
+JOIN entries e ON e.id = r.from_id WHERE r.to_id = $1
+ORDER BY e.weight;
 
 -- name: get-initials
 SELECT DISTINCT initial FROM entries
