@@ -1,6 +1,8 @@
 -- name: search
 -- FTS5 search with length-based ranking (shorter content ranks higher).
 -- Exact content matches get extra boost via negative rank adjustment.
+-- Supports both FTS matches and direct content_head matches (for multi-word phrases
+-- where tokens may be incomplete). Uses UNION for better index utilization.
 -- $1: lang, $2: raw query, $3: FTS query, $4: status, $5: offset, $6: limit
 SELECT e.*,
        JSON_ARRAY_LENGTH(e.content) AS content_length,
@@ -12,8 +14,16 @@ SELECT e.*,
        AS rank,
        COUNT(*) OVER() AS total
 FROM entries e
-INNER JOIN entries_fts fts ON fts.rowid = e.id
-WHERE entries_fts MATCH $3
+WHERE e.id IN (
+    -- FTS matches
+    SELECT rowid FROM entries_fts WHERE entries_fts MATCH $3
+    UNION
+    -- Direct content_head matches (for multi-word phrases with incomplete tokens)
+    SELECT id FROM entries
+    WHERE content_head = LOWER(SUBSTR($2, 1, 20))
+      AND ($1 = '' OR lang = $1)
+      AND status != 'disabled'
+)
   AND EXISTS (SELECT 1 FROM relations r WHERE r.from_id = e.id)
   AND ($1 = '' OR e.lang = $1)
   AND ($4 = '' OR e.status = $4)
