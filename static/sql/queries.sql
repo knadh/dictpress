@@ -168,9 +168,10 @@ WHERE id IN (SELECT value FROM JSON_EACH($1));
 -- Used for pre-loading autocomplete tries.
 -- $1: lang
 SELECT DISTINCT LOWER(j.value) AS word
-FROM entries, JSON_EACH(entries.content) AS j
-WHERE entries.lang = $1 AND entries.status = 'enabled'
-  AND EXISTS (SELECT 1 FROM relations r WHERE r.from_id = entries.id)
+FROM entries
+    JOIN relations r ON r.from_id = entries.id
+    JOIN JSON_EACH(entries.content) AS j
+    WHERE entries.lang = ?1 AND entries.status = 'enabled'
 ORDER BY word ASC;
 
 -- name: get-stats

@@ -616,9 +616,16 @@ impl Manager {
 
     /// Get all normalized words for a given language (for building autocomplete trie).
     pub async fn get_all_words(&self, lang: &str) -> Result<Vec<String>, Error> {
+        // Acquire a dedicated connection and set busy_timeout for this query
+        // as fetching all words can take time on large datasets.
+        let mut conn = self.db.acquire().await?;
+        sqlx::query("PRAGMA busy_timeout = 10000;")
+            .execute(&mut *conn)
+            .await?;
+
         let rows: Vec<(String,)> = sqlx::query_as(&q.get_all_words.query)
             .bind(lang)
-            .fetch_all(&self.db)
+            .fetch_all(&mut *conn)
             .await?;
 
         // Filter out empty strings and collect
