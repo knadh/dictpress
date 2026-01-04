@@ -1,4 +1,5 @@
 :root {
+  --bg: #fbfbfb;
   --primary: #111;
   --secondary: #333;
   --light: #666;
@@ -14,7 +15,7 @@
 }
 
 body {
-  background: #fbfbfb;
+  background: var(--bg);
   font-family: "Helvetica Neue", "Segoe UI", Helvetica, sans-serif;
   margin: 0;
   color: var(--primary);
@@ -277,6 +278,10 @@ button:hover,
   list-style-type: none;
 }
 
+.entries .entry:target {
+  outline: 3px solid var(--blue);
+}
+
 .entries .head {
   position: relative;
   margin-bottom: 10px;
@@ -370,16 +375,12 @@ button:hover,
   margin-right: 10px;
 }
 
-.entry .edit {
+.entry .defs .edit {
   padding: 3px 10px;
   margin-left: 15px;
   display: none;
   position: absolute;
   text-decoration: none;
-  z-index: 1000;
-  line-height: 1;
-  text-shadow: 0px 3px 3px #fff;
-  font-size: 0.8rem;
 }
 .entry .edit img {
   max-height: 12px;
@@ -409,6 +410,15 @@ button:hover,
   align-items: center;
   gap: 10px;
 }
+  .entries .meta a {
+    text-decoration: none;
+    display: inline-block;
+    margin-left: 5px;
+  }
+  .entries .meta .toolbar img {
+    max-height: 12px;
+    width: auto;
+  }
 
 .related .word {
   margin: 0 5px 8px 0;
@@ -448,10 +458,15 @@ button:hover,
 }
 
 .form-comments {
+  background: var(--bg);
   margin: 10px 0 45px 0;
   display: none;
   padding: 15px;
   clear: both;
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 10;
 }
 
 .form-comments textarea {

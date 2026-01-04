@@ -6,16 +6,10 @@
     <div class="eight columns">
         <ol class="entries">
             {% for r in results.entries | slice(end=num_results) %}
-            <li class="entry" data-guid="{{ r.guid }}" data-head="{{ r.content | join(sep=", ") }}">
+            <li class="entry" id="{{ r.guid }}" data-guid="{{ r.guid }}" data-head="{{ r.content | join(sep=", ") }}">
                 <header class="head">
                     <div>
-                        <h3 class="title">{{ r.content | join(sep=", ") }}
-                            {% if consts.enable_submissions %}
-                                <a href="#" data-from="{{ r.guid }}" class="edit" title="{{ i18n.public_suggestEdit }}">
-                                    <img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ i18n.public_suggestEdit }}">
-                                </a>
-                            {% endif %}
-                        </h3>
+                        <h3 class="title">{{ r.content | join(sep=", ") }}</h3>
 
                         {% if r.phones and r.phones | length > 0 %}
                             <span class="pronun">&#9834; {{ r.phones | join(sep=",") }}</span>
@@ -30,7 +24,14 @@
                                 {% endfor %}
                             </span>
                         {% endif %}
-                        <a href="#" title="Share screenshot" class="export" data-guid="{{ r.guid }}"><img src="/static/export.svg?v={{ asset_ver }}" alt="Share screenshot"></a>
+
+                        <div class="toolbar">
+                            {% if consts.enable_submissions %}
+                            <a href="#" data-from="{{ r.guid }}" class="edit" title="{{ i18n.public_suggestEdit }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ i18n.public_suggestEdit }}"></a>
+                            {% endif %}
+                            <a href="#{{ r.guid }}" title="Share link" class="link"><img src="/static/link.svg?v={{ asset_ver }}" alt="Share link"></a>
+                            <a href="#" title="Share screenshot" class="export" data-guid="{{ r.guid }}"><img src="/static/export.svg?v={{ asset_ver }}" alt="Share screenshot"></a>
+                        </div>
                     </div>
                 </header>
 
