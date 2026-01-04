@@ -1,32 +1,33 @@
 -- name: search
--- FTS5 search with length-based ranking (shorter content ranks higher).
+-- FTS5 search with BM25 + length-based ranking.
+-- BM25 rewards matching more query tokens. Shorter content_head breaks ties.
 -- Exact content matches get extra boost via negative rank adjustment.
--- Supports both FTS matches and direct content_head matches (for multi-word phrases
--- where tokens may be incomplete). Uses UNION for better index utilization.
 -- $1: lang, $2: raw query, $3: FTS query, $4: status, $5: offset, $6: limit
 SELECT e.*,
        JSON_ARRAY_LENGTH(e.content) AS content_length,
-       -- Rank: weight - (20 - content_length). Shorter content = more negative = ranks first.
-       --       20 as that's the max length of the generated content_head column.
-       -- Exact matches get extra -1000 boost to always rank highest.
-       e.weight + (-1.0 * (20.0 - LENGTH(e.content_head)))
+       -- Rank: BM25 (FTS match quality) + weight - (20 - content_length) for tie-breaking.
+       -- BM25 is negative (lower = better match), so adding it boosts better matches.
+       -- Exact content_head matches get extra -1000 boost to always rank highest.
+       MIN(matches.bm25_rank) + e.weight + (-1.0 * (20.0 - LENGTH(e.content_head)))
        + CASE WHEN e.content_head = LOWER(SUBSTR($2, 1, 20)) THEN -1000.0 ELSE 0.0 END
        AS rank,
        COUNT(*) OVER() AS total
-FROM entries e
-WHERE e.id IN (
-    -- FTS matches
-    SELECT rowid FROM entries_fts WHERE entries_fts MATCH $3
-    UNION
+FROM (
+    -- FTS matches with BM25 scores
+    SELECT rowid AS id, bm25(entries_fts) AS bm25_rank
+    FROM entries_fts WHERE entries_fts MATCH $3
+    UNION ALL
     -- Direct content_head matches (for multi-word phrases with incomplete tokens)
-    SELECT id FROM entries
+    SELECT id, 0.0 AS bm25_rank FROM entries
     WHERE content_head = LOWER(SUBSTR($2, 1, 20))
       AND ($1 = '' OR lang = $1)
       AND status != 'disabled'
-)
-  AND EXISTS (SELECT 1 FROM relations r WHERE r.from_id = e.id)
+) matches
+INNER JOIN entries e ON e.id = matches.id
+WHERE EXISTS (SELECT 1 FROM relations r WHERE r.from_id = e.id)
   AND ($1 = '' OR e.lang = $1)
   AND ($4 = '' OR e.status = $4)
+GROUP BY e.id
 ORDER BY rank
 LIMIT $6 OFFSET $5;
 
