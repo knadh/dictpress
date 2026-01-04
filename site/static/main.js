@@ -265,7 +265,7 @@ async function screenshotElement(element) {
       clearTimeout(debounce);
       return new Promise(resolve => {
         debounce = setTimeout(async () => {
-            const response = await fetch(`${_ROOT_URL}/api/suggestions/${langCode}/${val}`);
+            const response = await fetch(`${_ROOT_URL}/api/autocomplete/${langCode}/${val}`);
             const data = await response.json();
 
             const suggestions = data.data.map(item => item.content[0]);

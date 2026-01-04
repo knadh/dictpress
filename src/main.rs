@@ -1,3 +1,4 @@
+mod autocomplete;
 mod cache;
 mod cli;
 mod config;
@@ -9,7 +10,6 @@ mod init;
 mod manager;
 mod models;
 mod sitemaps;
-mod suggestions;
 mod tokenizer;
 
 // Use mimalloc for musl builds (musl's default malloc is very slow).
@@ -227,12 +227,12 @@ async fn main() {
         None
     };
 
-    // Initialize trie suggestions if enabled.
-    let suggestions = if config.suggestions.enabled {
-        match init::suggestions(&mgr, &langs).await {
-            Ok(s) => Some(Arc::new(s)),
+    // Initialize trie autocomplete if enabled.
+    let autocomplete = if config.app.enable_autocomplete {
+        match init::autocomplete(&mgr, &langs).await {
+            Ok(ac) => Some(Arc::new(ac)),
             Err(e) => {
-                log::error!("error initializing suggestions module: {}", e);
+                log::error!("error initializing autocomplete module: {}", e);
                 None
             }
         }
@@ -249,7 +249,7 @@ async fn main() {
         langs,
         dicts,
         cache,
-        suggestions,
+        autocomplete,
         admin_tpl,
         site_tpl,
         site_path: cli.site.clone(),
@@ -278,8 +278,8 @@ async fn main() {
             glossary_max_per_page: config.glossary.max_per_page,
             glossary_num_page_nums: config.glossary.num_page_nums,
 
-            suggestions_enabled: config.suggestions.enabled,
-            num_suggestions: config.suggestions.num,
+            autocomplete_enabled: config.app.enable_autocomplete,
+            num_autocomplete: config.app.num_autocomplete_results,
 
             // Split admin assets by file extension for template rendering.
             admin_js_assets: config

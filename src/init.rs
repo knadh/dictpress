@@ -1,7 +1,7 @@
+use crate::autocomplete::Autocomplete;
 use crate::cache::{Cache, CacheConfig, CacheError};
 use crate::manager::Manager;
 use crate::models::{Config, Dicts, Lang, LangMap, DEFAULT_TOKENIZER};
-use crate::suggestions::Suggestions;
 use crate::tokenizer::Tokenizers;
 
 /// Initialize logger.
@@ -185,19 +185,19 @@ pub async fn cache(cfg: &CacheConfig) -> Result<Cache, CacheError> {
     Cache::new(cfg).await
 }
 
-/// Initialize suggestions trie from database.
-pub async fn suggestions(
+/// Initialize autocomplete trie from database.
+pub async fn autocomplete(
     mgr: &Manager,
     langs: &LangMap,
-) -> Result<Suggestions, Box<dyn std::error::Error>> {
-    let mut sugg = Suggestions::new();
+) -> Result<Autocomplete, Box<dyn std::error::Error>> {
+    let mut ac = Autocomplete::new();
 
     for lang_id in langs.keys() {
         let words = mgr.get_all_words(lang_id).await?;
         let num = words.len();
-        sugg.build(lang_id, words);
-        log::info!("suggestions: loaded {} words for {}", num, lang_id);
+        ac.build(lang_id, words);
+        log::info!("autocomplete: loaded {} words for {}", num, lang_id);
     }
 
-    Ok(sugg)
+    Ok(ac)
 }

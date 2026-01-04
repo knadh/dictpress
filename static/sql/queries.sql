@@ -31,7 +31,7 @@ ORDER BY rank
 LIMIT $6 OFFSET $5;
 
 -- name: search-words
--- Return word suggestions (for autocomplete).
+-- Return autocomplete results for a search query.
 -- $1: lang, $2: raw query string, $3: FTS query, $4: limit
 SELECT e.content
 FROM entries e
@@ -165,7 +165,7 @@ WHERE id IN (SELECT value FROM JSON_EACH($1));
 
 -- name: get-all-words
 -- Fetch all words for a given language that have at least one relation.
--- Used for pre-loading auto suggestion tries.
+-- Used for pre-loading autocomplete tries.
 -- $1: lang
 SELECT DISTINCT LOWER(j.value) AS word
 FROM entries, JSON_EACH(entries.content) AS j

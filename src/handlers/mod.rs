@@ -17,10 +17,10 @@ use serde::Serialize;
 use tera::Tera;
 
 use crate::{
+    autocomplete::Autocomplete,
     cache::Cache,
     manager::Manager,
     models::{Dicts, LangMap},
-    suggestions::Suggestions,
 };
 
 pub type I18n = HashMap<String, String>;
@@ -31,7 +31,7 @@ pub struct Ctx {
     pub langs: LangMap,
     pub dicts: Dicts,
     pub cache: Option<Arc<Cache>>,
-    pub suggestions: Option<Arc<Suggestions>>,
+    pub autocomplete: Option<Arc<Autocomplete>>,
 
     /// Admin templates (always loaded, embedded in binary).
     pub admin_tpl: Arc<Tera>,
@@ -74,9 +74,9 @@ pub struct Consts {
     pub glossary_max_per_page: i32,
     pub glossary_num_page_nums: i32,
 
-    // Suggestions settings.
-    pub suggestions_enabled: bool,
-    pub num_suggestions: i32,
+    // Autocomplete settings.
+    pub autocomplete_enabled: bool,
+    pub num_autocomplete: i32,
 
     // Admin assets split by type for easier template rendering.
     pub admin_js_assets: Vec<String>,
@@ -106,8 +106,8 @@ impl Default for Consts {
             glossary_max_per_page: 100,
             glossary_num_page_nums: 10,
 
-            suggestions_enabled: false,
-            num_suggestions: 10,
+            autocomplete_enabled: false,
+            num_autocomplete: 10,
 
             admin_js_assets: Vec::new(),
             admin_css_assets: Vec::new(),

@@ -120,8 +120,8 @@ impl Manager {
         Ok((results, total))
     }
 
-    /// Get word suggestions for autocomplete.
-    pub async fn get_suggestions(
+    /// Get autocomplete results for a search query.
+    pub async fn get_autocomplete(
         &self,
         lang: &str,
         query: &str,
@@ -614,7 +614,7 @@ impl Manager {
         Ok(stats)
     }
 
-    /// Get all normalized words for a given language (for building suggestions trie).
+    /// Get all normalized words for a given language (for building autocomplete trie).
     pub async fn get_all_words(&self, lang: &str) -> Result<Vec<String>, Error> {
         let rows: Vec<(String,)> = sqlx::query_as(&q.get_all_words.query)
             .bind(lang)

@@ -28,6 +28,13 @@ enable_pages = true
 # on approval.
 enable_submissions = false
 
+# Enable autocomplete for search queries on the frontend.
+# This loads all dictionary words into memory for fast lookup.
+enable_autocomplete = false
+
+# Number of autocomplete results to return.
+num_autocomplete_results = 10
+
 # Directory containing Lua tokenizer scripts.
 tokenizers_dir = "tokenizers"
 
@@ -63,18 +70,6 @@ max_disk_mb = 512
 
 # Directory for disk cache storage (hybrid mode only).
 dir = "/tmp/dictpress-cache"
-
-
-[suggestions]
-# Enable autocomplete suggestions for search queries on the frontend.
-# This loads all dictionary words into memory for fast lookup.
-enabled = false
-
-# Number of suggestions to return.
-num = 10
-
-
-################################################################################
 
 
 [api_results]

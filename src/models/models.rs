@@ -374,9 +374,6 @@ pub struct Config {
     pub cache: CacheConfig,
 
     #[serde(default)]
-    pub suggestions: SuggestionsConfig,
-
-    #[serde(default)]
     pub api_results: ApiResultsConfig,
 
     #[serde(default)]
@@ -417,6 +414,16 @@ pub struct AppConfig {
 
     #[serde(default)]
     pub tokenizers_dir: String,
+
+    #[serde(default)]
+    pub enable_autocomplete: bool,
+
+    #[serde(default = "default_num_autocomplete_results")]
+    pub num_autocomplete_results: i32,
+}
+
+fn default_num_autocomplete_results() -> i32 {
+    10
 }
 
 fn default_true() -> bool {
@@ -525,27 +532,6 @@ impl Default for GlossaryConfig {
             default_per_page: default_glossary_per_page(),
             max_per_page: default_glossary_max_per_page(),
             num_page_nums: default_num_page_nums(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct SuggestionsConfig {
-    #[serde(default)]
-    pub enabled: bool,
-    #[serde(default = "default_suggestions_num")]
-    pub num: i32,
-}
-
-fn default_suggestions_num() -> i32 {
-    10
-}
-
-impl Default for SuggestionsConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            num: default_suggestions_num(),
         }
     }
 }

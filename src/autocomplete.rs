@@ -11,12 +11,12 @@ pub fn normalize_word(s: &str) -> String {
         .collect()
 }
 
-/// In-memory trie-based suggestions for fast prefix matching.
-pub struct Suggestions {
+/// In-memory trie-based autocomplete for fast prefix matching.
+pub struct Autocomplete {
     tries: HashMap<String, Trie<u8>>,
 }
 
-impl Suggestions {
+impl Autocomplete {
     pub fn new() -> Self {
         Self {
             tries: HashMap::new(),
@@ -40,7 +40,7 @@ impl Suggestions {
         self.tries.insert(lang.to_string(), b.build());
     }
 
-    /// Query suggestions for a prefix (normalizes the prefix internally).
+    /// Query autocomplete results for a prefix (normalizes the prefix internally).
     /// Returns up to `num` matching words.
     pub fn query(&self, lang: &str, prefix: &str, num: usize) -> Vec<String> {
         let word = normalize_word(prefix);

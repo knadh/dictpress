@@ -165,8 +165,8 @@ pub async fn do_search(ctx: Arc<Ctx>, mut query: SearchQuery, is_admin: bool) ->
     Ok(results)
 }
 
-/// Suggestions endpoint for search word autocomplete.
-pub async fn get_suggestions(
+/// Autocomplete endpoint for search word suggestions.
+pub async fn get_autocomplete(
     State(ctx): State<Arc<Ctx>>,
     Path((lang, q)): Path<(String, String)>,
 ) -> Result<ApiResp<Vec<Suggestion>>> {
@@ -180,16 +180,16 @@ pub async fn get_suggestions(
         return Err(ApiErr::new("unknown language", StatusCode::BAD_REQUEST));
     }
 
-    // If suggestions are disable, return an empty array.
-    if !ctx.consts.suggestions_enabled {
+    // If autocomplete is disabled, return an empty array.
+    if !ctx.consts.autocomplete_enabled {
         return Ok(json(Vec::new()));
     }
 
-    let limit = ctx.consts.num_suggestions;
+    let limit = ctx.consts.num_autocomplete;
 
-    // Try trie search first if suggestions are enabled.
-    let mut out: Vec<Suggestion> = if let Some(sugg) = &ctx.suggestions {
-        sugg.query(&lang, &q, limit as usize)
+    // Try trie search first if autocomplete is enabled.
+    let mut out: Vec<Suggestion> = if let Some(ac) = &ctx.autocomplete {
+        ac.query(&lang, &q, limit as usize)
             .into_iter()
             .map(|w| Suggestion {
                 content: StringArray(vec![w]),
@@ -202,7 +202,7 @@ pub async fn get_suggestions(
     // If there are fewer than limit results, supplement with DB FTS search.
     if out.len() < limit as usize {
         let remaining = limit - out.len() as i32;
-        if let Ok(res) = ctx.mgr.get_suggestions(&lang, &q, remaining).await {
+        if let Ok(res) = ctx.mgr.get_autocomplete(&lang, &q, remaining).await {
             for s in res {
                 if !out.iter().any(|r| r.content.0 == s.content.0) {
                     out.push(s);
