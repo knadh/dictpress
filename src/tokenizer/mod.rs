@@ -3,7 +3,27 @@ mod lua;
 pub use lua::LuaTokenizer;
 
 use rust_stemmers::{Algorithm, Stemmer};
-use std::{collections::HashMap, path::Path, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+    sync::{Arc, LazyLock},
+};
+
+/// Common English stop words to filter out during tokenization.
+/// Implemented manually because the rust-stemmers lib doesn't do stop word removal.
+static ENGLISH_STOP_WORDS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    HashSet::from([
+        "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by",
+        "from", "as", "is", "was", "are", "were", "be", "been", "being", "have", "has", "had",
+        "do", "does", "did", "will", "would", "could", "should", "may", "might", "must", "shall",
+        "can", "this", "that", "these", "those", "it", "its", "i", "me", "my", "we", "us", "our",
+        "you", "your", "he", "him", "his", "she", "her", "they", "them", "their", "who", "whom",
+        "which", "what", "where", "when", "how", "why", "if", "then", "so", "than", "too", "very",
+        "just", "only", "also", "into", "out", "up", "down", "off", "over", "under", "again",
+        "here", "there", "all", "any", "both", "each", "few", "more", "most", "other", "some",
+        "no", "not", "nor",
+    ])
+});
 
 use crate::models::DEFAULT_TOKENIZER;
 
@@ -56,12 +76,17 @@ impl Tokenizer for SimpleTokenizer {
 /// Default tokenizer using Snowball stemmer for a specific language.
 pub struct DefaultTokenizer {
     stemmer: Stemmer,
+    stop_words: Option<&'static LazyLock<HashSet<&'static str>>>,
 }
 
 impl DefaultTokenizer {
-    pub fn new(algorithm: Algorithm) -> Self {
+    pub fn new(
+        algorithm: Algorithm,
+        stop_words: Option<&'static LazyLock<HashSet<&'static str>>>,
+    ) -> Self {
         Self {
             stemmer: Stemmer::create(algorithm),
+            stop_words,
         }
     }
 }
@@ -69,18 +94,29 @@ impl DefaultTokenizer {
 // The default tokenizer for stemmers in the `rust-stemmers` lib.
 impl Tokenizer for DefaultTokenizer {
     fn tokenize(&self, text: &str, _lang: &str) -> Result<Vec<String>, TokenizerError> {
-        Ok(text
-            .split_whitespace()
-            .map(|word| self.stemmer.stem(&word.to_lowercase()).to_string())
-            .collect())
+        let iter = text.split_whitespace();
+        let tokens: Vec<String> = if let Some(sw) = &self.stop_words {
+            iter.filter(|word| !sw.contains(word.to_lowercase().as_str()))
+                .map(|word| self.stemmer.stem(&word.to_lowercase()).to_string())
+                .collect()
+        } else {
+            iter.map(|word| self.stemmer.stem(&word.to_lowercase()).to_string())
+                .collect()
+        };
+        Ok(tokens)
     }
 
     fn to_query(&self, text: &str, _lang: &str) -> Result<String, TokenizerError> {
         let cleaned = clean_query(text);
-        let terms: Vec<String> = cleaned
-            .split_whitespace()
-            .map(|word| self.stemmer.stem(&word.to_lowercase()).to_string())
-            .collect();
+        let iter = cleaned.split_whitespace();
+        let terms: Vec<String> = if let Some(sw) = &self.stop_words {
+            iter.filter(|word| !sw.contains(word.to_lowercase().as_str()))
+                .map(|word| self.stemmer.stem(&word.to_lowercase()).to_string())
+                .collect()
+        } else {
+            iter.map(|word| self.stemmer.stem(&word.to_lowercase()).to_string())
+                .collect()
+        };
         Ok(terms.join(" "))
     }
 }
@@ -117,9 +153,14 @@ pub fn load_all(dir: &Path) -> Result<Tokenizers, TokenizerError> {
         ("turkish", Algorithm::Turkish),
     ];
     for (name, algorithm) in default_stemmers {
+        let stop_words = if name == "english" {
+            Some(&ENGLISH_STOP_WORDS)
+        } else {
+            None
+        };
         out.insert(
             format!("default:{}", name),
-            Arc::new(DefaultTokenizer::new(algorithm)),
+            Arc::new(DefaultTokenizer::new(algorithm, stop_words)),
         );
     }
 
