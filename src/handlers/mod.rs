@@ -194,10 +194,19 @@ pub fn total_pages(total: i64, per_page: i32) -> i32 {
 }
 
 /// Clean and normalize a query string by replacing punctuation chars with spaces.
+/// Preserves apostrophe for contractions/possessives (one's, don't).
 /// Collapses multiple spaces into single spaces.
 pub fn clean_query(q: &str) -> String {
     q.chars()
-        .map(|c| if c.is_ascii_punctuation() { ' ' } else { c })
+        .map(|c| {
+            if c == '\'' {
+                c
+            } else if c.is_ascii_punctuation() {
+                ' '
+            } else {
+                c
+            }
+        })
         .collect::<String>()
         .split_whitespace()
         .collect::<Vec<_>>()

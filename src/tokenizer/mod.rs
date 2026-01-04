@@ -24,6 +24,17 @@ pub enum TokenizerError {
     Io(#[from] std::io::Error),
 }
 
+/// Strip ASCII punctuation from text, replacing with spaces and collapsing whitespace.
+/// Used before tokenization to ensure clean input for stemmers.
+fn clean_query(text: &str) -> String {
+    text.chars()
+        .map(|c| if c.is_ascii_punctuation() { ' ' } else { c })
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 /// Simple whitespace tokenizer (default fallback).
 pub struct SimpleTokenizer;
 
@@ -33,7 +44,11 @@ impl Tokenizer for SimpleTokenizer {
     }
 
     fn to_query(&self, text: &str, _lang: &str) -> Result<String, TokenizerError> {
-        let terms: Vec<String> = text.split_whitespace().map(|s| s.to_lowercase()).collect();
+        let cleaned = clean_query(text);
+        let terms: Vec<String> = cleaned
+            .split_whitespace()
+            .map(|s| s.to_lowercase())
+            .collect();
         Ok(terms.join(" "))
     }
 }
@@ -61,7 +76,8 @@ impl Tokenizer for DefaultTokenizer {
     }
 
     fn to_query(&self, text: &str, _lang: &str) -> Result<String, TokenizerError> {
-        let terms: Vec<String> = text
+        let cleaned = clean_query(text);
+        let terms: Vec<String> = cleaned
             .split_whitespace()
             .map(|word| self.stemmer.stem(&word.to_lowercase()).to_string())
             .collect();
