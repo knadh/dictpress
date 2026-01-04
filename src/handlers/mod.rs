@@ -20,7 +20,7 @@ use crate::{
     autocomplete::Autocomplete,
     cache::Cache,
     manager::Manager,
-    models::{Dicts, LangMap},
+    models::{Dicts, LangMap, Stats},
 };
 
 pub type I18n = HashMap<String, String>;
@@ -81,6 +81,9 @@ pub struct Consts {
     // Admin assets split by type for easier template rendering.
     pub admin_js_assets: Vec<String>,
     pub admin_css_assets: Vec<String>,
+
+    // Dictionary entry stats for templates (homepage).
+    pub stats: Stats,
 }
 
 impl Default for Consts {
@@ -111,6 +114,8 @@ impl Default for Consts {
 
             admin_js_assets: Vec::new(),
             admin_css_assets: Vec::new(),
+
+            stats: Stats::default(),
         }
     }
 }

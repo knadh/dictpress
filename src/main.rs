@@ -240,6 +240,9 @@ async fn main() {
         None
     };
 
+    // Fetch dictionary stats.
+    let stats = mgr.get_stats().await.unwrap_or_default();
+
     // Preload static files (JS & CSS) for bundling.
     let static_files = http::preload_static_files(&cli.site);
 
@@ -296,6 +299,8 @@ async fn main() {
                 .filter(|a| a.ends_with(".css"))
                 .cloned()
                 .collect(),
+
+            stats,
         },
 
         // Generate a random string for asset version cache busting.

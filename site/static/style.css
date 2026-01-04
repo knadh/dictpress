@@ -651,6 +651,15 @@ button:hover,
   flex: none;
 }
 
+.home .stats {
+  text-align: center;
+}
+  .home .stats .stat {
+    display: inline-block;
+    font-size: 0.875rem;
+    margin-right: 5px;
+  }
+
 /* Autocomplete */
 .autocomp {
   background: #f8f8f8;

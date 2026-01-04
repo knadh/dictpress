@@ -30,5 +30,7 @@
     "public.suggestSubmitted": "Submitted for review successfully",
     "public.suggestTitle": "Suggest a new entry",
     "public.viewMore": "View {num} more",
-    "public.sourceTag": "Source of the entry"
+    "public.sourceTag": "Source of the entry",
+    "public.statsEntries": "entries",
+    "public.statsDefs": "definitions"
 }
