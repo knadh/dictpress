@@ -11,11 +11,9 @@
 
             <form @submit.prevent="onSave">
                 <figure class="relation-diagram">
-                    <kbd>
-                        <template x-for="(item, idx) in parent.content" :key="idx">
-                            <span x-text="item"></span>
-                        </template>
-                    </kbd>
+                    <template x-for="(item, idx) in parent.content" :key="idx">
+                        <p x-text="item"></p>
+                    </template>
                     <span>&darr;</span>
                 </figure>
 
