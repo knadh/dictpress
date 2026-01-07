@@ -1,7 +1,7 @@
 use crate::autocomplete::Autocomplete;
 use crate::cache::{Cache, CacheConfig, CacheError};
 use crate::manager::Manager;
-use crate::models::{Config, Dicts, Lang, LangMap, Stats, DEFAULT_TOKENIZER};
+use crate::models::{Config, Dicts, Lang, LangMap, DEFAULT_TOKENIZER};
 use crate::tokenizer::Tokenizers;
 
 /// Initialize logger.
