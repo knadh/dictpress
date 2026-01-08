@@ -61,7 +61,11 @@ pub async fn search_admin(
 }
 
 /// Perform search. Reads offset/limit and max_relations/max_content_items from query.
-pub async fn do_search(ctx: Arc<Ctx>, mut query: SearchQuery, is_admin: bool) -> Result<SearchResults> {
+pub async fn do_search(
+    ctx: Arc<Ctx>,
+    mut query: SearchQuery,
+    is_admin: bool,
+) -> Result<SearchResults> {
     // Clean and normalize the query string.
     query.query = clean_query(&query.query);
 
