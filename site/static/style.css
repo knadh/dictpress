@@ -367,7 +367,7 @@ button:hover,
   text-decoration: underline;
   text-decoration-style: dashed;
   text-decoration-color: var(--lighter);
-  font-size: 0.675rem;
+  font-size: 0.875rem;
   font-weight: bold;
 }
 

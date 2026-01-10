@@ -46,13 +46,11 @@
           <form class="search-form" method="get" action="">
             <div>
               <select name="lang" aria-label="Select dictionary">
-                {% for d in dicts %}
-                  {% set from = d.0 %}
-                  {% set to = d.1 %}
-                  <option value="{{ from.id }}/{{ to.id }}">
-                    {{ from.name }} - {{ to.name }}
-                  </option>
-                {% endfor %}
+                {% for d in dicts -%}
+                  {%- set from = d.0 -%}
+                  {%- set to = d.1 -%}
+                  <option value="{{ from.id }}/{{ to.id }}">{{ from.name }} - {{ to.name }}</option>
+                {% endfor -%}
               </select>
               <div class="input-group">
                 <input autofocus autocomplete="off" required placeholder="" aria-label="Search word"
@@ -65,20 +63,20 @@
       </div>
     </header>
 
-    {% block content %}{% endblock %}
+    {%- block content %}{% endblock -%}
 
     <nav class="nav">
       {% if consts.enable_submissions %}
         <a href="{{ consts.root_url }}/submit">{{ i18n.public_submitEntry | default(value="Suggest new entry") }}</a>
       {% endif %}
       {% if consts.enable_glossary %}
-        {% for d in dicts %}
-          {% set from = d.0 %}
-          {% set to = d.1 %}
+        {%- for d in dicts %}
+          {%- set from = d.0 -%}
+          {%- set to = d.1 -%}
           <a href="{{ consts.root_url }}/glossary/{{ from.id }}/{{ to.id }}/*" class="tab">
             {{ i18n.public_glossary | default(value="{lang} glossary") | replace(from="{lang}", to=from.name) }}
           </a>
-        {% endfor %}
+        {% endfor -%}
       {% endif %}
     </nav>
   </section>

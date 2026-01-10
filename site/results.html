@@ -36,25 +36,25 @@
                 </header>
 
                 {% if r.relations and r.relations | length > 0 %}
-                    {% set_global last_type = "" %}
-                    {% for d in r.relations %}
-                        {% set types = d.relation.types | default(value=[]) | join(sep=", ") %}
+                    {%- set_global last_type = "" -%}
+                    {%- for d in r.relations -%}
+                        {%- set types = d.relation.types | default(value=[]) | join(sep=", ") -%}
 
-                        {% if last_type != types or loop.first %}
+                        {%- if last_type != types or loop.first -%}
                             {% if not loop.first %}</ol>{% endif %}
                             <ol class="defs">
                                 <li class="types">
-                                    {% for t in d.relation.types | default(value=[]) %}
-                                        {% if t != "" %}
+                                    {%- for t in d.relation.types | default(value=[]) -%}
+                                        {%- if t != "" -%}
                                         <span>
-                                            {{ t }}
-                                            {% set type_label = langs[d.lang].types | get(key=t, default="") %}
-                                            {% if type_label %}({{ type_label }}){% endif %}
+                                            {%- set type_label = langs[d.lang].types | get(key=t, default="") -%}
+                                            {%- if type_label %}{{ type_label }}
+                                            {%- else %}({{ t }}){% endif -%}
                                         </span>
-                                        {% endif %}
-                                    {% endfor %}
+                                        {%- endif -%}
+                                    {%- endfor -%}
                                 </li>
-                        {% endif %}
+                        {%- endif %}
 
                         <li><div data-guid="{{ d.guid }}" class="def">
                             {{ d.content | join(sep=", ") }}
@@ -70,12 +70,11 @@
                                 </a>
                             {% endif %}
 
-                            <!-- This is dynamically populated by JS when the "more" link is clicked -->
                             <div class="more" id="{{ r.guid }}-{{ d.guid }}" role="region" aria-hidden="true"></div>
 
                         </div></li>
-                        {% set_global last_type = types %}
-                    {% endfor %}
+                        {%- set_global last_type = types -%}
+                    {%- endfor -%}
                     </ol>
                 {% endif %}
 
