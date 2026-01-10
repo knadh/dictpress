@@ -23,12 +23,18 @@ builds:
       #   musl = ["mimalloc"]
 
 archives:
-  - format: tar.gz
+  - formats:
+      - tar.gz
     # Include Target to differentiate gnu vs musl builds
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Target }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
+    files:
+      - README.md
+      - LICENSE
+      - site/**/*
 
 changelog:
   sort: asc
