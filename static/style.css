@@ -1,0 +1,161 @@
+:root {
+	--primary: #b78900;
+	--bright: #ffcc00;
+	--secondary: #222;
+	--light: #999;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html, body {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	background: #fff;
+	font-family: sans-serif;
+	font-size: 17px;
+	line-height: 29px;
+	color: var(--secondary);
+}
+
+h1, h2, h3, h4, h5 {
+	font-weight: 600;
+	margin: 0 0 20px 0;
+}
+
+h1 {
+	font-size: 2.6rem;
+	line-height: 3.3rem;
+}
+
+h2 {
+	font-size: 2.1rem;
+	line-height: 2.4rem;
+}
+
+h3 {
+	font-size: 1.6rem;
+}
+
+a {
+	color: var(--primary);
+	text-decoration: none;
+	font-weight: 600;
+}
+	a:hover {
+		color: var(--secondary);
+	}
+
+section {
+	margin-bottom: 60px;
+}
+	section:last-child {
+		margin-bottom: 0;
+	}
+
+img {
+	max-width: 100%;
+}
+
+figcaption {
+	text-align: center;
+	color: var(--light);
+}
+figure {
+	text-align: center;
+	display: block;
+	margin: 0 0 60px 0;
+}
+
+code {
+	background: #eee;
+	padding: 2px;
+	border-radius: 2px;
+}
+
+p {
+	margin: 0 0 15px 0;
+}
+
+.button {
+	background: var(--secondary);
+	color: #fff;
+	padding: 15px 40px;
+	border-radius: 5px;
+	box-shadow: 2px 2px 0 #ecbd00;
+	display: inline-block;
+	font-size: 1.2rem;
+}
+	.button:hover {
+		color: var(--bright);
+	}
+	.button:active {
+		transform: translate(2px, 2px);
+	}
+
+.box {
+	box-shadow: 2px 2px 2px #eee;
+	border: 1px solid #ddd;
+	padding: 30px;
+}
+
+
+.container {
+	max-width: 900px;
+	margin: 0 auto 30px auto;
+	padding: 30px;
+}
+
+.header {
+	background: var(--bright);
+	padding: 60px 0;
+	margin-bottom: 60px;
+}
+
+.intro .desc {
+	max-width: 600px;
+}
+
+.logo {
+	margin-bottom: 15px;
+}
+.nav a {
+	display: inline-block;
+	margin: 0 20px 0 0;
+	color: var(--secondary);
+}
+	.nav a:hover {
+		opacity: 0.8;
+	}
+	.hero {
+		margin-top: 90px;
+	}
+
+
+footer {
+	margin: 30px 0;
+	text-align: center;
+	color: var(--light);
+}
+	footer a {
+		font-weight: normal;
+	}
+
+@media(max-width: 750px) {
+	body {
+		font-size: 16px;
+		line-height: 1.7rem;
+	}
+	.header {
+		padding: 0;
+		margin: 0;
+		overflow: hidden;
+	}
+	.container {
+		padding: 25px;
+	}
+}
