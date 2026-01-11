@@ -190,11 +190,11 @@ button:hover,
 
 .logo img {
   height: auto;
-  max-width: 200px;
+  max-height: 42px;
 }
 
 .home .logo img {
-  max-width: 80%;
+  max-width: 250px;
 }
 
 .intro {
@@ -698,29 +698,10 @@ button:hover,
   font-weight: bold;
 }
 
-@media screen and (max-width: 500px) {
-  .search-form select {
-    min-width: 0;
-    flex-shrink: 1;
-  }
-
-  .search-form .input-group {
-    min-width: 0;
-    flex-shrink: 1;
-  }
-
-  .search-form input {
-    min-width: 0;
-  }
-}
-
 @media screen and (max-width: 720px) {
   .logo {
     text-align: center;
     margin-bottom: 5px;
-  }
-  .logo img {
-    max-height: 42px;
   }
 
   .main {
@@ -741,28 +722,20 @@ button:hover,
   }
 }
 
-@media screen and (max-width: 320px) {
-  .search-form>div {
-    flex-wrap: wrap;
-  }
-
+@media screen and (max-width: 500px) {
   .search-form select {
-    flex-basis: 100%;
-    border-radius: 30px;
-    padding: 10px 15px;
-    margin-bottom: 10px;
+    min-width: 0;
+    flex-shrink: 1;
+    max-width: 75px;
+    text-overflow: ellipsis;
   }
 
   .search-form .input-group {
-    flex-basis: 100%;
-    width: 100%;
     min-width: 0;
+    flex-shrink: 1;
   }
 
   .search-form input {
-    border-width: 1px 0 1px 1px;
-    border-radius: 30px 0 0 30px;
-    padding: 10px 15px;
     min-width: 0;
   }
 
@@ -772,5 +745,31 @@ button:hover,
 
   .entries .defs:not(:last-child) {
     margin-bottom: 15px;
+  }
+
+  .home .search-form>div {
+    flex-wrap: wrap;
+  }
+
+  .home .search-form select {
+    flex-basis: 100%;
+    border-radius: 30px;
+    padding: 10px 15px;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    max-width: none;
+  }
+
+  .home .search-form .input-group {
+    flex-basis: 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .home .search-form input {
+    border-width: 1px 0 1px 1px;
+    border-radius: 30px 0 0 30px;
+    padding: 10px 15px;
+    min-width: 0;
   }
 }
