@@ -6,7 +6,8 @@
     <div class="eight columns">
         <ol class="entries">
             {% for r in results.entries | slice(end=num_results) %}
-            <li class="entry" id="{{ r.guid }}" data-guid="{{ r.guid }}" data-head="{{ r.content | join(sep=", ") }}">
+            {% set shareGuid = "s" ~ r.guid | split(pat="-") | first %}
+            <li class="entry" id="{{ shareGuid }}" data-head="{{ r.content | join(sep=", ") }}" data-lang="{{ r.lang }}">
                 <header class="head">
                     <div>
                         <h3 class="title">{{ r.content | join(sep=", ") }}</h3>
@@ -29,8 +30,7 @@
                             {% if consts.enable_submissions %}
                             <a href="#" data-from="{{ r.guid }}" class="edit" title="{{ i18n.public_suggestEdit }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ i18n.public_suggestEdit }}"></a>
                             {% endif %}
-                            <a href="#{{ r.guid }}" title="Share link" class="link"><img src="/static/link.svg?v={{ asset_ver }}" alt="Share link"></a>
-                            <a href="#" title="Share screenshot" class="export" data-guid="{{ r.guid }}"><img src="/static/export.svg?v={{ asset_ver }}" alt="Share screenshot"></a>
+                            <a href="#{{ shareGuid }}" data-share-guid="{{ shareGuid }}" title="Share link"><img src="/static/share.svg?v={{ asset_ver }}" alt="Share link"></a>
                         </div>
                     </div>
                 </header>
@@ -56,7 +56,7 @@
                                 </li>
                         {%- endif %}
 
-                        <li><div data-guid="{{ d.guid }}" class="def">
+                        <li><div data-guid="{{ d.guid }}" class="def" data-lang="{{ d.lang }}">
                             {{ d.content | join(sep=", ") }}
                             {% if d.content_length > max_content_items or d.meta.synonyms %}
                                 <a href="#" class="more-toggle" data-id="{{ r.guid }}-{{ d.guid }}" title="{{ i18n.public_viewMore | default(value="View more") }}"

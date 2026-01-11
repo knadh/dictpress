@@ -280,6 +280,7 @@ button:hover,
 
 .entries .entry:target {
   outline: 3px solid var(--blue);
+  scroll-margin-top: 20px;
 }
 
 .entries .head {

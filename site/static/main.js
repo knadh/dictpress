@@ -1,15 +1,3 @@
-async function screenshotElement(element) {
-  const canvas = await html2canvas(element);
-  canvas.toBlob(blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'screenshot.png';
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-}
-
 (() => {
   const elForm = document.querySelector("form.search-form");
   const elQ = document.querySelector("#q");
@@ -127,33 +115,6 @@ async function screenshotElement(element) {
   elQ.select();
 })();
 
-// Screenshot sharing.
-(() => {
-  document.querySelectorAll("a.export").forEach((el) => {
-    el.onclick = async (e) => {
-      e.preventDefault();
-      const guid = el.dataset.guid;
-      const entryEl = document.querySelector(`.entry[data-guid='${guid}']`);
-      if (!entryEl) {
-        alert("Could not find entry to export");
-        return;
-      }
-
-      const title = entryEl.dataset.head;
-      // Make the filename by stripping spaces from the head word(s).
-      const filename = title.replace(/\s+/g, "_").toLowerCase();
-
-      try {
-        await shareDOM(entryEl, `${title} meaning`, `${localStorage.from_lang} to ${localStorage.to_lang} meaning\n\n${window.location.href}`, `${filename}.png`);
-      } catch (err) {
-        console.error("Error sharing entry:", err);
-        alert(`Error sharing entry: ${err?.message || err}`);
-      }
-    };
-  });
-})();
-
-
 // Submission form.
 (() => {
   function filterTypes(e) {
@@ -250,7 +211,7 @@ async function screenshotElement(element) {
 
 // Autocomplete.
 (() => {
-  if(!autocomp) {
+  if (!autocomp) {
     return;
   }
 
@@ -265,13 +226,13 @@ async function screenshotElement(element) {
       clearTimeout(debounce);
       return new Promise(resolve => {
         debounce = setTimeout(async () => {
-            const response = await fetch(`${_ROOT_URL}/api/autocomplete/${langCode}/${val}`);
-            const data = await response.json();
+          const response = await fetch(`${_ROOT_URL}/api/autocomplete/${langCode}/${val}`);
+          const data = await response.json();
 
-            const suggestions = data.data.map(item => item.content[0]);
+          const suggestions = data.data.map(item => item.content[0]);
 
-            debounce = null;
-            resolve(suggestions);
+          debounce = null;
+          resolve(suggestions);
         }, 50);
       });
     },
@@ -285,5 +246,38 @@ async function screenshotElement(element) {
       elForm.dispatchEvent(new Event("submit", { cancelable: true }));
       return elQ.value;
     }
+  });
+})();
+
+// Share link (.share-link) that invokes web share API.
+(() => {
+  window.setTimeout(() => {
+    // For some reason, page doesn't scroll to hash on load. Do it manually.
+    if (window.location.hash) {
+      document.querySelector(window.location.hash)?.scrollIntoView();
+    }
+  }, 100);
+
+  if (!navigator.share) {
+    return;
+  }
+
+  document.querySelectorAll("a[data-share-guid]").forEach((el) => {
+    el.onclick = async (e) => {
+      e.preventDefault();
+
+      const def = document.querySelector(`#${el.dataset.shareGuid} .def:first-child`);
+      const data = {
+        title: `${document.getElementById(el.dataset.shareGuid).dataset.head} ${def.dataset.lang} meaning`,
+        text: `${def.innerText}`,
+        url: `${el.href}`,
+      };
+
+      try {
+        await navigator.share(data);
+      } catch (err) {
+        alert(`error sharing link: ${err?.message || err}`);
+      }
+    };
   });
 })();
