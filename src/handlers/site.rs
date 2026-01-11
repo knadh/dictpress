@@ -114,6 +114,20 @@ pub async fn search(
     tpl_ctx.insert("page_type", "search");
     tpl_ctx.insert("query", &query);
 
+    // Get language names for SEO title/description.
+    let from_lang_name = ctx
+        .langs
+        .get(&from_lang)
+        .map(|l| l.name.as_str())
+        .unwrap_or(&from_lang);
+    let to_lang_name = ctx
+        .langs
+        .get(&to_lang)
+        .map(|l| l.name.as_str())
+        .unwrap_or(&to_lang);
+    tpl_ctx.insert("from_lang_name", from_lang_name);
+    tpl_ctx.insert("to_lang_name", to_lang_name);
+
     // Pagination.
     let (page, per_page, offset) = paginate(
         0,
