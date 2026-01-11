@@ -21,16 +21,16 @@
                         {% if r.tags and r.tags | length > 0 %}
                             <span class="tags">
                                 {% for tag in r.tags %}
-                                    <span class="tag" {% if tag is starting_with("src:") %} title="{{ i18n.public_sourceTag | default(value="Source") }}"{% endif %}>{{ tag }}</span>
+                                    <span class="tag" {% if tag is starting_with("src:") %} title="{{ t(key="public.sourceTag") }}"{% endif %}>{{ tag }}</span>
                                 {% endfor %}
                             </span>
                         {% endif %}
 
                         <div class="toolbar">
                             {% if consts.enable_submissions %}
-                            <a href="#" data-edit-from="{{ r.guid }}" class="edit" title="{{ i18n.public_suggestEdit }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ i18n.public_suggestEdit }}"></a>
+                            <a href="#" data-edit-from="{{ r.guid }}" class="edit" title="{{ t(key="public.suggestEdit") }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ t(key="public.suggestEdit") }}"></a>
                             {% endif %}
-                            <a href="#{{ shareGuid }}" data-share-guid="{{ shareGuid }}" title="Share link"><img src="/static/share.svg?v={{ asset_ver }}" alt="Share link"></a>
+                            <a href="#{{ shareGuid }}" data-share-guid="{{ shareGuid }}" title="{{ t(key="global.shareLink") }}"><img src="/static/share.svg?v={{ asset_ver }}" alt="{{ t(key="global.shareLink") }}"></a>
                         </div>
                     </div>
                 </header>
@@ -59,14 +59,14 @@
                         <li><div data-guid="{{ d.guid }}" class="def" data-lang="{{ d.lang }}">
                             {{ d.content | join(sep=", ") }}
                             {% if d.content_length > max_content_items or d.meta.synonyms %}
-                                <a href="#" class="more-toggle" data-id="{{ r.guid }}-{{ d.guid }}" title="{{ i18n.public_viewMore | default(value="View more") }}"
+                                <a href="#" class="more-toggle" data-id="{{ r.guid }}-{{ d.guid }}" title="{{ t(key="public.viewMore") }}"
                                     data-entry-guid="{{ d.guid }}" data-from-lang="{{ r.lang }}" data-to-lang="{{ d.lang }}"
                                     role="button" aria-expanded="false" aria-controls="{{ r.guid }}-{{ d.guid }}">
                                 </a>
                             {% endif %}
                             {% if consts.enable_submissions %}
-                                <a href="#" data-edit-from="{{ r.guid }}" data-edit-to="{{ d.guid }}" class="edit" title="{{ i18n.public_suggestEdit | default(value="Suggest edit") }}">
-                                    <img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ i18n.public_suggestEdit }}">
+                                <a href="#" data-edit-from="{{ r.guid }}" data-edit-to="{{ d.guid }}" class="edit" title="{{ t(key="public.suggestEdit") }}">
+                                    <img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ t(key="public.suggestEdit") }}">
                                 </a>
                             {% endif %}
 
@@ -84,7 +84,7 @@
     </div>
     <nav class="three columns col-offset-1 related">
         {% if results.entries | length > num_results %}
-            <h3>{{ i18n.public_similarTitle | default(value="Similar words") }}</h3>
+            <h3>{{ t(key="public.similarTitle") }}</h3>
             {% for r in results.entries | slice(start=num_results) %}
                 <a href="{{ consts.root_url }}/dictionary/{{ r.lang }}/{{ r.lang }}/{{ r.content.0 | urlencode }}" class="word">{{ r.content.0 }}</a>
             {% endfor %}

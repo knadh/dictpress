@@ -23,7 +23,7 @@ use crate::{
     models::{Dicts, LangMap, Stats},
 };
 
-pub type I18n = HashMap<String, String>;
+pub type I18n = tinyi18n_rs::I18n;
 
 /// Application context passed to all handlers.
 pub struct Ctx {

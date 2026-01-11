@@ -6,16 +6,16 @@
 
   {% block meta %}
     <title>
-      {%- if page_type == "/" %} {{ i18n.global_siteName | default(value="Dictionary") }}
-      {%- elif page_type == "glossary" %}{{ i18n.public_glossaryTitle | default(value="Glossary") }}
-      {%- elif page_type == "search" %}{{ i18n.public_searchTitle | default(value="{query} {to_lang} meaning") | replace(from="{query}", to=query) | replace(from="{to_lang}", to=to_lang_name | lower) }}
-      {%- elif title %}{{ title }}
+      {%- if page_type == "/" %} {{ t(key="global.siteTitle") }}
+      {%- elif page_type == "glossary" %}{{ ts(key="public.glossaryTitle", lang=from_lang_name) }} - {{ t(key="global.siteName") }}
+      {%- elif page_type == "search" %}{{ ts(key="public.searchTitle", query=query, to_lang=to_lang_name | lower) }} - {{ t(key="global.siteName") }}
+      {%- elif title %}{{ title }} - {{ t(key="global.siteName") }}
       {%- endif -%}
     </title>
     <meta name="description" value="
-      {%- if page_type == "/" %}Dictionary website
-      {%- elif page_type == "glossary" %}Glossary of words.
-      {%- elif page_type == "search" %}{{ i18n.public_searchDescription | default(value="{from_lang} {query} meaning and definitions in {to_lang}") | replace(from="{from_lang}", to=from_lang_name) | replace(from="{query}", to=query) | replace(from="{to_lang}", to=to_lang_name) }}
+      {%- if page_type == "/" %}{{ t(key="public.mainTitle") }}
+      {%- elif page_type == "glossary" %}{{ ts(key="public.glossaryTitle", lang=from_lang_name) }}
+      {%- elif page_type == "search" %}{{ ts(key="public.searchDescription", from_lang=from_lang_name, query=query, to_lang=to_lang_name) }}
       {%- elif description %}{{ description }}
       {%- else %}{% block description %}{% endblock %}
       {%- endif -%}" />
@@ -36,16 +36,16 @@
     <header class="header">
       <div class="row">
         <div class="logo four columns">
-          <a href="/"><img src="/static/logo.svg?v={{ asset_ver }}" alt="Dictionary logo" /></a>
+          <a href="/"><img src="/static/logo.svg?v={{ asset_ver }}" alt="{{ t(key="global.siteName") }}" /></a>
           <h3 class="intro">
-            {{ i18n.public_subTitle | default(value="Dictionary") }}
+            {{ t(key="public.subTitle") }}
           </h3>
         </div><!-- logo col -->
 
         <div class="search eight columns">
           <form class="search-form" method="get" action="">
             <div>
-              <select name="lang" aria-label="Select dictionary">
+              <select name="lang" aria-label="{{ t(key="global.selectDict") }}">
                 {% for d in dicts -%}
                   {%- set from = d.0 -%}
                   {%- set to = d.1 -%}
@@ -53,9 +53,9 @@
                 {% endfor -%}
               </select>
               <div class="input-group">
-                <input autofocus autocomplete="off" required placeholder="" aria-label="Search word"
+                <input autofocus autocomplete="off" required placeholder="" aria-label="{{ t(key="global.searchWord") }}"
                   type="text" id="q" name="q" value="{{ query | default(value="") }}" />
-                <button type="submit" aria-label="Search"><img src="/static/search.svg?v={{ asset_ver }}" alt="{{ i18n.global_btnSearch | default(value="Search") }}" /></button>
+                <button type="submit" aria-label="{{ t(key="global.btnSearch") }}"><img src="/static/search.svg?v={{ asset_ver }}" alt="{{ t(key="global.btnSearch") }}" /></button>
               </div>
             </div>
           </form>
@@ -67,14 +67,14 @@
 
     <nav class="nav">
       {% if consts.enable_submissions %}
-        <a href="{{ consts.root_url | safe }}/submit">{{ i18n.public_submitEntry | default(value="Suggest new entry") }}</a>
+        <a href="{{ consts.root_url | safe }}/submit">{{ t(key="public.submitEntry") }}</a>
       {% endif %}
       {% if consts.enable_glossary %}
         {%- for d in dicts %}
           {%- set from = d.0 -%}
           {%- set to = d.1 -%}
           <a href="{{ consts.root_url | safe }}/glossary/{{ from.id }}/{{ to.id }}/*" class="tab">
-            {{ i18n.public_glossary | default(value="{lang} glossary") | replace(from="{lang}", to=from.name) }}
+            {{ ts(key="public.glossary", lang=from.name) }}
           </a>
         {% endfor -%}
       {% endif %}
@@ -82,17 +82,17 @@
   </section>
 
   <footer class="footer">
-    <a href="https://dict.press">Powered by dictpress</a>
+    <a href="https://dict.press">{{ t(key="public.poweredBy") }}</a>
   </footer>
 </div><!-- container -->
 
-<form class="box form-comments" data-success="{{ i18n.public_suggestSubmitted | default(value="Submitted") }}">
+<form class="box form-comments" data-success="{{ t(key="public.suggestSubmitted") }}">
 <div>
-  <h4>{{ i18n.public_submitTitle | default(value="Comments") }}</h4>
+  <h4>{{ t(key="public.submitTitle") }}</h4>
   <textarea name="comments" autofocus maxlength="500"></textarea>
   <div class="buttons">
-    <button type="submit">{{ i18n.public_suggestSubmitBtn | default(value="Submit") }}</button>
-    <button class="button-outline close">{{ i18n.global_btnClose | default(value="Close") }}</button>
+    <button type="submit">{{ t(key="public.suggestSubmitBtn") }}</button>
+    <button class="button-outline close">{{ t(key="global.btnClose") }}</button>
   </div>
 </div>
 </form>

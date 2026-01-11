@@ -614,6 +614,7 @@ dependencies = [
  "sqlx",
  "tera",
  "thiserror",
+ "tinyi18n-rs",
  "tokio",
  "toml",
  "trie-rs",
@@ -2931,6 +2932,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f60246a4944f24f6e018aa17cdeffb7818b76356965d03b07d6a9886e8962185"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "tinyi18n-rs"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40c90450148e7480649e023fb967aa000c9439a1a479ead94280047e8269d054"
+dependencies = [
+ "regex",
+ "serde_json",
 ]
 
 [[package]]

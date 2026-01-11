@@ -3,8 +3,8 @@
 {% block content %}
 <section class="content glossary">
     {% if not initials or initials | length == 0 %}
-        <h2>{{ i18n.public_glossaryTitle | default(value="Glossary") }}</h2>
-        <p>{{ i18n.public_noResults | default(value="No results were found.") }}</p>
+        <h2>{{ t(key="public.glossaryTitle") }}</h2>
+        <p>{{ t(key="public.noResults") }}</p>
     {% else %}
         <nav class="index">
             {% for a in initials %}

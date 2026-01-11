@@ -157,19 +157,79 @@ pub fn site_tpls(site_dir: &std::path::Path) -> Result<tera::Tera, Box<dyn std::
     Ok(tera)
 }
 
-/// Load i18n strings from the site/JSON file.
-pub fn i18n(
-    path: &std::path::Path,
-) -> Result<std::collections::HashMap<String, String>, Box<dyn std::error::Error>> {
-    let content = std::fs::read_to_string(path)?;
-    let raw: std::collections::HashMap<String, String> = serde_json::from_str(&content)?;
-    // Convert keys: "public.noResults" -> "public_noResults" for Tera compatibility.
-    let i18n = raw
-        .into_iter()
-        .map(|(k, v)| (k.replace('.', "_"), v))
-        .collect();
+/// Load i18n from the site/JSON file.
+pub fn i18n(path: &std::path::Path) -> Result<tinyi18n_rs::I18n, Box<dyn std::error::Error>> {
+    Ok(tinyi18n_rs::I18n::from_file(path, None, None)?)
+}
 
-    Ok(i18n)
+/// Register i18n functions (t, ts, tc) with Tera.
+///
+/// Usage in templates:
+/// - `{{ t(key="public.hello") }}` - simple translation
+/// - `{{ ts(key="public.greeting", name="World", count="5") }}` - with substitution
+/// - `{{ tc(key="public.items", count=5) }}` - singular/plural based on count
+pub fn register_i18n_functions(tera: &mut tera::Tera, i18n: std::sync::Arc<tinyi18n_rs::I18n>) {
+    // t(key) - simple translation
+    let i18n_t = i18n.clone();
+    tera.register_function(
+        "t",
+        move |args: &std::collections::HashMap<String, tera::Value>| {
+            let key = args
+                .get("key")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| tera::Error::msg("t() requires 'key' argument"))?;
+            Ok(tera::Value::String(i18n_t.t(key)))
+        },
+    );
+
+    // ts(key, ...params) - translation with parameter substitution
+    // All arguments except "key" are treated as substitution parameters.
+    // Example: ts(key="greeting", name="World", count="5")
+    let i18n_ts = i18n.clone();
+    tera.register_function(
+        "ts",
+        move |args: &std::collections::HashMap<String, tera::Value>| {
+            let key = args
+                .get("key")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| tera::Error::msg("ts() requires 'key' argument"))?;
+
+            // Collect all arguments except "key" as substitution parameters.
+            let mut params: Vec<(String, String)> = Vec::new();
+            for (k, v) in args {
+                if k == "key" {
+                    continue;
+                }
+                let val = match v {
+                    tera::Value::String(s) => s.clone(),
+                    tera::Value::Number(n) => n.to_string(),
+                    tera::Value::Bool(b) => b.to_string(),
+                    tera::Value::Null => String::new(),
+                    _ => v.to_string().trim_matches('"').to_string(),
+                };
+                params.push((k.clone(), val));
+            }
+
+            // Convert to the format expected by I18n::ts
+            let params_ref: Vec<(&str, String)> =
+                params.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+            Ok(tera::Value::String(i18n_ts.ts(key, &params_ref)))
+        },
+    );
+
+    // tc(key, count) - count-based singular/plural
+    let i18n_tc = i18n.clone();
+    tera.register_function(
+        "tc",
+        move |args: &std::collections::HashMap<String, tera::Value>| {
+            let key = args
+                .get("key")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| tera::Error::msg("tc() requires 'key' argument"))?;
+            let count = args.get("count").and_then(|v| v.as_i64()).unwrap_or(1);
+            Ok(tera::Value::String(i18n_tc.tc(key, count)))
+        },
+    );
 }
 
 /// Initialize cache from configuration.
