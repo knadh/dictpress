@@ -177,11 +177,22 @@ async fn main() {
         }
     };
 
+    // Load i18n strings (only if site is enabled).
+    let i18n = if let Some(site_path) = &cli.site {
+        init::i18n(&site_path.join("lang.json")).unwrap_or_else(|e| {
+            log::warn!("failed to load i18n: {}, using empty", e);
+            tinyi18n_rs::I18n::new("{}", None, None).unwrap()
+        })
+    } else {
+        tinyi18n_rs::I18n::new("{}", None, None).unwrap()
+    };
+    let i18n_arc = Arc::new(i18n.clone());
+
     // Initialize site templates (optional, from --site flag).
     let site_tpl = if let Some(site_path) = &cli.site {
         log::info!("loading site theme: {}", site_path.display());
 
-        let templates = init::site_tpls(site_path).unwrap_or_else(|e| {
+        let mut templates = init::site_tpls(site_path).unwrap_or_else(|e| {
             log::error!(
                 "error loading site templates from {}: {}",
                 site_path.display(),
@@ -190,19 +201,12 @@ async fn main() {
             std::process::exit(1);
         });
 
+        // Register i18n functions (t, ts, tc) with Tera templates.
+        init::register_i18n_functions(&mut templates, i18n_arc);
+
         Some(Arc::new(templates))
     } else {
         None
-    };
-
-    // Load i18n strings (only if site is enabled).
-    let i18n = if let Some(site_path) = &cli.site {
-        init::i18n(&site_path.join("lang.json")).unwrap_or_else(|e| {
-            log::warn!("failed to load i18n: {}, using empty", e);
-            std::collections::HashMap::new()
-        })
-    } else {
-        std::collections::HashMap::new()
     };
 
     // Initialize manager.

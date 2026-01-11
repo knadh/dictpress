@@ -62,7 +62,6 @@ fn base_context(ctx: &Ctx) -> tera::Context {
     let mut context = tera::Context::new();
     context.insert("asset_ver", &ctx.asset_ver);
     context.insert("consts", &ctx.consts);
-    context.insert("i18n", &ctx.i18n);
     context.insert("langs", &ctx.langs);
     // Convert dicts to serializable format.
     let dicts: Vec<_> = ctx.dicts.iter().map(|(from, to)| (from, to)).collect();
@@ -169,25 +168,31 @@ pub async fn search(
 
 /// Glossary page.
 pub async fn render_glossary_page(
-    State(context): State<Arc<Ctx>>,
+    State(ctx): State<Arc<Ctx>>,
     Path((from_lang, to_lang, initial)): Path<(String, String, String)>,
     Query(params): Query<GlossaryParams>,
 ) -> impl IntoResponse {
     // Check if glossary is enabled.
-    if !context.consts.enable_glossary {
+    if !ctx.consts.enable_glossary {
         return (StatusCode::NOT_FOUND, "glossary is disabled").into_response();
     }
 
-    let mut ctx = base_context(&context);
-    ctx.insert("page_type", "glossary");
-    ctx.insert("initial", &initial);
+    let mut tpl_ctx = base_context(&ctx);
+    tpl_ctx.insert("page_type", "glossary");
+    tpl_ctx.insert("initial", &initial);
+    let from_lang_name = ctx
+        .langs
+        .get(&from_lang)
+        .map(|l| l.name.as_str())
+        .unwrap_or(&from_lang);
+    tpl_ctx.insert("from_lang_name", from_lang_name);
 
     // Get initials.
-    match context.mgr.get_initials(&from_lang).await {
-        Ok(initials) => ctx.insert("initials", &initials),
+    match ctx.mgr.get_initials(&from_lang).await {
+        Ok(initials) => tpl_ctx.insert("initials", &initials),
         Err(e) => {
             log::error!("initials error: {}", e);
-            ctx.insert("initials", &Vec::<String>::new());
+            tpl_ctx.insert("initials", &Vec::<String>::new());
         }
     }
 
@@ -195,24 +200,24 @@ pub async fn render_glossary_page(
     let page = params.page.unwrap_or(1);
     let per_page = params
         .per_page
-        .unwrap_or(context.consts.glossary_default_per_page)
-        .min(context.consts.glossary_max_per_page);
+        .unwrap_or(ctx.consts.glossary_default_per_page)
+        .min(ctx.consts.glossary_max_per_page);
     let offset = (page - 1) * per_page;
 
     // Build base URL for pagination.
     let pg_url = format!(
         "{}/glossary/{}/{}/{}",
-        context.consts.root_url, from_lang, to_lang, initial
+        ctx.consts.root_url, from_lang, to_lang, initial
     );
-    ctx.insert("pg_url", &pg_url);
+    tpl_ctx.insert("pg_url", &pg_url);
 
     // Fetch glossary words (from cache or DB).
     let (words, total) =
-        match get_glossary_words(&context, &from_lang, &initial, offset, per_page).await {
+        match get_glossary_words(&ctx, &from_lang, &initial, offset, per_page).await {
             Ok(result) => result,
             Err(e) => {
                 log::error!("glossary error: {}", e);
-                ctx.insert(
+                tpl_ctx.insert(
                     "glossary",
                     &GlossaryData {
                         words: vec![],
@@ -220,8 +225,8 @@ pub async fn render_glossary_page(
                         to_lang,
                     },
                 );
-                ctx.insert("total_pages", &0);
-                return match render(&context, "glossary.html", &ctx) {
+                tpl_ctx.insert("total_pages", &0);
+                return match render(&ctx, "glossary.html", &tpl_ctx) {
                     Ok(html) => html.into_response(),
                     Err(e) => e.into_response(),
                 };
@@ -229,7 +234,7 @@ pub async fn render_glossary_page(
         };
 
     let total_pages = ((total as f64) / (per_page as f64)).ceil() as i32;
-    ctx.insert(
+    tpl_ctx.insert(
         "glossary",
         &GlossaryData {
             words,
@@ -237,27 +242,28 @@ pub async fn render_glossary_page(
             to_lang: to_lang.clone(),
         },
     );
-    ctx.insert("page", &page);
-    ctx.insert("per_page", &per_page);
-    ctx.insert("total", &total);
-    ctx.insert("total_pages", &total_pages);
+    tpl_ctx.insert("page", &page);
+    tpl_ctx.insert("per_page", &per_page);
+    tpl_ctx.insert("total", &total);
+    tpl_ctx.insert("total_pages", &total_pages);
 
-    match render(&context, "glossary.html", &ctx) {
+    match render(&ctx, "glossary.html", &tpl_ctx) {
         Ok(html) => html.into_response(),
         Err(e) => e.into_response(),
     }
 }
 
 /// Submit new entry page.
-pub async fn render_submit_page(State(context): State<Arc<Ctx>>) -> impl IntoResponse {
-    if !context.consts.enable_submissions {
+pub async fn render_submit_page(State(ctx): State<Arc<Ctx>>) -> impl IntoResponse {
+    if !ctx.consts.enable_submissions {
         return (StatusCode::NOT_FOUND, "submissions disabled").into_response();
     }
 
-    let mut ctx = base_context(&context);
-    ctx.insert("page_type", "submit");
+    let mut tpl_ctx = base_context(&ctx);
+    tpl_ctx.insert("page_type", "submit");
+    tpl_ctx.insert("title", &ctx.i18n.t("public.submitEntry"));
 
-    match render(&context, "submit-new.html", &ctx) {
+    match render(&ctx, "submit-new.html", &tpl_ctx) {
         Ok(html) => html.into_response(),
         Err(e) => e.into_response(),
     }

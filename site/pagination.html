@@ -1,5 +1,5 @@
 {% if total_pages > 1 %}
-    <a href="{% if page > 1 %}{{ pg_url }}?page={{ page - 1 }}&per_page={{ per_page }}{% endif %}" class="prev{% if page <= 1 %} disabled{% endif %}">&laquo; Previous</a>
+    <a href="{% if page > 1 %}{{ pg_url }}?page={{ page - 1 }}&per_page={{ per_page }}{% endif %}" class="prev{% if page <= 1 %} disabled{% endif %}">&laquo; {{ t(key="pagination.previous") }}</a>
 
     {% set window = 10 %}
     {% set half = 5 %}
@@ -35,5 +35,5 @@
         {% endif %}
     </span>
 
-    <a href="{% if page < total_pages %}{{ pg_url }}?page={{ page + 1 }}&per_page={{ per_page }}{% endif %}" class="next{% if page >= total_pages %} disabled{% endif %}">Next &raquo;</a>
+    <a href="{% if page < total_pages %}{{ pg_url }}?page={{ page + 1 }}&per_page={{ per_page }}{% endif %}" class="next{% if page >= total_pages %} disabled{% endif %}">{{ t(key="pagination.next") }} &raquo;</a>
 {% endif %}

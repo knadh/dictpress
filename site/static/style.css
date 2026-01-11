@@ -312,7 +312,7 @@ button:hover,
 }
 
 .entries .defs li {
-  margin-bottom: 5px;
+  margin-bottom: 10px;
   position: relative;
 }
 
@@ -414,7 +414,11 @@ button:hover,
   .entries .meta a {
     text-decoration: none;
     display: inline-block;
-    margin-left: 5px;
+    margin-left: 10px;
+    transition: scale 0.15s ease-in-out;
+  }
+  .entries .meta a:hover {
+    scale: 1.2;
   }
   .entries .meta .toolbar img {
     max-height: 12px;

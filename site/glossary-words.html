@@ -1,6 +1,6 @@
 {% if not glossary.words or glossary.words | length == 0 %}
-    <h2>{{ i18n.public_noResultsTitle | default(value="No results") }}</h2>
-    <p>{{ i18n.public_noResults | default(value="No results were found.") }}</p>
+    <h2>{{ t(key="public.noResultsTitle") }}</h2>
+    <p>{{ t(key="public.noResults") }}</p>
 {% else %}
     <ul class="noul words">
         {% for w in glossary.words %}

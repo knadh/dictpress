@@ -6,10 +6,10 @@
     {%- set lang_name = langs[lang_code].name -%}
     <span class="stat">
         <strong>{{ count }}</strong> {{ lang_name }}
-        {{ i18n.public_statsEntries }},
+        {{ t(key="public.statsEntries") }},
     </span>
   {%- endfor -%}
 
-  <span class="stat"><strong>{{ consts.stats.relations }}</strong> {{ i18n.public_statsDefs }}</span>
+  <span class="stat"><strong>{{ consts.stats.relations }}</strong> {{ t(key="public.statsDefs") }}</span>
 </div>
 {% endblock %}
