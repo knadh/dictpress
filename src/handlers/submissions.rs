@@ -7,7 +7,9 @@ use axum::{
 };
 
 use super::{json, paginate, total_pages, ApiErr, ApiResp, Ctx, PaginationQuery, Result};
-use crate::models::{Comment, Entry, Relation, SearchResults, StringArray, STATUS_PENDING};
+use crate::models::{
+    Comment, Entry, Relation, RelationsQuery, SearchResults, StringArray, STATUS_PENDING,
+};
 
 /// Public submission request.
 #[derive(Debug, serde::Deserialize)]
@@ -155,7 +157,12 @@ pub async fn get_pending_entries(
         ctx.consts.api_default_per_page,
     );
 
-    let (entries, total) = ctx.mgr.get_pending_entries("", offset, per_page).await?;
+    let (mut entries, total) = ctx.mgr.get_pending_entries("", offset, per_page).await?;
+
+    // Load relations for pending entries.
+    ctx.mgr
+        .load_relations(&mut entries, &RelationsQuery::default())
+        .await?;
 
     Ok(json(SearchResults {
         entries,

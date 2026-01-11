@@ -295,6 +295,13 @@ article .meta {
     margin-bottom: var(--pico-block-spacing-vertical);
 }
 
+blockquote.comment {
+    background: #fff5a0;
+    border-radius: 3px;
+    border-left: 6px solid var(--pico-primary);
+    padding: 10px;
+}
+
 /* side panel form */
 .side-panel {
     position: fixed;

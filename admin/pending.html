@@ -1,17 +1,14 @@
 {% extends "admin/base.html" %}
 
 {% block content %}
-<section x-data="searchResultsComponent('pending')" x-init="onLoad" @search.window="onSearch">
+<section x-data="searchResultsComponent('pending')" x-init="onLoad" @search.window="onSearch" class="entries">
     <template x-if="!id && loading['entries.search'] !== true">
-        <header class="pending-header">
-            <hgroup>
-                <h2><span x-text="total"></span> pending entries</h2>
-                <p>Entries awaiting review</p>
-            </hgroup>
+        <hgroup>
+            <h2><span x-text="total"></span> pending entries</h2>
             <template x-if="total > 0">
                 <a href="#" role="button" class="outline contrast" @click.prevent="onClearPending()">Clear all</a>
             </template>
-        </header>
+        </hgroup>
     </template>
     <template x-if="loading['entries.search'] === true">
         <article aria-busy="true"></article>
@@ -28,21 +25,25 @@
                                 <span><span x-text="item"></span><span x-show="idx < e.content.length - 1">, </span></span>
                             </template>
                         </a>
+                        <template x-if="e.phones.length > 0">
+                            <div class="phones">♪ <em x-text="e.phones.join(', ')"></em></div>
+                        </template>
                     </h3>
-                    <p x-text="config.languages[e.lang].name"></p>
+                    <span x-text="config.languages[e.lang].name" class="tag"></span>
                 </hgroup>
                 <nav>
                     <ul>
-                        <li><a href="#" @click.prevent="onEditEntry(e)" class="secondary">Edit</a></li>
-                        <li><a href="#" @click.prevent="onDeleteEntry(e.id)" class="contrast">Delete</a></li>
+                        <li><a href="#" @click.prevent="onEditEntry(e)" class="icon-link"><img class="icon icon-primary" src="/admin/static/edit.svg?v={{ asset_ver }}" alt="" /> Edit</a></li>
+                        <li><a href="#" @click.prevent="onDeleteEntry(e.id)" class="icon-link"><img class="icon icon-primary" src="/admin/static/delete.svg?v={{ asset_ver }}" alt="" /> Delete</a></li>
                     </ul>
                 </nav>
             </header>
 
             <template x-if="e.id in comments && 'null' in comments[e.id]">
                 <template x-for="(c, n) in comments[e.id]['null']" :key="c.id">
-                    <blockquote>
-                        <p x-text="c.comments"></p>
+                    <blockquote class="comment">
+                        <strong>User comment:</strong>
+                        <div x-text="c.comments"></div>
                         <footer>
                             <button class="outline secondary small" @click.prevent="onClearComments(c.id)">Clear</button>
                         </footer>
@@ -50,19 +51,16 @@
                 </template>
             </template>
 
-            <template x-if="e.phones.length > 0">
-                <p><em x-text="e.phones.join(', ')"></em></p>
-            </template>
-
-            <div class="definitions-list">
+            <ol class="definitions-list">
                 <template x-for="(r, n) in e.relations" :key="r.id">
-                    <div class="definition-row" :class="{ 'is-reordered': order[e.id] && order[e.id].changedRels[r.id] }">
+                    <li class="definition-row" :class="{ 'is-reordered': order[e.id] && order[e.id].changedRels[r.id] }">
                         <div>
-                            <small class="secondary">
+                            <div class="meta secondary">
                                 <template x-if="r.status === 'pending'"><mark>New</mark></template>
                                 <template x-if="r.relation.status === 'pending'"><ins>Pending</ins></template>
-                                <span x-text="config.languages[r.lang].name + (r.relation.types ? ' · ' + r.relation.types : '')"></span>
-                            </small>
+                                <span x-text="config.languages[r.lang].name" class="tag"></span>
+                                <span x-text="(r.relation.types ? ' · ' + r.relation.types : '')"></span>
+                            </div>
                             <p>
                                 <template x-for="(item, idx) in r.content" :key="idx">
                                     <span><span x-text="item"></span><span x-show="idx < r.content.length - 1">, </span></span>
@@ -71,8 +69,9 @@
                         </div>
                         <template x-if="e.id in comments && r.id in comments[e.id]">
                             <template x-for="(c, n) in comments[e.id][r.id]" :key="c.id">
-                                <blockquote>
-                                    <p x-text="c.comments"></p>
+                                <blockquote class="comment">
+                                    <strong>User comment:</strong>
+                                    <div x-text="c.comments"></div>
                                     <footer>
                                         <button class="outline secondary small" @click.prevent="onClearComments(c.id)">Clear</button>
                                     </footer>
@@ -80,18 +79,18 @@
                             </template>
                         </template>
                         <nav class="def-actions">
-                            <a href="#" @click.prevent="onEditRelation(r, e)">Relation</a>
-                            <a href="#" @click.prevent="onEditEntry(r, e)">Edit</a>
-                            <a href="#" @click.prevent="onDetatchRelation(e.id, r.relation.id)">Detach</a>
-                            <a href="#" @click.prevent="onDeleteRelationEntry(r.id)" class="contrast">Delete</a>
-                            <span role="group">
+                            <a href="#" @click.prevent="onEditEntry(r, e)" class="icon-link"><img class="icon icon-primary" src="/admin/static/edit.svg?v={{ asset_ver }}" alt="" /> Edit definition</a>
+                            <a href="#" @click.prevent="onEditRelation(r, e)" class="icon-link"><img class="icon icon-primary" src="/admin/static/edit.svg?v={{ asset_ver }}" alt="" /> Edit relation</a>
+                            <a href="#" @click.prevent="onDetatchRelation(e.id, r.relation.id)" class="icon-link"><img class="icon icon-primary" src="/admin/static/link.svg?v={{ asset_ver }}" alt="" /> Detach relation</a>
+                            <a href="#" @click.prevent="onDeleteRelationEntry(r.id)" class="icon-link"><img class="icon icon-primary" src="/admin/static/delete.svg?v={{ asset_ver }}" alt="" /> Delete</a>
+                            <span role="group" class="buttons">
                                 <button class="outline secondary" @click.prevent="onReorderRelation(e, r, n, -1)">&uarr;</button>
                                 <button class="outline secondary" @click.prevent="onReorderRelation(e, r, n, 1)">&darr;</button>
                             </span>
                         </nav>
-                    </div>
+                    </li>
                 </template>
-            </div>
+            </ol>
 
             <footer>
                 <a href="#" role="button" class="outline" @click.prevent="onAddDefinition(e)">+ Add definition</a>

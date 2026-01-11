@@ -200,7 +200,7 @@ function searchResultsComponent(typ) {
                         out[d.from_id] = {};
                     }
 
-                    if (!out.hasOwnProperty(d.from_id[d.to_id])) {
+                    if (!out[d.from_id].hasOwnProperty(d.to_id)) {
                         out[d.from_id][d.to_id] = [];
                     }
 
