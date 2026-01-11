@@ -28,7 +28,7 @@
 
                         <div class="toolbar">
                             {% if consts.enable_submissions %}
-                            <a href="#" data-from="{{ r.guid }}" class="edit" title="{{ i18n.public_suggestEdit }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ i18n.public_suggestEdit }}"></a>
+                            <a href="#" data-edit-from="{{ r.guid }}" class="edit" title="{{ i18n.public_suggestEdit }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ i18n.public_suggestEdit }}"></a>
                             {% endif %}
                             <a href="#{{ shareGuid }}" data-share-guid="{{ shareGuid }}" title="Share link"><img src="/static/share.svg?v={{ asset_ver }}" alt="Share link"></a>
                         </div>
@@ -65,7 +65,7 @@
                                 </a>
                             {% endif %}
                             {% if consts.enable_submissions %}
-                                <a href="#" data-from="{{ r.guid }}" data-to="{{ d.guid }}" class="edit" title="{{ i18n.public_suggestEdit | default(value="Suggest edit") }}">
+                                <a href="#" data-edit-from="{{ r.guid }}" data-edit-to="{{ d.guid }}" class="edit" title="{{ i18n.public_suggestEdit | default(value="Suggest edit") }}">
                                     <img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ i18n.public_suggestEdit }}">
                                 </a>
                             {% endif %}

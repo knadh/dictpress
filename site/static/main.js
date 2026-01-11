@@ -156,10 +156,9 @@
 
 // Edit form.
 (() => {
-  document.querySelectorAll(".edit").forEach((o) => {
-    o.onclick = ((e) => {
+  document.querySelectorAll("a[data-edit-from]").forEach((btn) => {
+    btn.onclick = ((e) => {
       e.preventDefault();
-      const btn = e.target;
 
       // Form is already open.
       if (btn.close) {
@@ -168,7 +167,7 @@
       }
 
       const form = document.querySelector(".form-comments").cloneNode(true);
-      o.parentNode.appendChild(form);
+      btn.parentNode.appendChild(form);
       form.style.display = "block";
 
       const txt = form.querySelector("textarea");
@@ -192,8 +191,8 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            from_guid: btn.dataset.from,
-            to_guid: btn.dataset.to,
+            from_guid: btn.dataset.editFrom,
+            to_guid: btn.dataset.editTo,
             comments: txt.value
           })
         }).catch((err) => {
