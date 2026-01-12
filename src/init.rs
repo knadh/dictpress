@@ -211,8 +211,10 @@ pub fn register_i18n_functions(tera: &mut tera::Tera, i18n: std::sync::Arc<tinyi
             }
 
             // Convert to the format expected by I18n::ts
-            let params_ref: Vec<(&str, String)> =
-                params.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+            let params_ref: Vec<(&str, String)> = params
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.clone()))
+                .collect();
             Ok(tera::Value::String(i18n_ts.ts(key, &params_ref)))
         },
     );
