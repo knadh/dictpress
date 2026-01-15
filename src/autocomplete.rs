@@ -25,17 +25,12 @@ impl Autocomplete {
 
     /// Build trie for a language from words. Words are normalized and sorted before insertion.
     pub fn build(&mut self, lang: &str, words: Vec<String>) {
-        let mut words: Vec<String> = words
-            .into_iter()
-            .map(|w| normalize_word(&w))
-            .filter(|w| !w.is_empty())
-            .collect();
-        words.sort();
-        words.dedup();
-
         let mut b = TrieBuilder::new();
-        for word in words {
-            b.push(word);
+        for w in words {
+            let wn = normalize_word(&w);
+            if !wn.is_empty() {
+                b.push(wn);
+            }
         }
         self.tries.insert(lang.to_string(), b.build());
     }
