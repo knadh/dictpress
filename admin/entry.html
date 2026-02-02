@@ -13,7 +13,7 @@
                 <label>
                     Content
                     <template x-for="(item, idx) in entry.content" :key="idx">
-                        <fieldset role="group" class="content-input">
+                        <fieldset class="group content-input">
                             <textarea x-model="entry.content[idx]" required :autofocus="idx === 0" rows="2" autofocus></textarea>
                             <button type="button" class="secondary" @click.prevent="onDeleteContentItem(idx)" x-show="entry.content.length > 1">&times;</button>
                         </fieldset>
@@ -21,8 +21,8 @@
                 </label>
                 <p><a href="#" @click.prevent="onAddContentItem">+ Add variant</a></p>
 
-                <div class="grid">
-                    <label>
+                <div class="row">
+                    <label class="col col-6">
                         Language
                         <select x-model="entry.lang" required>
                             <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
@@ -30,7 +30,7 @@
                             </template>
                         </select>
                     </label>
-                    <label>
+                    <label class="col col-6">
                         Initial
                         <input type="text" x-model="entry.initial" @focus="onFocusInitial" required />
                         <small class="help">Initial alphabet/character of the word for the A-Z glossary.</small>
@@ -43,8 +43,8 @@
                             <img class="icon" src="/admin/static/settings.svg?v={{ asset_ver }}" alt="" /> Advanced options
                         </span>
                     </summary>
-                    <div class="grid">
-                        <label>
+                    <div class="row">
+                        <label class="col col-6">
                             Status
                             <select x-model="entry.status" required>
                                 <option value="enabled">Enabled</option>
@@ -52,7 +52,7 @@
                             </select>
                             <small class="help">Disabled entries are hidden from public</small>
                         </label>
-                        <label>
+                        <label class="col col-6">
                             Weight
                             <input type="number" step="0.01" x-model="entry.weight" placeholder="0 = auto" />
                             <small class="help">(Optional). Only set if this word has to be specifically boosted above other results. Smaller values rank higher</small>
@@ -90,10 +90,10 @@
                     </label>
                 </details>
 
-                <fieldset role="group" class="buttons">
+                <div class="hstack">
                     <button type="submit" x-bind:aria-busy="loading['entries.update'] === true || loading['entries.create'] === true">Save</button>
                     <button type="button" class="secondary" @click.prevent="onClose">Cancel</button>
-                </fieldset>
+                </div>
                 <p x-show="!isNew"><a href="#" class="icon-link" @click.prevent="onDeleteEntry"><img class="icon" src="/admin/static/delete.svg?v={{ asset_ver }}" alt="" />Delete this entry</a></p>
             </form>
 

@@ -4,7 +4,8 @@
 	<title>{{ title }}{% if title %} |{% endif %} DictPress</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<link rel="stylesheet" type="text/css" href="/admin/static/pico.min.css">
+	<link rel="stylesheet" href="/admin/static/oat.min.css?v={{ asset_ver }}">
+	<script defer src="/admin/static/oat.min.js?v={{ asset_ver }}"></script>
 	<link rel="stylesheet" type="text/css" href="/admin/static/style.css?v={{ asset_ver }}">
 	<link rel="shortcut icon" href="/admin/static/favicon.png?v={{ asset_ver }}" type="image/x-icon" />
 
@@ -21,11 +22,15 @@
 </head>
 <body x-init="onLoad()" x-data="globalComponent()">
 <template x-if="ready">
-	<div class="admin-shell">
-		<aside class="admin-sidebar">
+	<div data-sidebar-layout>
+		<nav data-topnav>
+			<button data-sidebar-toggle aria-label="Toggle menu" class="outline small">☰</button>
+			<strong>DictPress</strong>
+		</nav>
+		<aside data-sidebar>
 			<header class="logo">
 				<a href="/admin">
-					<img src="/admin/static/logo.svg?v={{ asset_ver }}" alt="DictPress" />
+					<!-- <img src="/admin/static/logo.svg?v={{ asset_ver }}" alt="DictPress" /> -->
 				</a>
 			</header>
 
@@ -42,17 +47,19 @@
 			</footer>
 		</aside>
 
-		<main class="admin-main container-fluid">
+		<main class="admin-main">
 			<nav aria-label="Search" class="admin-search">
 				<form role="search" action="/admin/search" x-data="searchFormComponent()" @submit="onSearch">
-					<select name="from_lang" x-model="fromLang" aria-label="Language">
-						<option value="*id">ID</option>
-						<template x-for="[id, l] in Object.entries(config.languages)" :key="id">
-							<option :value="id" x-text="l.name" x-bind:selected="id === fromLang"></option>
-						</template>
-					</select>
-					<input type="search" name="query" x-model="query" placeholder="Search entries..." required />
-					<button type="submit" x-bind:aria-busy="loading['entries.search'] === true">Search</button>
+					<fieldset class="group">
+						<select name="from_lang" x-model="fromLang" aria-label="Language">
+							<option value="*id">ID</option>
+							<template x-for="[id, l] in Object.entries(config.languages)" :key="id">
+								<option :value="id" x-text="l.name" x-bind:selected="id === fromLang"></option>
+							</template>
+						</select>
+						<input type="search" name="query" x-model="query" placeholder="Search entries..." required />
+						<button type="submit" x-bind:aria-busy="loading['entries.search'] === true">Search</button>
+					</fieldset>
 				</form>
 			</nav>
 

@@ -20,7 +20,7 @@
                 <label>
                     Definition
                     <template x-for="(item, idx) in def.content" :key="idx">
-                        <fieldset role="group" class="content-input">
+                        <fieldset class="group content-input">
                             <textarea x-model="def.content[idx]" required :autofocus="idx === 0" rows="2"></textarea>
                             <button type="button" class="secondary" @click.prevent="onDeleteDefContentItem(idx)" x-show="def.content.length > 1">&times;</button>
                         </fieldset>
@@ -30,8 +30,8 @@
 
                 <template x-if="Object.keys(config.languages[parent.lang].types).length > 0">
                     <div>
-                        <div class="grid">
-                            <label>
+                        <div class="row">
+                            <label class="col col-6">
                                 Language
                                 <select x-model="def.lang">
                                     <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
@@ -39,7 +39,7 @@
                                     </template>
                                 </select>
                             </label>
-                            <label>
+                            <label class="col col-6">
                                 Relation type
                                 <select x-model="def.types" multiple required>
                                     <template x-for="[id, typ] in Object.entries(config.languages[def.lang].types)" :key="id">
@@ -61,7 +61,7 @@
                     <textarea x-model="def.notes" rows="2"></textarea>
                 </label>
 
-                <fieldset role="group">
+                <fieldset class="group">
                     <button type="submit">Save</button>
                     <button type="button" class="secondary" @click.prevent="onClose">Cancel</button>
                 </fieldset>
