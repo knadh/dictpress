@@ -18,7 +18,7 @@
 
                 <template x-if="Object.keys(config.languages[entry.lang].types).length > 0">
                     <div>
-                        <label>
+                        <label data-field>
                             Relation type
                             <select x-model="entry.relation.types" multiple>
                                 <template x-for="[id, typ] in Object.entries(config.languages[entry.lang].types)" :key="id">
@@ -27,31 +27,32 @@
                             </select>
                         </label>
 
-                        <label>
+                        <label data-field>
                             Tags
                             <textarea x-model="entry.relation.tags" rows="2" placeholder="One per line"></textarea>
                         </label>
                     </div>
                 </template>
 
-                <label>
+                <label data-field>
                     Notes
                     <textarea x-model="entry.relation.notes" rows="2"></textarea>
                 </label>
 
-                <fieldset role="group">
+                <br />
+                <div hstack>
                     <button type="submit">Save</button>
                     <button type="button" class="secondary" @click.prevent="onClose">Cancel</button>
-                </fieldset>
+                </div>
             </form>
 
             <footer>
-                <small>
-                    <strong>Relation ID:</strong> <code x-text="entry.relation.id"></code> &middot;
-                    <strong>Parent ID:</strong> <code x-text="entry.parent.id"></code><br>
-                    <strong>Definition ID:</strong> <code x-text="entry.id"></code> &middot;
-                    <strong>Created:</strong> <span x-text="entry.relation.created_at.slice(0, 16).replace('T', ' ')"></span>
-                </small>
+                <ul class="unstyled">
+                    <li><strong>Relation ID:</strong> <code x-text="entry.relation.id"></code></li>
+                    <li><strong>Parent ID:</strong> <code x-text="entry.parent.id"></code></li>
+                    <li><strong>Definition ID:</strong> <code x-text="entry.id"></code></li>
+                    <li><strong>Created:</strong> <span x-text="entry.relation.created_at.slice(0, 16).replace('T', ' ')"></span></li>
+                </ul>
             </footer>
         </aside>
     </template>

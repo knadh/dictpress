@@ -7,16 +7,16 @@
     </hgroup>
 
     <template x-if="stats">
-        <div class="grid">
-            <article class="stat-card">
+        <div class="row">
+            <article class="card stat-card col col-4">
                 <data x-text="formatNumber(stats.entries)"></data>
                 <small>Entries</small>
             </article>
-            <article class="stat-card">
+            <article class="card stat-card col col-4">
                 <data x-text="formatNumber(stats.relations)"></data>
                 <small>Definitions</small>
             </article>
-            <article>
+            <article class="card col col-4">
                 <header>Languages</header>
                 <table role="grid">
                     <tbody>

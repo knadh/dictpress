@@ -10,10 +10,10 @@
             </header>
 
             <form @submit.prevent="onSave">
-                <label>
+                <label data-field>
                     Content
                     <template x-for="(item, idx) in entry.content" :key="idx">
-                        <fieldset role="group" class="content-input">
+                        <fieldset class="group content-input">
                             <textarea x-model="entry.content[idx]" required :autofocus="idx === 0" rows="2" autofocus></textarea>
                             <button type="button" class="secondary" @click.prevent="onDeleteContentItem(idx)" x-show="entry.content.length > 1">&times;</button>
                         </fieldset>
@@ -21,8 +21,8 @@
                 </label>
                 <p><a href="#" @click.prevent="onAddContentItem">+ Add variant</a></p>
 
-                <div class="grid">
-                    <label>
+                <div class="row">
+                    <label class="col col-6">
                         Language
                         <select x-model="entry.lang" required>
                             <template x-for="[id, l] in Object.entries(config.languages)" :key="id">
@@ -30,10 +30,10 @@
                             </template>
                         </select>
                     </label>
-                    <label>
+                    <label class="col col-6" data-field>
                         Initial
-                        <input type="text" x-model="entry.initial" @focus="onFocusInitial" required />
-                        <small class="help">Initial alphabet/character of the word for the A-Z glossary.</small>
+                        <input type="text" x-model="entry.initial" @focus="onFocusInitial" required aria-describedby="initial-hint" />
+                        <small data-hint id="initial-hint">Initial alphabet/character of the word for the A-Z glossary.</small>
                     </label>
                 </div>
 
@@ -43,71 +43,73 @@
                             <img class="icon" src="/admin/static/settings.svg?v={{ asset_ver }}" alt="" /> Advanced options
                         </span>
                     </summary>
-                    <div class="grid">
-                        <label>
+                    <div class="row">
+                        <label class="col col-6" data-field>
                             Status
-                            <select x-model="entry.status" required>
+                            <select x-model="entry.status" required aria-describedby="status-hint">
                                 <option value="enabled">Enabled</option>
                                 <option value="disabled">Disabled</option>
                             </select>
-                            <small class="help">Disabled entries are hidden from public</small>
+                            <small data-hint id="status-hint">Disabled entries are hidden from public</small>
                         </label>
-                        <label>
+                        <label class="col col-6" data-field>
                             Weight
-                            <input type="number" step="0.01" x-model="entry.weight" placeholder="0 = auto" />
-                            <small class="help">(Optional). Only set if this word has to be specifically boosted above other results. Smaller values rank higher</small>
+                            <input type="number" step="0.01" x-model="entry.weight" placeholder="0 = auto" aria-describedby="weight-hint" />
+                            <small data-hint id="weight-hint">(Optional). Only set if this word has to be specifically boosted above other results. Smaller values rank higher</small>
                         </label>
                     </div>
 
-                    <label>
+                    <label data-field>
                         Phonetic notations
-                        <textarea x-model="entry.phones" rows="2" placeholder="One per line"></textarea>
-                        <small class="help">Pronunciation, IPA etc.</small>
+                        <textarea x-model="entry.phones" rows="2" placeholder="One per line" aria-describedby="phones-hint"></textarea>
+                        <small data-hint id="phones-hint">Pronunciation, IPA etc.</small>
                     </label>
 
-                    <label>
+                    <label data-field>
                         Tags
-                        <textarea x-model="entry.tags" rows="2" placeholder="One per line"></textarea>
-                        <small class="help">One or more tags categorizing the entry. One per line.</small>
+                        <textarea x-model="entry.tags" rows="2" placeholder="One per line" aria-describedby="tags-hint"></textarea>
+                        <small data-hint id="tags-hint">One or more tags categorizing the entry. One per line.</small>
                     </label>
 
-                    <label>
+                    <label data-field>
                         Search tokens
-                        <textarea x-model="entry.tokens" rows="2" placeholder="One per line (blank = auto)"></textarea>
-                        <small class="help">Fulltext / stemmed tokens for fulltext search. One per line.</small>
+                        <textarea x-model="entry.tokens" rows="2" placeholder="One per line (blank = auto)" aria-describedby="tokens-hint"></textarea>
+                        <small data-hint id="tokens-hint">Fulltext / stemmed tokens for fulltext search. One per line.</small>
                     </label>
 
-                    <label>
+                    <label data-field>
                         Notes
-                        <textarea x-model="entry.notes" rows="2"></textarea>
-                        <small class="help">Optional description</small>
+                        <textarea x-model="entry.notes" rows="2" aria-describedby="notes-hint"></textarea>
+                        <small data-hint id="notes-hint">Optional description</small>
                     </label>
 
-                    <label>
+                    <label data-field>
                         Meta (JSON)
-                        <textarea x-model="entry.meta_str" rows="2"></textarea>
-                        <small class="help">Optional JSON attributes that can be used in templates</small>
+                        <textarea x-model="entry.meta_str" rows="2" aria-describedby="meta-hint"></textarea>
+                        <small data-hint id="meta-hint">Optional JSON attributes that can be used in templates</small>
                     </label>
                 </details>
 
-                <fieldset role="group" class="buttons">
-                    <button type="submit" x-bind:aria-busy="loading['entries.update'] === true || loading['entries.create'] === true">Save</button>
-                    <button type="button" class="secondary" @click.prevent="onClose">Cancel</button>
-                </fieldset>
-                <p x-show="!isNew"><a href="#" class="icon-link" @click.prevent="onDeleteEntry"><img class="icon" src="/admin/static/delete.svg?v={{ asset_ver }}" alt="" />Delete this entry</a></p>
+                <br />
+                <div class="row">
+                    <div class="col-4">
+                        <div class="hstack">
+                            <button type="submit" x-bind:aria-busy="loading['entries.update'] === true || loading['entries.create'] === true">Save</button>
+                            <button type="button" class="secondary" @click.prevent="onClose">Cancel</button>
+                        </div>
+                    </div>
+                    <div class="col-8 col-end">
+                        <button x-if="!isNew" @click.prevent="onDeleteEntry" class="danger">Delete entry</button>
+                    </div>
+                </div>
+                <br />
             </form>
 
             <footer x-show="!isNew">
-                <ul class="meta">
-                    <li><label>ID</label> <code x-text="entry.id"></code></li>
-                    <li><label>GUID</label> <code x-text="entry.guid"></code><br></li>
-                    <li><label>Created</label> <span x-text="entry.created_at?.slice(0, 16).replace('T', ' ')"></span></li>
-                    <li><label>Updated</label> <span x-text="entry.updated_at?.slice(0, 16).replace('T', ' ')"></span></li>
-                </ul>
                 <template x-if="parentEntries.length > 0">
-                    <div>
-                        <p><strong>Parent entries (<span x-text="parentEntries.length"></span>)</strong></p>
-                        <ul class="meta">
+                    <article class="card mt-6">
+                        <h3>Parent entries (<span x-text="parentEntries.length"></span>)</h3>
+                        <ul class="unstyled meta">
                             <template x-for="r in parentEntries" :key="r.id">
                                 <li>
                                     <a x-bind:href="makeURL({'id': r.id})">
@@ -118,8 +120,17 @@
                                 </li>
                             </template>
                         </ul>
-                    </div>
+                    </article>
                 </template>
+
+                <article class="card">
+                    <ul class="unstyled meta">
+                        <li><label>ID</label> <code x-text="entry.id"></code></li>
+                        <li><label>GUID</label> <code x-text="entry.guid"></code><br></li>
+                        <li><label>Created</label> <span x-text="entry.created_at?.slice(0, 16).replace('T', ' ')"></span></li>
+                        <li><label>Updated</label> <span x-text="entry.updated_at?.slice(0, 16).replace('T', ' ')"></span></li>
+                    </ul>
+                </article>
             </footer>
         </aside>
     </template>
