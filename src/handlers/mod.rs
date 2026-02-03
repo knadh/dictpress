@@ -44,6 +44,7 @@ pub struct Ctx {
 
     pub consts: Consts,
     pub asset_ver: String,
+    pub version: String,
 }
 
 /// Application constants.

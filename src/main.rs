@@ -312,6 +312,9 @@ async fn main() {
             "{:08}",
             chrono::Local::now().timestamp_nanos_opt().unwrap_or(0) % 100_000_000
         ),
+
+        // App build version.
+        version: env!("VERSION").to_string(),
     });
 
     // Start the HTTP server.

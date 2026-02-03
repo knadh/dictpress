@@ -13,6 +13,7 @@ use crate::models::Stats;
 pub struct ConfigResp {
     pub languages: HashMap<String, LangResp>,
     pub dicts: Vec<[String; 2]>,
+    pub version: String,
 }
 
 #[derive(serde::Serialize)]
@@ -50,6 +51,7 @@ pub async fn get_config(State(ctx): State<Arc<Ctx>>) -> Result<ApiResp<ConfigRes
             .iter()
             .map(|(from, to)| [from.id.clone(), to.id.clone()])
             .collect(),
+        version: ctx.version.clone(),
     };
 
     Ok(json(out))

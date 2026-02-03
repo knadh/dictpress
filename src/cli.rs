@@ -5,7 +5,7 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(name = "dictpress")]
 #[command(about = "dictpress - Build dictionary websites. https://dict.press")]
-#[command(version)]
+#[command(version = env!("VERSION"))]
 pub struct Cli {
     /// Path to one or more config files (merged in order).
     #[arg(long, default_value = "config.toml", action = clap::ArgAction::Append)]
