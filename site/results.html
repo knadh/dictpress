@@ -10,7 +10,14 @@
             <li class="entry" id="{{ shareGuid }}" data-head="{{ r.content | join(sep=", ") }}" data-lang="{{ r.lang }}">
                 <header class="head">
                     <div>
-                        <h3 class="title">{{ r.content | join(sep=", ") }}</h3>
+                        <div class="title-wrap">
+                            <h3 class="title">{{ r.content | join(sep=", ") }}</h3>
+                            {% if r.meta.audio %}
+                                <a href="{{ r.meta.audio }}" class="audio" data-audio>
+                                    <img src="/static/audio.svg?v={{ asset_ver }}" alt="{{ t(key="public.playAudio") }}">
+                                </a>
+                            {% endif %}
+                        </div>
 
                         {% if r.phones and r.phones | length > 0 %}
                             <span class="pronun">&#9834; {{ r.phones | join(sep=",") }}</span>

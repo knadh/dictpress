@@ -248,6 +248,18 @@
   });
 })();
 
+// Audio playback.
+document.querySelectorAll("a[data-audio]").forEach((el) => {
+  el.onclick = (e) => {
+    e.preventDefault();
+    const audio = new Audio(el.getAttribute("href"));
+    audio.play().catch((err) => {
+      console.error("error playing audio:", err);
+      alert("error playing audio");
+    });
+  };
+});
+
 // Share link (.share-link) that invokes web share API.
 (() => {
   window.setTimeout(() => {

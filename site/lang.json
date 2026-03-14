@@ -39,5 +39,6 @@
     "public.suggestSubmitBtn": "Submit for review",
     "public.suggestSubmitted": "Submitted for review successfully",
     "public.suggestTitle": "Suggest a new entry",
+    "public.playAudio": "Play audio",
     "public.viewMore": "View {num} more"
 }

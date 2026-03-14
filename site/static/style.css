@@ -295,6 +295,22 @@ button:hover,
   margin: 0;
 }
 
+.entries .title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entries .audio img {
+  max-height: 14px;
+  width: auto;
+  transition: scale 0.15s ease-in-out;
+}
+
+.entries .audio:hover img {
+  scale: 1.2;
+}
+
 .entries .pronun {
   color: var(--light);
 }
