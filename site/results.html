@@ -37,7 +37,7 @@
                             {% if consts.enable_submissions %}
                             <a href="#" data-edit-from="{{ r.guid }}" class="edit" title="{{ t(key="public.suggestEdit") }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ t(key="public.suggestEdit") }}"></a>
                             {% endif %}
-                            <a href="#{{ shareGuid }}" data-share-guid="{{ shareGuid }}" title="{{ t(key="public.shareLink") }}"><img src="/static/share.svg?v={{ asset_ver }}" alt="{{ t(key="public.shareLink") }}"></a>
+                            <a href="#" class="share" data-share-entry="{{ shareGuid }}" title="{{ t(key="public.shareSnapshot") }}"><img src="/static/export.svg?v={{ asset_ver }}" alt="{{ t(key="public.shareSnapshot") }}"></a>
                         </div>
                     </div>
                 </header>

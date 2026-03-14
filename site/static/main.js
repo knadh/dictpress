@@ -260,35 +260,24 @@ document.querySelectorAll("a[data-audio]").forEach((el) => {
   };
 });
 
-// Share link (.share-link) that invokes web share API.
-(() => {
-  window.setTimeout(() => {
-    // For some reason, page doesn't scroll to hash on load. Do it manually.
-    if (window.location.hash) {
-      document.querySelector(window.location.hash)?.scrollIntoView();
-    }
-  }, 100);
-
-  if (!navigator.share) {
-    return;
+// Scroll to hash on load.
+window.setTimeout(() => {
+  if (window.location.hash) {
+    document.querySelector(window.location.hash)?.scrollIntoView();
   }
+}, 100);
 
-  document.querySelectorAll("a[data-share-guid]").forEach((el) => {
-    el.onclick = async (e) => {
-      e.preventDefault();
-
-      const def = document.querySelector(`#${el.dataset.shareGuid} .def:first-child`);
-      const data = {
-        title: `${document.getElementById(el.dataset.shareGuid).dataset.head} ${def.dataset.lang} meaning`,
-        text: `${def.innerText}`,
-        url: `${el.href}`,
-      };
-
-      try {
-        await navigator.share(data);
-      } catch (err) {
-        alert(`error sharing link: ${err?.message || err}`);
-      }
-    };
-  });
-})();
+// Screenshot share.
+document.querySelectorAll("a[data-share-entry]").forEach((el) => {
+  el.onclick = async (e) => {
+    e.preventDefault();
+    const entryEl = document.getElementById(el.dataset.shareEntry);
+    if (!entryEl) return;
+    try {
+      await shareEntry(entryEl);
+    } catch (err) {
+      console.error("Error sharing entry:", err);
+      alert(`Error sharing: ${err?.message || err}`);
+    }
+  };
+});
