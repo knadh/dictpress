@@ -2,7 +2,7 @@
     <h2>{{ t(key="public.noResultsTitle") }}</h2>
     <p>{{ t(key="public.noResults") }}</p>
 {% else %}
-    <ul class="noul words">
+    <ul class="unstyled words">
         {% for w in glossary.words %}
             <li><a href="{{ consts.root_url }}/dictionary/{{ glossary.from_lang | urlencode }}/{{ glossary.to_lang | urlencode }}/{{ w.content.0 | urlencode }}">{{ w.content | join(sep=", ") }}</a></li>
         {% endfor %}

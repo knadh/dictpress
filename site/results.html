@@ -3,14 +3,14 @@
 {% if num_results > 10 %}{% set num_results = 10 %}{% endif %}
 
 <div class="row">
-    <div class="eight columns">
-        <ol class="entries">
+    <div class="col-8">
+        <ol class="entries unstyled">
             {% for r in results.entries | slice(end=num_results) %}
             {% set shareGuid = "s" ~ r.guid | split(pat="-") | first %}
-            <li class="entry" id="{{ shareGuid }}" data-head="{{ r.content | join(sep=", ") }}" data-lang="{{ r.lang }}">
-                <header class="head">
+            <li class="entry card" id="{{ shareGuid }}" data-head="{{ r.content | join(sep=", ") }}" data-lang="{{ r.lang }}">
+                <header class="head hstack justify-between">
                     <div>
-                        <div class="title-wrap">
+                        <div class="title-wrap hstack items-center gap-2">
                             <h3 class="title">{{ r.content | join(sep=", ") }}</h3>
                             {% if r.meta.audio %}
                                 <button type="button" class="audio" data-audio data-src="{{ r.meta.audio }}">
@@ -20,24 +20,24 @@
                         </div>
 
                         {% if r.phones and r.phones | length > 0 %}
-                            <span class="pronun">&#9834; {{ r.phones | join(sep=",") }}</span>
+                            <span class="pronun text-light">&#9834; {{ r.phones | join(sep=",") }}</span>
                         {% endif %}
                     </div>
 
-                    <div class="meta">
+                    <div class="meta hstack items-center">
                         {% if r.tags and r.tags | length > 0 %}
                             <span class="tags">
                                 {% for tag in r.tags %}
-                                    <span class="tag" {% if tag is starting_with("src:") %} title="{{ t(key="public.sourceTag") }}"{% endif %}>{{ tag }}</span>
+                                    <span class="badge outline" {% if tag is starting_with("src:") %} title="{{ t(key="public.sourceTag") }}"{% endif %}>{{ tag }}</span>
                                 {% endfor %}
                             </span>
                         {% endif %}
 
                         <div class="toolbar">
                             {% if consts.enable_submissions %}
-                            <button type="button" data-edit-from="{{ r.guid }}" class="edit" title="{{ t(key="public.suggestEdit") }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ t(key="public.suggestEdit") }}"></button>
+                            <button cass="ghost edit item" data-edit-from="{{ r.guid }}" title="{{ t(key="public.suggestEdit") }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ t(key="public.suggestEdit") }}"></button>
                             {% endif %}
-                            <button type="button" class="share" data-share-entry="{{ shareGuid }}" title="{{ t(key="public.shareSnapshot") }}"><img src="/static/export.svg?v={{ asset_ver }}" alt="{{ t(key="public.shareSnapshot") }}"></button>
+                            <button class="ghost share item" data-share-entry="{{ shareGuid }}" title="{{ t(key="public.shareSnapshot") }}"><img src="/static/export.svg?v={{ asset_ver }}" alt="{{ t(key="public.shareSnapshot") }}"></button>
                         </div>
                     </div>
                 </header>
@@ -89,7 +89,7 @@
             {% endfor %}
         </ol>
     </div>
-    <nav class="three columns col-offset-1 related" aria-label="{{ t(key='public.similarTitle') }}">
+    <nav class="col-3 offset-1 related" aria-label="{{ t(key='public.similarTitle') }}">
         {% if results.entries | length > num_results %}
             <h3>{{ t(key="public.similarTitle") }}</h3>
             {% for r in results.entries | slice(start=num_results) %}

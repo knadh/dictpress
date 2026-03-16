@@ -6,7 +6,7 @@
 <form method="post" action="" class="form-submit">
     <div>
         <div class="row">
-            <div class="columns three">
+            <div class="col-3">
                 <label for="entry-lang">{{ t(key="public.suggestEntryLang") }}</label>
                 <select name="entry_lang" id="entry-lang">
                 {% for id, l in langs %}
@@ -14,8 +14,8 @@
                 {% endfor %}
                 </select>
             </div>
-            <div class="columns one"></div>
-            <div class="columns eight">
+            <div class="col-1"></div>
+            <div class="col-8">
                 <label for="entry-content">{{ t(key="public.suggestContent") }}</label>
                 <textarea name="entry_content" id="entry-content" required minlength="3"></textarea>
             </div>
@@ -27,9 +27,9 @@
 
         <br />
         <h3>{{ t(key="public.suggestDefsTitle") }}</h3>
-        <ol class="add-relations box">
+        <ol class="add-relations card">
             <li class="row">
-                <div class="columns three">
+                <div class="col-3" data-relation-controls>
                     <label>{{ t(key="public.suggestDefLang") }}</label>
                     <select name="relation_lang">
                     {% for id, l in langs %}
@@ -48,14 +48,14 @@
                     <br />
                     <a href="#" class="btn-remove-relation">{{ t(key="global.btnDelete") }}</a>
                 </div>
-                <div class="columns one"></div>
-                <div class="columns eight">
+                <div class="col-1"></div>
+                <div class="col-8">
                     <label for="definition-content">{{ t(key="public.suggestContent") }}</label>
                     <textarea name="relation_content" required minlength="3"></textarea>
                 </div>
             </li>
         </ol>
-        <p class="text-right">
+        <p class="align-right">
             <a href="#" class="btn-add-relation">+ {{ t(key="public.suggestAddDefBtn") }}</a>
         </p>
 

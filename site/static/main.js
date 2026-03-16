@@ -70,7 +70,7 @@
       // fetch() content from the dataset data.guid from /api/entry/{guid}
       // and populate the div.more innerHTML with the content.
       if (state === "block" && !el.dataset.fetched) {
-        container.innerHTML = `<div class="loader"></div>`;
+        container.innerHTML = `<div aria-busy="true"></div>`;
 
         fetch(`${window._ROOT_URL}/api/dictionary/entries/${el.dataset.entryGuid}`)
           .then((resp) => resp.json())
@@ -119,7 +119,7 @@
 (() => {
   function filterTypes(e) {
     // Filter the types select field with elements that are supported by the language.
-    const types = e.target.closest(".columns").querySelector("select[name=relation_type]");
+    const types = e.target.closest("[data-relation-controls]").querySelector("select[name=relation_type]");
     types.querySelectorAll("option").forEach((o) => o.style.display = "none");
     types.querySelectorAll(`option[data-lang=${e.target.value}]`).forEach((o) => o.style.display = "block");
     types.selectedIndex = 1;
@@ -154,58 +154,54 @@
   }
 })();
 
-// Edit form.
+// Edit form using ot-dropdown.
 (() => {
+  const tpl = document.querySelector("#tpl-form-comments");
+  if (!tpl) return;
+
+  let counter = 0;
   document.querySelectorAll("[data-edit-from]").forEach((btn) => {
-    btn.onclick = ((e) => {
-      e.preventDefault();
+    const parent = btn.parentNode;
 
-      // Form is already open.
-      if (btn.close) {
-        btn.close();
-        return;
-      }
+    // Clone template content and give the popover a unique ID.
+    const popoverId = `form-comments-${counter++}`;
+    const form = tpl.content.firstElementChild.cloneNode(true);
+    form.id = popoverId;
 
-      const form = document.querySelector(".form-comments").cloneNode(true);
-      btn.parentNode.appendChild(form);
-      form.style.display = "block";
+    // Wire the button as the popover trigger.
+    btn.setAttribute("popovertarget", popoverId);
 
-      const txt = form.querySelector("textarea");
-      txt.focus();
-      txt.onkeydown = (e) => {
-        if (e.key === "Escape" && txt.value === "") {
-          btn.close();
-        }
-      };
+    // Build <ot-dropdown> with children fully assembled before inserting into DOM
+    // so that init() finds [popovertarget] and [popover].
+    const dropdown = document.createElement("ot-dropdown");
+    dropdown.appendChild(btn);
+    dropdown.appendChild(form);
+    parent.appendChild(dropdown);
 
-      btn.close = () => {
-        btn.close = null;
-        form.remove();
-      };
+    const txt = form.querySelector("textarea");
 
-      // Handle form submission.
-      form.onsubmit = () => {
-        fetch(`${window._ROOT_URL}/api/submissions/comments`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            from_guid: btn.dataset.editFrom,
-            to_guid: btn.dataset.editTo,
-            comments: txt.value
-          })
-        }).catch((err) => {
-          alert(`Error submitting: ${err}`);
-        });
+    // Handle submission.
+    form.querySelector("button.submit-comment").onclick = () => {
+      fetch(`${window._ROOT_URL}/api/submissions/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          from_guid: btn.dataset.editFrom,
+          to_guid: btn.dataset.editTo,
+          comments: txt.value
+        })
+      }).catch((err) => {
+        alert(`Error submitting: ${err}`);
+      });
 
-        alert(form.dataset.success);
-        btn.close();
-      };
+      alert(form.dataset.success);
+      form.hidePopover();
+    };
 
-      form.querySelector("button.close").onclick = btn.close;
-    });
-  })
+    form.querySelector("button.close").onclick = () => form.hidePopover();
+  });
 })();
 
 // Autocomplete.
