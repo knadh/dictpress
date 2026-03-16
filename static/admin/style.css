@@ -39,7 +39,7 @@ button[aria-busy="true"]::after {
 
 /* main */
 .admin-main {
-    padding: var(--space-6) var(--space-3);
+    padding: var(--space-6);
     max-width: 900px;
 }
 

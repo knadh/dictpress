@@ -126,6 +126,8 @@ pub async fn search(
         .unwrap_or(&to_lang);
     tpl_ctx.insert("from_lang_name", from_lang_name);
     tpl_ctx.insert("to_lang_name", to_lang_name);
+    tpl_ctx.insert("from_lang", &from_lang);
+    tpl_ctx.insert("to_lang", &to_lang);
 
     // Pagination.
     let (page, per_page, offset) = paginate(

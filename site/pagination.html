@@ -1,5 +1,6 @@
 {% if total_pages > 1 %}
-    <a href="{% if page > 1 %}{{ pg_url }}?page={{ page - 1 }}&per_page={{ per_page }}{% endif %}" class="prev{% if page <= 1 %} disabled{% endif %}"{% if page <= 1 %} aria-disabled="true"{% endif %}>&laquo; {{ t(key="pagination.previous") }}</a>
+<menu class="buttons">
+    <li><a {% if page > 1 %}href="{{ pg_url }}?page={{ page - 1 }}&per_page={{ per_page }}"{% endif %} class="button outline small"{% if page <= 1 %} aria-disabled="true"{% endif %}>&larr; {{ t(key="pagination.previous") }}</a></li>
 
     {% set window = 10 %}
     {% set half = 5 %}
@@ -15,25 +16,24 @@
         {% if start < 1 %}{% set_global start = 1 %}{% endif %}
     {% endif %}
 
-    <span class="pages">
-        {% if start > 1 %}
-            <a href="{{ pg_url }}?page=1&per_page={{ per_page }}" class="pg-page">1</a>
-            {% if start > 2 %}<span class="ellipsis">...</span>{% endif %}
+    {% if start > 1 %}
+        <li><a href="{{ pg_url }}?page=1&per_page={{ per_page }}" class="button outline small">1</a></li>
+        {% if start > 2 %}<li><span class="ellipsis">...</span></li>{% endif %}
+    {% endif %}
+
+    {% for p in range(start=start, end=end + 1) %}
+        {% if p == page %}
+            <li><a class="button small" aria-current="page">{{ p }}</a></li>
+        {% else %}
+            <li><a href="{{ pg_url }}?page={{ p }}&per_page={{ per_page }}" class="button outline small">{{ p }}</a></li>
         {% endif %}
+    {% endfor %}
 
-        {% for p in range(start=start, end=end + 1) %}
-            {% if p == page %}
-                <a class="selected" aria-current="page">{{ p }}</a>
-            {% else %}
-                <a href="{{ pg_url }}?page={{ p }}&per_page={{ per_page }}" class="pg-page">{{ p }}</a>
-            {% endif %}
-        {% endfor %}
+    {% if end < total_pages %}
+        {% if end < total_pages - 1 %}<li><span class="ellipsis">...</span></li>{% endif %}
+        <li><a href="{{ pg_url }}?page={{ total_pages }}&per_page={{ per_page }}" class="button outline small">{{ total_pages }}</a></li>
+    {% endif %}
 
-        {% if end < total_pages %}
-            {% if end < total_pages - 1 %}<span class="ellipsis">...</span>{% endif %}
-            <a href="{{ pg_url }}?page={{ total_pages }}&per_page={{ per_page }}" class="pg-page">{{ total_pages }}</a>
-        {% endif %}
-    </span>
-
-    <a href="{% if page < total_pages %}{{ pg_url }}?page={{ page + 1 }}&per_page={{ per_page }}{% endif %}" class="next{% if page >= total_pages %} disabled{% endif %}"{% if page >= total_pages %} aria-disabled="true"{% endif %}>{{ t(key="pagination.next") }} &raquo;</a>
+    <li><a {% if page < total_pages %}href="{{ pg_url }}?page={{ page + 1 }}&per_page={{ per_page }}"{% endif %} class="button outline small"{% if page >= total_pages %} aria-disabled="true"{% endif %}>{{ t(key="pagination.next") }} &rarr;</a></li>
+</menu>
 {% endif %}
