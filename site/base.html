@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -32,7 +32,7 @@
 </head>
 <body class="{% if page_type == "/" %}home{% endif %}">
 <div class="container">
-  <section class="main">
+  <main class="main">
     <header class="header">
       <div class="row">
         <div class="logo four columns">
@@ -65,7 +65,7 @@
 
     {%- block content %}{% endblock -%}
 
-    <nav class="nav">
+    <nav class="nav" aria-label="Site">
       {% if consts.enable_submissions %}
         <a href="{{ consts.root_url | safe }}/submit">{{ t(key="public.submitEntry") }}</a>
       {% endif %}
@@ -79,17 +79,17 @@
         {% endfor -%}
       {% endif %}
     </nav>
-  </section>
+  </main>
 
   <footer class="footer">
     <a href="https://dict.press">Powered by dictpress</a>
   </footer>
 </div><!-- container -->
 
-<form class="box form-comments" data-success="{{ t(key="public.suggestSubmitted") }}">
+<form class="box form-comments" role="dialog" aria-label="{{ t(key="public.submitTitle") }}" data-success="{{ t(key="public.suggestSubmitted") }}">
 <div>
   <h4>{{ t(key="public.submitTitle") }}</h4>
-  <textarea name="comments" autofocus maxlength="500"></textarea>
+  <textarea name="comments" aria-label="{{ t(key="public.submitTitle") }}" autofocus maxlength="500"></textarea>
   <div class="buttons">
     <button type="submit">{{ t(key="public.suggestSubmitBtn") }}</button>
     <button class="button-outline close">{{ t(key="global.btnClose") }}</button>

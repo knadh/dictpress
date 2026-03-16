@@ -6,17 +6,17 @@
         <h2>{{ t(key="public.glossaryTitle") }}</h2>
         <p>{{ t(key="public.noResults") }}</p>
     {% else %}
-        <nav class="index">
+        <nav class="index" aria-label="Alphabetical index">
             {% for a in initials %}
             <a href="{{ consts.root_url }}/glossary/{{ glossary.from_lang }}/{{ glossary.to_lang }}/{{ a | urlencode }}"{% if a == initial %} class="sel"{% endif %}>{{ a }}</a>
             {% endfor %}
         </nav>
 
-        <nav class="pagination top">{% include "pagination.html" %}</nav>
+        <nav class="pagination top" aria-label="Top pagination">{% include "pagination.html" %}</nav>
 
         {% include "glossary-words.html" %}
 
-        <nav class="pagination bottom">{% include "pagination.html" %}</nav>
+        <nav class="pagination bottom" aria-label="Bottom pagination">{% include "pagination.html" %}</nav>
     {% endif %}
 </section>
 {% endblock %}

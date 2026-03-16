@@ -13,9 +13,9 @@
                         <div class="title-wrap">
                             <h3 class="title">{{ r.content | join(sep=", ") }}</h3>
                             {% if r.meta.audio %}
-                                <a href="{{ r.meta.audio }}" class="audio" data-audio>
+                                <button type="button" class="audio" data-audio data-src="{{ r.meta.audio }}">
                                     <img src="/static/audio.svg?v={{ asset_ver }}" alt="{{ t(key="public.playAudio") }}">
-                                </a>
+                                </button>
                             {% endif %}
                         </div>
 
@@ -35,9 +35,9 @@
 
                         <div class="toolbar">
                             {% if consts.enable_submissions %}
-                            <a href="#" data-edit-from="{{ r.guid }}" class="edit" title="{{ t(key="public.suggestEdit") }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ t(key="public.suggestEdit") }}"></a>
+                            <button type="button" data-edit-from="{{ r.guid }}" class="edit" title="{{ t(key="public.suggestEdit") }}"><img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ t(key="public.suggestEdit") }}"></button>
                             {% endif %}
-                            <a href="#" class="share" data-share-entry="{{ shareGuid }}" title="{{ t(key="public.shareSnapshot") }}"><img src="/static/export.svg?v={{ asset_ver }}" alt="{{ t(key="public.shareSnapshot") }}"></a>
+                            <button type="button" class="share" data-share-entry="{{ shareGuid }}" title="{{ t(key="public.shareSnapshot") }}"><img src="/static/export.svg?v={{ asset_ver }}" alt="{{ t(key="public.shareSnapshot") }}"></button>
                         </div>
                     </div>
                 </header>
@@ -72,9 +72,9 @@
                                 </a>
                             {% endif %}
                             {% if consts.enable_submissions %}
-                                <a href="#" data-edit-from="{{ r.guid }}" data-edit-to="{{ d.guid }}" class="edit" title="{{ t(key="public.suggestEdit") }}">
+                                <button type="button" data-edit-from="{{ r.guid }}" data-edit-to="{{ d.guid }}" class="edit" title="{{ t(key="public.suggestEdit") }}">
                                     <img src="/static/edit.svg?v={{ asset_ver }}" alt="{{ t(key="public.suggestEdit") }}">
-                                </a>
+                                </button>
                             {% endif %}
 
                             <div class="more" id="{{ r.guid }}-{{ d.guid }}" role="region" aria-hidden="true"></div>
@@ -89,7 +89,7 @@
             {% endfor %}
         </ol>
     </div>
-    <nav class="three columns col-offset-1 related">
+    <nav class="three columns col-offset-1 related" aria-label="{{ t(key='public.similarTitle') }}">
         {% if results.entries | length > num_results %}
             <h3>{{ t(key="public.similarTitle") }}</h3>
             {% for r in results.entries | slice(start=num_results) %}

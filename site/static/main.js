@@ -119,7 +119,7 @@
 (() => {
   function filterTypes(e) {
     // Filter the types select field with elements that are supported by the language.
-    const types = e.target.closest("fieldset").querySelector("select[name=relation_type]");
+    const types = e.target.closest(".columns").querySelector("select[name=relation_type]");
     types.querySelectorAll("option").forEach((o) => o.style.display = "none");
     types.querySelectorAll(`option[data-lang=${e.target.value}]`).forEach((o) => o.style.display = "block");
     types.selectedIndex = 1;
@@ -156,7 +156,7 @@
 
 // Edit form.
 (() => {
-  document.querySelectorAll("a[data-edit-from]").forEach((btn) => {
+  document.querySelectorAll("[data-edit-from]").forEach((btn) => {
     btn.onclick = ((e) => {
       e.preventDefault();
 
@@ -249,10 +249,10 @@
 })();
 
 // Audio playback.
-document.querySelectorAll("a[data-audio]").forEach((el) => {
+document.querySelectorAll("[data-audio]").forEach((el) => {
   el.onclick = (e) => {
     e.preventDefault();
-    const audio = new Audio(el.getAttribute("href"));
+    const audio = new Audio(el.dataset.src);
     audio.play().catch((err) => {
       console.error("error playing audio:", err);
       alert("error playing audio");
@@ -268,7 +268,7 @@ window.setTimeout(() => {
 }, 100);
 
 // Screenshot share.
-document.querySelectorAll("a[data-share-entry]").forEach((el) => {
+document.querySelectorAll("[data-share-entry]").forEach((el) => {
   el.onclick = async (e) => {
     e.preventDefault();
     const entryEl = document.getElementById(el.dataset.shareEntry);

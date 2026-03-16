@@ -7,6 +7,9 @@ function autocomp(el, options = {}) {
 
 	// Disable browser's default autocomplete behaviour on the input.
 	el.autocomplete = "off";
+	el.setAttribute("role", "combobox");
+	el.setAttribute("aria-autocomplete", "list");
+	el.setAttribute("aria-expanded", "false");
 
 	// Attach all the events required for the interactions in one go.
 	["input", "keydown", "blur"].forEach(k => el.addEventListener(k, handleEvent));
@@ -85,7 +88,9 @@ function autocomp(el, options = {}) {
 		});
 
 		box.classList.add("autocomp");
+		box.setAttribute("role", "listbox");
 		el.parentNode.insertBefore(box, el.nextSibling);
+		el.setAttribute("aria-expanded", "true");
 	}
 
 	function renderResults() {
@@ -93,6 +98,8 @@ function autocomp(el, options = {}) {
 		items.forEach((item, idx) => {
 			const div = document.createElement("div");
 			div.classList.add("autocomp-item");
+			div.setAttribute("role", "option");
+			div.setAttribute("aria-selected", idx === cur ? "true" : "false");
 
 			// If there's a custom renderer callback, use it, else, simply insert the value/text as-is.
 			opt.onRender ? div.appendChild(opt.onRender(item)) : div.innerText = item;
@@ -110,11 +117,16 @@ function autocomp(el, options = {}) {
 
 		// Remove the previous item's highlight;
 		const prev = box.querySelector(`:nth-child(${cur + 1})`);
-		prev?.classList.remove("autocomp-sel");
+		if (prev) {
+			prev.classList.remove("autocomp-sel");
+			prev.setAttribute("aria-selected", "false");
+		}
 
 		// Increment the cursor and highlight the next item, cycled between [0, n].
 		cur = (cur + direction + items.length) % items.length;
-		box.querySelector(`:nth-child(${cur + 1})`).classList.add("autocomp-sel");
+		const next = box.querySelector(`:nth-child(${cur + 1})`);
+		next.classList.add("autocomp-sel");
+		next.setAttribute("aria-selected", "true");
 	}
 
 	function select(idx) {
@@ -133,5 +145,6 @@ function autocomp(el, options = {}) {
 			box.remove();
 			box = null;
 		}
+		el.setAttribute("aria-expanded", "false");
 	}
 }

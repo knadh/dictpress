@@ -110,15 +110,15 @@ button,
   color: var(--primary);
 }
 
-.button-outline:hover {
-  background: var(--lighter);
-  color: var(--primary);
-}
-
 button:hover,
 .button:hover {
   border-color: #444;
   background: #444;
+}
+
+.button-outline:hover {
+  background: var(--lighter);
+  color: var(--primary);
 }
 
 .buttons {
@@ -301,6 +301,13 @@ button:hover,
   gap: 8px;
 }
 
+.entries .audio {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+}
 .entries .audio img {
   max-height: 14px;
   width: auto;
@@ -398,6 +405,9 @@ button:hover,
   display: none;
   position: absolute;
   text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 .entry .edit img {
   max-height: 12px;
@@ -427,13 +437,20 @@ button:hover,
   align-items: center;
   gap: 10px;
 }
-  .entries .meta a {
+  .entries .meta .toolbar > a,
+  .entries .meta .toolbar > button {
     text-decoration: none;
     display: inline-block;
     margin-left: 10px;
     transition: scale 0.15s ease-in-out;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    line-height: 0;
   }
-  .entries .meta a:hover {
+  .entries .meta .toolbar > a:hover,
+  .entries .meta .toolbar > button:hover {
     scale: 1.2;
   }
   .entries .meta .toolbar img {
@@ -450,7 +467,8 @@ button:hover,
   display: inline-block;
 }
 
-.form-submit fieldset {
+.form-submit fieldset,
+.form-submit > div .columns {
   padding: 0;
   margin: 0 0 20px 0;
   border: 0;
@@ -690,6 +708,11 @@ button:hover,
 .home .stats {
   text-align: center;
 }
+  .home .stats ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
   .home .stats .stat {
     display: inline-block;
     font-size: 0.875rem;

@@ -6,19 +6,19 @@
 <form method="post" action="" class="form-submit">
     <div>
         <div class="row">
-            <fieldset class="columns three">
+            <div class="columns three">
                 <label for="entry-lang">{{ t(key="public.suggestEntryLang") }}</label>
-                <select name="entry_lang" for="entry-lang">
+                <select name="entry_lang" id="entry-lang">
                 {% for id, l in langs %}
                     <option value="{{ id }}">{{ l.name }}</option>
                 {% endfor %}
                 </select>
-            </fieldset>
-            <fieldset class="columns one"></fieldset>
-            <fieldset class="columns eight">
+            </div>
+            <div class="columns one"></div>
+            <div class="columns eight">
                 <label for="entry-content">{{ t(key="public.suggestContent") }}</label>
                 <textarea name="entry_content" id="entry-content" required minlength="3"></textarea>
-            </fieldset>
+            </div>
         </div>
         <fieldset>
             <label>{{ t(key="public.suggestPhones") }}</label>
@@ -29,7 +29,7 @@
         <h3>{{ t(key="public.suggestDefsTitle") }}</h3>
         <ol class="add-relations box">
             <li class="row">
-                <fieldset class="columns three">
+                <div class="columns three">
                     <label>{{ t(key="public.suggestDefLang") }}</label>
                     <select name="relation_lang">
                     {% for id, l in langs %}
@@ -37,7 +37,7 @@
                     {% endfor %}
                     </select>
 
-                    <select name="relation_type">
+                    <select name="relation_type" aria-label="Definition type">
                     {% for lid, l in langs %}
                         {% for tid, typ in l.types %}
                             <option data-lang="{{ lid }}" value="{{ tid }}">{{ typ }}</option>
@@ -47,12 +47,12 @@
 
                     <br />
                     <a href="#" class="btn-remove-relation">{{ t(key="global.btnDelete") }}</a>
-                </fieldset>
-                <fieldset class="columns one"></fieldset>
-                <fieldset class="columns eight">
+                </div>
+                <div class="columns one"></div>
+                <div class="columns eight">
                     <label for="definition-content">{{ t(key="public.suggestContent") }}</label>
                     <textarea name="relation_content" required minlength="3"></textarea>
-                </fieldset>
+                </div>
             </li>
         </ol>
         <p class="text-right">
