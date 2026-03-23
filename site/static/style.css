@@ -398,15 +398,8 @@ fieldset.group {
 }
 
 .page {
-  margin: 0 var(--space-8);
-
-  a {
-    color: var(--primary);
-
-    &:hover {
-      color: var(--foreground);
-    }
-  }
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-8);
 }
 
 /* Submission form */
