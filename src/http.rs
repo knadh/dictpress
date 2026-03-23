@@ -134,7 +134,7 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
                 "/glossary/{from}/{to}/{initial}",
                 get(site::render_glossary_page),
             )
-            .route("/page/{page}", get(site::render_custom_page));
+            .route("/p/{page}", get(site::render_custom_page));
 
         router = router.merge(site_routes);
         log::info!("site routes enabled");
