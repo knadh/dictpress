@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
-    response::{Html, IntoResponse},
+    response::{Html, IntoResponse, Redirect},
 };
 use axum_extra::extract::Form;
 
@@ -168,10 +168,11 @@ pub async fn search(
     render(&ctx, "search.html", &tpl_ctx)
 }
 
-/// Glossary page.
+/// Glossary page. Since it's the same handler for /glossary/{from}/{to} and /glossary/{from}/{to}/{initial},
+/// the path params aren't defined in the func args and is parsed inside the handler.
 pub async fn render_glossary_page(
     State(ctx): State<Arc<Ctx>>,
-    Path((from_lang, to_lang, initial)): Path<(String, String, String)>,
+    Path(parts): Path<Vec<String>>,
     Query(params): Query<GlossaryParams>,
 ) -> impl IntoResponse {
     // Check if glossary is enabled.
@@ -179,18 +180,34 @@ pub async fn render_glossary_page(
         return (StatusCode::NOT_FOUND, "glossary is disabled").into_response();
     }
 
+    let from_lang = &parts[0];
+    let to_lang = &parts[1];
+    let initial = parts.get(2).cloned().unwrap_or_default();
+
+    // If no initial is given or it's a wildcard, redirect to the first available initial.
+    if initial.is_empty() || initial == "*" {
+        return match ctx.mgr.get_initials(from_lang).await {
+            Ok(initials) if !initials.is_empty() => Redirect::to(&format!(
+                "{}/glossary/{}/{}/{}",
+                ctx.consts.root_url, from_lang, to_lang, initials[0]
+            ))
+            .into_response(),
+            _ => (StatusCode::NOT_FOUND, "no glossary entries found").into_response(),
+        };
+    }
+
     let mut tpl_ctx = base_context(&ctx);
     tpl_ctx.insert("page_type", "glossary");
     tpl_ctx.insert("initial", &initial);
     let from_lang_name = ctx
         .langs
-        .get(&from_lang)
+        .get(from_lang)
         .map(|l| l.name.as_str())
-        .unwrap_or(&from_lang);
+        .unwrap_or(from_lang);
     tpl_ctx.insert("from_lang_name", from_lang_name);
 
     // Get initials.
-    match ctx.mgr.get_initials(&from_lang).await {
+    match ctx.mgr.get_initials(from_lang).await {
         Ok(initials) => tpl_ctx.insert("initials", &initials),
         Err(e) => {
             log::error!("initials error: {}", e);
@@ -223,8 +240,8 @@ pub async fn render_glossary_page(
                     "glossary",
                     &GlossaryData {
                         words: vec![],
-                        from_lang,
-                        to_lang,
+                        from_lang: from_lang.clone(),
+                        to_lang: to_lang.clone(),
                     },
                 );
                 tpl_ctx.insert("total_pages", &0);
