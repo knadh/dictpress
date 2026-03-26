@@ -15,14 +15,6 @@ body {
   min-width: 320px;
 }
 
-main {
-  padding-block-start: 0;
-}
-
-.main {
-  margin: var(--space-8) auto var(--space-4) auto;
-}
-
 fieldset.group {
   select {
     border-radius: var(--radius-full) 0 0 var(--radius-full);
@@ -75,6 +67,10 @@ fieldset.group {
       display: inline-block;
     }
   }
+
+  .nav {
+    margin-top: var(--space-14);
+  }
 }
 
 /* Entry/result cards */
@@ -84,7 +80,7 @@ fieldset.group {
 }
 
 .entries {
-  .entry {
+  .entry:not(:last-child) {
     margin-bottom: var(--space-8);
   }
 
@@ -342,8 +338,7 @@ fieldset.group {
 /* Nav */
 .nav {
   border-top: 1px dashed var(--border);
-  padding: var(--space-8) 0 var(--space-4) 0;
-  margin-top: var(--space-8);
+  margin: var(--space-8) var(--space-2) var(--space-4);
   font-size: var(--text-7);
   display: flex;
   flex-wrap: wrap;
@@ -361,7 +356,7 @@ fieldset.group {
 
 /* Footer */
 .footer {
-  padding-bottom: var(--space-4);
+  padding-bottom: var(--space-8);
   font-size: var(--text-8);
 
   display: flex;
@@ -426,6 +421,10 @@ fieldset.group {
 
 /* Responsive */
 @media screen and (max-width: 720px) {
+  main {
+    padding-block-start: var(--space-4);
+  }
+
   .logo {
     text-align: center;
   }
