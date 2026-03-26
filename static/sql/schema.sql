@@ -1,7 +1,7 @@
 -- name: pragma
 -- Concurrency (minimal write concern)
 PRAGMA journal_mode       = WAL;
-PRAGMA busy_timeout       = 1000;    -- Shorter; writes are rare.
+PRAGMA busy_timeout       = 10000;
 PRAGMA wal_autocheckpoint = 0;       -- Disable auto-checkpoint; do it manually during maintenance
 PRAGMA cache_size         = -256000; -- 256MB cache (or more if available)
 PRAGMA temp_store         = MEMORY;
