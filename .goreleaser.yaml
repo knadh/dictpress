@@ -35,6 +35,7 @@ archives:
       - README.md
       - LICENSE
       - site/**/*
+      - tokenizers/**/*
 
 changelog:
   sort: asc
