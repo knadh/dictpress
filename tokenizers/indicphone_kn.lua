@@ -352,16 +352,25 @@ end
 -- Returns keys joined with " OR " for SQLite FTS5 OR matching
 function to_query(text, lang)
     local key0, key1, key2
+    local is_romanized = false
 
     -- If no Kannada chars, use English transliteration
     if not has_native(text) then
         key0, key1, key2 = encode_en(text)
+        is_romanized = true
     else
         key0, key1, key2 = encode(text)
     end
 
     if key0 == "" then
         return ""
+    end
+
+    -- Romanized autocomplete input is usually a partial syllable. Falling back
+    -- to no-vowel keys makes "he", "hi", "hu" all match "h". So keep the
+    -- adjacent vowel marker and use a prefix query instead.
+    if is_romanized and key2 ~= "" then
+        return key2 .. "*"
     end
 
     -- Collect unique keys (most specific first)

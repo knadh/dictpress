@@ -130,10 +130,7 @@ pub fn init_handlers(ctx: Arc<Ctx>) -> Router {
             .route("/static/_bundle.js", get(serve_bundle))
             .route("/static/_bundle.css", get(serve_bundle))
             .route("/static/{*path}", get(serve_site_static))
-            .route(
-                "/glossary/{from}/{to}",
-                get(site::render_glossary_page),
-            )
+            .route("/glossary/{from}/{to}", get(site::render_glossary_page))
             .route(
                 "/glossary/{from}/{to}/{initial}",
                 get(site::render_glossary_page),
