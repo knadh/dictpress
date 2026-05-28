@@ -200,12 +200,6 @@ impl Cache {
         }
     }
 
-    /// Close the cache and flush pending writes.
-    pub async fn close(&self) {
-        if let CacheBackend::Hybrid(c) = &self.backend {
-            c.close().await.ok();
-        }
-    }
 }
 
 /// Generate a cache key for search queries.

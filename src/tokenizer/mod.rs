@@ -27,13 +27,34 @@ static ENGLISH_STOP_WORDS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
 
 use crate::models::DEFAULT_TOKENIZER;
 
+#[derive(Debug, Clone)]
+pub struct TokenizedQuery {
+    pub text: String,
+    pub fts_query: String,
+}
+
 /// Tokenizer trait for converting text to searchable tokens.
 pub trait Tokenizer: Send + Sync {
     /// Convert text to tokens for indexing.
     fn tokenize(&self, text: &str, lang: &str) -> Result<Vec<String>, TokenizerError>;
 
-    /// Convert search query to FTS5 query string.
-    fn to_query(&self, text: &str, lang: &str) -> Result<String, TokenizerError>;
+    /// Convert search query to tokenizer-specific raw text and FTS5 query string.
+    fn to_query(
+        &self,
+        text: &str,
+        lang: &str,
+        config: &HashMap<String, toml::Value>,
+    ) -> Result<TokenizedQuery, TokenizerError>;
+
+    /// Return autocomplete suggestions for a query.
+    fn autocomplete(
+        &self,
+        _text: &str,
+        _lang: &str,
+        _config: &HashMap<String, toml::Value>,
+    ) -> Result<Vec<String>, TokenizerError> {
+        Ok(Vec::new())
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -63,13 +84,21 @@ impl Tokenizer for SimpleTokenizer {
         Ok(text.split_whitespace().map(|s| s.to_lowercase()).collect())
     }
 
-    fn to_query(&self, text: &str, _lang: &str) -> Result<String, TokenizerError> {
+    fn to_query(
+        &self,
+        text: &str,
+        _lang: &str,
+        _config: &HashMap<String, toml::Value>,
+    ) -> Result<TokenizedQuery, TokenizerError> {
         let cleaned = clean_query(text);
         let terms: Vec<String> = cleaned
             .split_whitespace()
             .map(|s| s.to_lowercase())
             .collect();
-        Ok(terms.join(" "))
+        Ok(TokenizedQuery {
+            text: text.to_string(),
+            fts_query: terms.join(" "),
+        })
     }
 }
 
@@ -106,7 +135,12 @@ impl Tokenizer for DefaultTokenizer {
         Ok(tokens)
     }
 
-    fn to_query(&self, text: &str, _lang: &str) -> Result<String, TokenizerError> {
+    fn to_query(
+        &self,
+        text: &str,
+        _lang: &str,
+        _config: &HashMap<String, toml::Value>,
+    ) -> Result<TokenizedQuery, TokenizerError> {
         let cleaned = clean_query(text);
         let iter = cleaned.split_whitespace();
         let terms: Vec<String> = if let Some(sw) = &self.stop_words {
@@ -117,7 +151,10 @@ impl Tokenizer for DefaultTokenizer {
             iter.map(|word| self.stemmer.stem(&word.to_lowercase()).to_string())
                 .collect()
         };
-        Ok(terms.join(" "))
+        Ok(TokenizedQuery {
+            text: text.to_string(),
+            fts_query: terms.join(" "),
+        })
     }
 }
 
@@ -214,7 +251,7 @@ pub fn load_all(dir: &Path) -> Result<Tokenizers, TokenizerError> {
             log::error!("error validating '{}': {}", fname, e);
             continue;
         }
-        if let Err(e) = tk.to_query("test", "test") {
+        if let Err(e) = tk.to_query("test", "test", &HashMap::new()) {
             log::error!("error validating '{}': {}", fname, e);
             continue;
         }

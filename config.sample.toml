@@ -121,6 +121,10 @@ name = "English"
 # For 'lua': path to a Lua script in tokenizers_dir, eg: "lua:malayalam.lua"
 tokenizer = "default:english"
 
+# Optional tokenizer-specific settings passed through as-is.
+# Example: config = { transliterate_script = "devanagari" }
+config = {}
+
 [lang.english.types]
 noun = "Noun"
 verb = "Verb"

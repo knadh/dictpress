@@ -210,7 +210,7 @@ async fn main() {
     };
 
     // Initialize manager.
-    let mgr = match Manager::new(db, tokenizers, langs.clone(), dicts.clone()).await {
+    let mgr = match Manager::new(db, tokenizers, langs.clone()).await {
         Ok(m) => Arc::new(m),
         Err(e) => {
             log::error!("error initializing manager: {}", e);

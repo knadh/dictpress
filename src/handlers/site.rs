@@ -232,7 +232,7 @@ pub async fn render_glossary_page(
 
     // Fetch glossary words (from cache or DB).
     let (words, total) =
-        match get_glossary_words(&ctx, &from_lang, &initial, offset, per_page).await {
+        match get_glossary_words(&ctx, from_lang, &initial, offset, per_page).await {
             Ok(result) => result,
             Err(e) => {
                 log::error!("glossary error: {}", e);

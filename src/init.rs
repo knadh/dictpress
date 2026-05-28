@@ -70,6 +70,7 @@ pub fn langs(config: &Config, tokenizers: &Tokenizers) -> LangMap {
             },
             types: cfg.types.clone(),
             tokenizer: tokenizer.clone(),
+            config: cfg.config.clone(),
         };
 
         log::info!("language: {} (tokenizer: {})", id, tokenizer);
