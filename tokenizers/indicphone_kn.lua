@@ -347,9 +347,9 @@ function tokenize(text, lang)
     return tokens
 end
 
--- Convert search query to FTS5 query string
+-- Convert search query to raw text + FTS5 query string
 -- Auto-detects Kannada vs Kanglish input
--- Returns keys joined with " OR " for SQLite FTS5 OR matching
+-- Returns {raw_text=..., fts_query=...}
 function to_query(text, lang)
     local key0, key1, key2
     local is_romanized = false
@@ -363,14 +363,14 @@ function to_query(text, lang)
     end
 
     if key0 == "" then
-        return ""
+        return {raw_text=text, fts_query=""}
     end
 
     -- Romanized autocomplete input is usually a partial syllable. Falling back
     -- to no-vowel keys makes "he", "hi", "hu" all match "h". So keep the
     -- adjacent vowel marker and use a prefix query instead.
     if is_romanized and key2 ~= "" then
-        return key2 .. "*"
+        return {raw_text=text, fts_query=key2 .. "*"}
     end
 
     -- Collect unique keys (most specific first)
@@ -391,7 +391,7 @@ function to_query(text, lang)
     end
 
     if #keys == 0 then
-        return ""
+        return {raw_text=text, fts_query=""}
     end
 
     -- Return up to num_keys keys
@@ -400,5 +400,5 @@ function to_query(text, lang)
         result[#result + 1] = keys[i]
     end
 
-    return table_concat(result, " OR ")
+    return {raw_text=text, fts_query=table_concat(result, " OR ")}
 end

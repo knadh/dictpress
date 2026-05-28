@@ -169,6 +169,16 @@ pub async fn do_search(
     Ok(results)
 }
 
+fn push_autocomplete_result(out: &mut Vec<Suggestion>, suggestion: Suggestion, limit: usize) {
+    if out.len() >= limit {
+        return;
+    }
+
+    if !out.iter().any(|r| r.content.0 == suggestion.content.0) {
+        out.push(suggestion);
+    }
+}
+
 /// Autocomplete endpoint for search word suggestions.
 pub async fn get_autocomplete(
     State(ctx): State<Arc<Ctx>>,
@@ -190,30 +200,53 @@ pub async fn get_autocomplete(
     }
 
     let limit = ctx.consts.num_autocomplete;
+    let limit_usize = limit.max(0) as usize;
+    if limit_usize == 0 {
+        return Ok(json(Vec::new()));
+    }
 
-    // Try trie search first if autocomplete is enabled.
-    let mut out: Vec<Suggestion> = if let Some(ac) = &ctx.autocomplete {
-        ac.query(&lang, &q, limit as usize)
-            .into_iter()
-            .map(|w| Suggestion {
-                content: StringArray(vec![w]),
-            })
-            .collect()
-    } else {
-        Vec::new()
-    };
+    let mut out: Vec<Suggestion> = Vec::new();
 
-    // If there are fewer than limit results, supplement with DB FTS search.
-    if out.len() < limit as usize {
-        let remaining = limit - out.len() as i32;
-        if let Ok(res) = ctx.mgr.get_autocomplete(&lang, &q, remaining).await {
+    match ctx.mgr.autocomplete_variants(&q, &lang) {
+        Ok(variants) => {
+            for word in variants {
+                push_autocomplete_result(
+                    &mut out,
+                    Suggestion {
+                        content: StringArray(vec![word]),
+                    },
+                    limit_usize,
+                );
+            }
+        }
+        Err(e) => log::warn!("autocomplete tokenizer failed: {}", e),
+    }
+
+    // Use tokenizer-generated FTS queries to fetch real dictionary matches.
+    if out.len() < limit_usize {
+        let remaining = (limit_usize - out.len()) as i32;
+        if let Ok(res) = ctx
+            .mgr
+            .autocomplete_by_fts_query(&lang, &q, remaining)
+            .await
+        {
             for s in res {
-                if !out.iter().any(|r| r.content.0 == s.content.0) {
-                    out.push(s);
-                    if out.len() >= limit as usize {
-                        break;
-                    }
-                }
+                push_autocomplete_result(&mut out, s, limit_usize);
+            }
+        }
+    }
+
+    // If there are fewer than limit results, add trie prefix matches.
+    if out.len() < limit_usize {
+        if let Some(ac) = &ctx.autocomplete {
+            for word in ac.query(&lang, &q, limit_usize - out.len()) {
+                push_autocomplete_result(
+                    &mut out,
+                    Suggestion {
+                        content: StringArray(vec![word]),
+                    },
+                    limit_usize,
+                );
             }
         }
     }

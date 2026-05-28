@@ -8,7 +8,7 @@ local config = { num_keys = 2 }
 
 local table_concat = table.concat
 local string_sub, string_gsub, string_lower = string.sub, string.gsub, string.lower
-local math_min, math_floor = math.min, math.floor
+local math_floor = math.floor
 local utf8 = utf8 or require("utf8")
 
 local CONSONANT, CHILLU, VOWEL, MATRA, VIRAMA_T, ANUSVARA_T, VISARGA_T, OTHER = 1,2,3,4,5,6,7,8
@@ -22,6 +22,9 @@ local BLOCKS = {
     {0x0C00, 0x0C7F, "telugu"},     {0x0C80, 0x0CFF, "kannada"},
     {0x0D00, 0x0D7F, "malayalam"},
 }
+local SCRIPT_BASES = {}
+for _, b in ipairs(BLOCKS) do SCRIPT_BASES[b[3]] = b[1] end
+
 local INDIC_LO, INDIC_HI, BLOCK_WIDTH = 0x0900, 0x0D7F, 0x80
 
 local CONSONANTS = {
@@ -72,58 +75,9 @@ local COMPOUND_EXCEPTIONS = {
     kannada    = {[0x26*0x100+0x26]="D", [0x26*0x100+0x27]="D"},
 }
 
-local RETROFLEX_N, RETROFLEX_L, RETROFLEX_R = "\1", "\2", "\3"
-local RETROFLEX_MAP = {N=RETROFLEX_N, L=RETROFLEX_L, R=RETROFLEX_R}
+local RETROFLEX_N, RETROFLEX_L, RETROFLEX_R, RETROFLEX_T, RETROFLEX_D = "\1", "\2", "\3", "\4", "\5"
+local RETROFLEX_MAP = {N=RETROFLEX_N, L=RETROFLEX_L, R=RETROFLEX_R, T=RETROFLEX_T, D=RETROFLEX_D}
 local NORMALIZE_MAP = {w="v", x="ks", q="k"}
-
-local en_compounds = (function()
-    local list = {
-        {"ntha","N0"},  {"njch","NC"},  {"ksha","KS1"}, {"nkha","NK"},
-        {"zhla","L1"},  {"zhna","N1"},  {"zhra","R1"},
-        {"kka","K2"},   {"gga","K"},    {"cca","C2"},   {"cha","C"},
-        {"tta","T2"},   {"dda","T2"},   {"ppa","P2"},   {"mma","M2"},
-        {"lla","L2"},   {"nna","NN"},   {"rra","T"},    {"yya","Y"},
-        {"vva","V"},    {"ssa","S"},
-        {"sha","S1"},   {"zha","Z"},    {"nga","NG"},   {"nja","NJ"},
-        {"nda","N1T"},  {"nta","NT"},   {"mpa","MP"},   {"nka","NK"},
-        {"tth","0"},    {"nth","N0"},   {"nch","NC"},   {"ksh","KS1"},
-        {"zhl","L1"},   {"zhn","N1"},   {"zhr","R1"},
-        {"zl","L1"},    {"zn","N1"},    {"zr","R1"},
-        {"kk","K2"},    {"gg","K"},     {"cc","C2"},    {"ch","C"},
-        {"tt","T2"},    {"dd","T2"},    {"pp","P2"},    {"mm","M2"},
-        {"ll","L2"},    {"nn","NN"},    {"rr","T"},     {"yy","Y"},
-        {"vv","V"},     {"ss","S"},
-        {"sh","S1"},    {"zh","Z"},     {"ng","NG"},    {"nj","NJ"},
-        {"th","0"},     {"dh","0"},     {"nd","N1T"},   {"nt","NT"},
-        {"mp","MP"},    {"nk","NK"},    {"ph","F"},     {"bh","B"},
-        {"kh","K"},     {"gh","K"},     {"jh","J"},
-    }
-    local map = {}
-    for _, pair in ipairs(list) do
-        if not map[pair[1]] then map[pair[1]] = pair[2] end
-    end
-    return map
-end)()
-
-local en_consonants = {
-    k="K", g="K", c="C", j="J", t="T", d="T", n="N", p="P", f="F",
-    b="B", m="M", y="Y", r="R", l="L", v="V", s="S", h="H", z="Z",
-    [RETROFLEX_N]="N1", [RETROFLEX_L]="L1", [RETROFLEX_R]="R1",
-}
-
-local en_vowels_standalone = {
-    aa="A", ai="AI", au="O", ou="O",
-    ee="I", ii="I", oo="U", uu="U",
-    ea="I", ie="I", oa="O",
-    a="A", i="I", u="U", e="E", o="O",
-}
-
-local en_vowels_modifier = {
-    aa="", ai="7", au="9", ou="9",
-    ee="4", ii="4", oo="5", uu="5",
-    ea="4", ie="4", oa="8",
-    a="", i="4", u="5", e="6", o="8",
-}
 
 local function detect_script(text)
     local ok, iter, state, start = pcall(utf8.codes, text)
@@ -264,94 +218,246 @@ local function hash_native(text, script, base)
     return table_concat(out)
 end
 
-local COMPOUND_LENS = {4, 3, 2}
-local VOWEL_LENS = {2, 1}
+local MAX_TRANSLITERATION_VARIANTS = 32
 
-local function hash_romanized(text)
-    -- Mark uppercase retroflex N/L/R before lowercasing.
-    local t = string_gsub(text, "[NLR]", RETROFLEX_MAP)
+local function chr(base, off)
+    return utf8.char(base + off)
+end
+
+local function expand_variants(vars, choices)
+    local out, seen = {}, {}
+    for _, prefix in ipairs(vars) do
+        for _, choice in ipairs(choices) do
+            local v = prefix .. choice
+            if not seen[v] then
+                out[#out+1], seen[v] = v, true
+                if #out >= MAX_TRANSLITERATION_VARIANTS then return out end
+            end
+        end
+    end
+    return out
+end
+
+local function transliterate_roman(text, script)
+    local base = SCRIPT_BASES[script]
+    if not base or detect_script(text) then return {} end
+
+    local virama, anusvara = chr(base, VIRAMA), chr(base, ANUSVARA)
+    local function c(off) return chr(base, off) end
+    local function raw(...)
+        local out, n = {}, select("#", ...)
+        for i = 1, n do out[i] = c(select(i, ...)) end
+        return table_concat(out)
+    end
+    local function j(...)
+        local out, n = {}, select("#", ...)
+        for i = 1, n do
+            if i > 1 then out[#out+1] = virama end
+            out[#out+1] = c(select(i, ...))
+        end
+        return table_concat(out)
+    end
+    local function jm(matra, ...)
+        return j(...) .. c(matra)
+    end
+    local function rj(off)
+        if script == "malayalam" then return utf8.char(0x0D7C) .. c(off) end
+        return j(0x30, off)
+    end
+    local zh = script == "malayalam" and 0x34 or 0x33
+    local au_matra = script == "malayalam" and c(0x57) or c(0x4C)
+
+    local consonants = {
+        k={c(0x15)}, kh={c(0x16)}, g={c(0x17)}, gh={c(0x18)},
+        ch={c(0x1A)}, c={c(0x1A)}, j={c(0x1C)}, jh={c(0x1D)},
+        t={c(0x24), c(0x1F)}, d={c(0x26), c(0x21)},
+        [RETROFLEX_T]={c(0x1F)}, [RETROFLEX_D]={c(0x21)},
+        [RETROFLEX_N]={c(0x23)}, [RETROFLEX_L]={c(0x33)}, [RETROFLEX_R]={c(0x31)},
+        th={c(0x24), c(0x25)}, dh={c(0x26), c(0x27)}, p={c(0x2A)},
+        ph={c(0x2B), c(0x2A)}, f={c(0x2B)}, b={c(0x2C)}, bh={c(0x2D)}, m={c(0x2E)},
+        y={c(0x2F)}, r={c(0x30)}, l={c(0x32)}, v={c(0x35)}, w={c(0x35)},
+        s={c(0x38)}, sh={c(0x36)}, h={c(0x39)}, n={c(0x28), c(0x23)},
+        ng={c(0x19)}, nj={c(0x1E)}, z={script == "malayalam" and c(0x34) or c(0x1C)},
+        zh={c(zh)},
+    }
+    local clusters = {
+        kshm={j(0x15,0x37,0x2E)},
+        ksh={j(0x15,0x37)}, ks={j(0x15,0x37)},
+        rish={raw(0x0B,0x37)}, rush={raw(0x0B,0x37)},
+        gy={j(0x17,0x2F), j(0x1C,0x1E)}, jn={j(0x1C,0x1E)},
+        jny={j(0x1C,0x1E)}, gn={j(0x1C,0x1E)},
+        rr={c(0x31)}, zhch={j(zh,0x1A)},
+        kk={j(0x15,0x15)}, gg={j(0x17,0x17)}, cc={j(0x1A,0x1A)}, chch={j(0x1A,0x1A)},
+        jj={j(0x1C,0x1C)}, tt={j(0x24,0x24), j(0x1F,0x1F)}, dd={j(0x26,0x26), j(0x21,0x21)},
+        pp={j(0x2A,0x2A)}, bb={j(0x2C,0x2C)}, mm={j(0x2E,0x2E)},
+        ll={j(0x32,0x32), j(0x33,0x33)}, yy={j(0x2F,0x2F)}, vv={j(0x35,0x35)}, ss={j(0x38,0x38)},
+        sri={raw(0x38,0x43), jm(0x40,0x36,0x30)}, sru={raw(0x38,0x43)},
+        shri={jm(0x40,0x36,0x30), raw(0x38,0x43)}, shru={jm(0x43,0x36,0x30)},
+        str={j(0x38,0x24,0x30), j(0x37,0x1F,0x30)},
+        st={j(0x38,0x24), j(0x37,0x1F)}, sht={j(0x37,0x1F), j(0x37,0x20)}, shth={j(0x37,0x20)},
+        sth={j(0x37,0x1F), j(0x38,0x25)},
+        nsth={anusvara..j(0x38,0x25), anusvara..j(0x37,0x1F)},
+        msth={anusvara..j(0x38,0x25), anusvara..j(0x37,0x1F)},
+        nsk={anusvara..j(0x38,0x15)}, msk={anusvara..j(0x38,0x15)},
+        nst={anusvara..j(0x38,0x24), anusvara..j(0x37,0x1F)},
+        mst={anusvara..j(0x38,0x24), anusvara..j(0x37,0x1F)},
+        ns={anusvara..c(0x38), j(0x28,0x38)}, ms={anusvara..c(0x38), j(0x2E,0x38)},
+        shn={j(0x37,0x23)}, shm={j(0x36,0x2E), j(0x37,0x2E)},
+        sk={j(0x38,0x15)}, shk={j(0x36,0x15)}, sp={j(0x38,0x2A)}, sph={j(0x38,0x2B)},
+        sm={j(0x38,0x2E)}, sn={j(0x38,0x28)}, sl={j(0x38,0x32)}, sv={j(0x38,0x35)}, sw={j(0x38,0x35)},
+        mb={anusvara..c(0x2C), j(0x2E,0x2C), j(0x2E,0x2A)}, mbh={anusvara..c(0x2D), j(0x2E,0x2D)},
+        mp={anusvara..c(0x2A), j(0x2E,0x2A)}, mph={anusvara..c(0x2B), j(0x2E,0x2B)},
+        nk={anusvara..c(0x15), j(0x19,0x15)}, nkh={anusvara..c(0x16), j(0x19,0x16)},
+        ng={anusvara..c(0x17), j(0x19,0x17), c(0x19)}, ngh={anusvara..c(0x18), j(0x19,0x18)},
+        nch={j(0x1E,0x1A), anusvara..c(0x1A)}, nj={j(0x1E,0x1C), anusvara..c(0x1C)},
+        njh={j(0x1E,0x1D), anusvara..c(0x1D)},
+        nn={j(0x28,0x28), j(0x23,0x23)}, nna={j(0x28,0x28), j(0x23,0x23)},
+        ["n"..RETROFLEX_T]={j(0x23,0x1F)}, ["n"..RETROFLEX_D]={j(0x23,0x21)},
+        nth={j(0x28,0x25), j(0x28,0x24), anusvara..c(0x25)},
+        ndh={j(0x28,0x27), j(0x28,0x26), anusvara..c(0x27)},
+        nt={j(0x28,0x24), j(0x23,0x1F), anusvara..c(0x24)},
+        nd={j(0x28,0x26), j(0x23,0x21), anusvara..c(0x26)},
+        ny={j(0x28,0x2F), j(0x23,0x2F)},
+        ty={j(0x24,0x2F)}, thy={j(0x24,0x2F)}, dy={j(0x26,0x2F)}, dhy={j(0x26,0x2F)},
+        ky={j(0x15,0x2F)}, khy={j(0x16,0x2F)}, py={j(0x2A,0x2F)}, by={j(0x2C,0x2F)},
+        bhy={j(0x2D,0x2F)}, my={j(0x2E,0x2F)}, vy={j(0x35,0x2F)},
+        ly={j(0x32,0x2F)}, lhy={j(0x32,0x39,0x2F)}, ry={j(0x30,0x2F)},
+        kr={j(0x15,0x30)}, khr={j(0x16,0x30)}, gr={j(0x17,0x30)}, ghr={j(0x18,0x30)},
+        cr={j(0x1A,0x30)}, chr={j(0x1A,0x30)}, jr={j(0x1C,0x30)}, tr={j(0x24,0x30)},
+        thr={j(0x24,0x30), j(0x25,0x30)}, dr={j(0x26,0x30)}, dhr={j(0x26,0x30), j(0x27,0x30)},
+        pr={j(0x2A,0x30)}, phr={j(0x2B,0x30), j(0x2A,0x30)}, br={j(0x2C,0x30)}, bhr={j(0x2D,0x30)},
+        mr={j(0x2E,0x30)}, nr={j(0x28,0x30)}, kv={j(0x15,0x35)}, gv={j(0x17,0x35)},
+        tv={j(0x24,0x35)}, tw={j(0x24,0x35)}, dv={j(0x26,0x35)}, dw={j(0x26,0x35)},
+        vr={j(0x35,0x30)}, wr={j(0x35,0x30)},
+        rsh={rj(0x37), rj(0x36)}, rth={rj(0x25)}, rdh={rj(0x27)}, rbh={rj(0x2D)},
+        rk={rj(0x15)}, rg={rj(0x17)}, rt={rj(0x24)}, rd={rj(0x26)},
+        rp={rj(0x2A)}, rb={rj(0x2C)}, rm={rj(0x2E)}, rn={rj(0x23), rj(0x28)}, rv={rj(0x35)},
+        sr={j(0x38,0x30), j(0x36,0x30)}, shr={j(0x36,0x30)}, hr={j(0x39,0x30)},
+        hm={j(0x39,0x2E)}, hn={j(0x39,0x28)}, hy={j(0x39,0x2F)}, hl={j(0x39,0x32)},
+    }
+    local function add_cluster(key, vals)
+        clusters[key] = clusters[key] or {}
+        for _, v in ipairs(vals) do
+            local exists = false
+            for _, cur in ipairs(clusters[key]) do
+                if cur == v then exists = true; break end
+            end
+            if not exists then clusters[key][#clusters[key]+1] = v end
+        end
+    end
+    for roman, offs in pairs({
+        k={0x15}, kh={0x16}, g={0x17}, gh={0x18}, ch={0x1A}, c={0x1A}, j={0x1C}, jh={0x1D},
+        t={0x24,0x1F}, th={0x24,0x25}, d={0x26,0x21}, dh={0x26,0x27}, n={0x28,0x23},
+        p={0x2A}, ph={0x2B,0x2A}, b={0x2C}, bh={0x2D}, m={0x2E}, y={0x2F},
+        r={0x30}, l={0x32}, v={0x35}, w={0x35}, s={0x38}, sh={0x36}, h={0x39},
+    }) do
+        local riy, ri, ru = {}, {}, {}
+        for _, off in ipairs(offs) do
+            ri[#ri+1] = c(off)..c(0x43)
+            ri[#ri+1] = j(off,0x30)..c(0x3F)
+            ru[#ru+1] = c(off)..c(0x43)
+            ru[#ru+1] = j(off,0x30)..c(0x41)
+            riy[#riy+1] = j(off,0x30)..c(0x3F)..c(0x2F)
+        end
+        add_cluster(roman.."riy", riy)
+        add_cluster(roman.."ri", ri)
+        add_cluster(roman.."ru", ru)
+    end
+    local vowels = {
+        aa={c(0x06), c(0x3E)}, a={c(0x05), ""},
+        ee={c(0x08), c(0x40)}, ii={c(0x08), c(0x40)}, i={c(0x07), c(0x3F), c(0x08), c(0x40)},
+        u={c(0x09), c(0x41), c(0x0A), c(0x42)}, oo={c(0x0A), c(0x42)}, uu={c(0x0A), c(0x42)},
+        ri={c(0x0B), c(0x43)}, ru={c(0x0B), c(0x43)},
+        e={c(0x0F), c(0x47), c(0x0E), c(0x46)}, ai={c(0x10), c(0x48)},
+        o={c(0x13), c(0x4B), c(0x12), c(0x4A)}, au={c(0x14), au_matra}, ou={c(0x14), au_matra},
+    }
+    local lens = {4, 3, 2, 1}
+    local t = string_gsub(text, "[NLRTD]", RETROFLEX_MAP)
     t = string_lower(t)
+    t = string_gsub(t, "ow", "au")
     t = string_gsub(t, "[wxq]", NORMALIZE_MAP)
-    t = string_gsub(t, "[^a-z\1\2\3]", "")
+    t = string_gsub(t, "[^a-z\1\2\3\4\5]", "")
+    if t == "" then return {} end
 
-    local out = {}
-    local pos = 1
-    local len = #t
-    local after_c = false
-
-    while pos <= len do
+    local variants, after_c, pos = {""}, false, 1
+    while pos <= #t do
         local matched = false
-
-        for _, plen in ipairs(COMPOUND_LENS) do
-            if pos + plen - 1 <= len then
-                local sub = string_sub(t, pos, pos + plen - 1)
-                if en_compounds[sub] then
-                    out[#out+1] = en_compounds[sub]
-                    pos = pos + plen
-                    after_c = true
-                    matched = true
+        for _, len in ipairs(lens) do
+            if pos + len - 1 <= #t then
+                local sub = string_sub(t, pos, pos + len - 1)
+                if clusters[sub] then
+                    variants = expand_variants(variants, clusters[sub])
+                    after_c, pos, matched = true, pos + len, true
+                    break
+                end
+                if consonants[sub] then
+                    if sub == "m" and pos + len - 1 == #t then
+                        variants = expand_variants(variants, {anusvara, consonants[sub][1]})
+                    else
+                        variants = expand_variants(variants, consonants[sub])
+                    end
+                    after_c, pos, matched = true, pos + len, true
+                    break
+                end
+                if vowels[sub] and (sub ~= "ri" and sub ~= "ru" or after_c or pos == 1) then
+                    local choices = {}
+                    for i = after_c and 2 or 1, #vowels[sub], 2 do
+                        choices[#choices+1] = vowels[sub][i]
+                    end
+                    variants = expand_variants(variants, choices)
+                    after_c, pos, matched = false, pos + len, true
                     break
                 end
             end
         end
 
-        if not matched then
-            for _, vlen in ipairs(VOWEL_LENS) do
-                if pos + vlen - 1 <= len then
-                    local sub = string_sub(t, pos, pos + vlen - 1)
-                    if after_c and en_vowels_modifier[sub] then
-                        local mod = en_vowels_modifier[sub]
-                        if mod ~= "" then out[#out+1] = mod end
-                        pos = pos + vlen
-                        after_c = false
-                        matched = true
-                        break
-                    elseif not after_c and en_vowels_standalone[sub] then
-                        out[#out+1] = en_vowels_standalone[sub]
-                        pos = pos + vlen
-                        after_c = false
-                        matched = true
-                        break
-                    end
-                end
-            end
-        end
-
-        if not matched then
-            local ch = string_sub(t, pos, pos)
-            if en_consonants[ch] then
-                out[#out+1] = en_consonants[ch]
-                after_c = true
-            end
-            pos = pos + 1
-        end
+        if not matched then pos = pos + 1 end
     end
 
-    local result = table_concat(out)
-    return (string_gsub(result, "([^AEIOU])M$", "%13"))
+    return variants
 end
 
-local function encode(text)
+local function script_for(lang, cfg)
+    cfg = cfg or {}
+    return cfg.transliterate_script or (SCRIPT_BASES[lang] and lang) or ""
+end
+
+local function encode(text, script)
     text = utils.trim(text)
     if text == "" then return "", "", "" end
 
-    local script, base = detect_script(text)
+    local detected, base = detect_script(text)
     local key2
-    if script then
-        key2 = hash_native(text, script, base)
+    if detected then
+        key2 = hash_native(text, detected, base)
     else
-        key2 = hash_romanized(text)
+        local native = transliterate_roman(text, script)[1]
+        if not native then return "", "", "", true end
+        key2 = hash_native(native, script, SCRIPT_BASES[script])
     end
 
     local key1 = string_gsub(key2, "[24-9]", "")
     local key0 = string_gsub(key2, "[1-24-9]", "")
-    return key0, key1, key2, script == nil
+    return key0, key1, key2, detected == nil
+end
+
+local function add_query_keys(out, seen, key2)
+    local key1 = string_gsub(key2, "[24-9]", "")
+    local key0 = string_gsub(key2, "[1-24-9]", "")
+    local n = 0
+    for _, key in ipairs({key2, key1, key0}) do
+        if key ~= "" and not seen[key] then
+            out[#out+1], seen[key] = key, true
+            n = n + 1
+            if n >= config.num_keys then return end
+        end
+    end
 end
 
 function tokenize(text, lang)
     local tokens = {}
     for word in utils.words(text) do
-        local key0, key1, key2 = encode(word)
+        local key0, key1, key2 = encode(word, lang)
         if key0 ~= "" then
             tokens[#tokens+1] = key0 .. ":3"
             if key1 ~= key0 then
@@ -365,24 +471,29 @@ function tokenize(text, lang)
     return tokens
 end
 
-function to_query(text, lang)
-    local key0, key1, key2, is_romanized = encode(text)
-    if key0 == "" then return "" end
+function to_query(text, lang, cfg)
+    text = utils.trim(text)
+    if text == "" then return {raw_text=text, fts_query=""} end
 
-    -- Romanized autocomplete input is usually a partial syllable. Falling back
-    -- to vowel-stripped keys makes "he", "hi", "hu" all match "h"; keep the
-    -- dependent vowel marker and use a prefix query instead.
-    if is_romanized and key2 ~= "" then
-        return key2 .. "*"
+    local keys, seen = {}, {}
+    local raw_text = text
+    local detected, base = detect_script(text)
+    if detected then
+        add_query_keys(keys, seen, hash_native(text, detected, base))
+    else
+        local script = script_for(lang, cfg)
+        local base = SCRIPT_BASES[script]
+        if not base then return {raw_text=raw_text, fts_query=""} end
+        local variants = transliterate_roman(text, script)
+        raw_text = variants[1] or raw_text
+        for _, native in ipairs(variants) do
+            add_query_keys(keys, seen, hash_native(native, script, base))
+        end
     end
 
-    -- Collect unique keys (most specific first).
-    local keys = {key2}
-    if key1 ~= key2 then keys[#keys+1] = key1 end
-    if key0 ~= key1 and key0 ~= key2 then keys[#keys+1] = key0 end
+    return {raw_text=raw_text, fts_query=table_concat(keys, " OR ")}
+end
 
-    if #keys > config.num_keys then
-        for i = #keys, config.num_keys + 1, -1 do keys[i] = nil end
-    end
-    return table_concat(keys, " OR ")
+function transliterate(text, lang, cfg)
+    return transliterate_roman(text, script_for(lang, cfg))
 end

@@ -356,6 +356,9 @@ pub struct Lang {
 
     #[serde(default)]
     pub tokenizer: String,
+
+    #[serde(default)]
+    pub config: HashMap<String, toml::Value>,
 }
 
 pub type LangMap = HashMap<String, Lang>;
@@ -549,6 +552,9 @@ pub struct LangConfig {
 
     #[serde(default)]
     pub tokenizer: String,
+
+    #[serde(default)]
+    pub config: HashMap<String, toml::Value>,
 
     #[serde(default)]
     pub types: HashMap<String, String>,

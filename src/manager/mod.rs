@@ -7,7 +7,7 @@ use crate::{
         q, Comment, Dicts, Entry, GlossaryWord, LangMap, Relation, RelationsQuery, SearchQuery,
         Stats, Suggestion, STATUS_ENABLED,
     },
-    tokenizer::{Tokenizer, TokenizerError, Tokenizers},
+    tokenizer::{TokenizedQuery, Tokenizer, TokenizerError, Tokenizers},
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -66,16 +66,40 @@ impl Manager {
     }
 
     /// Convert search query to FTS5 query string.
-    pub fn to_fts_query(&self, query: &str, lang_id: &str) -> Result<String, Error> {
+    pub fn to_search_query(&self, query: &str, lang_id: &str) -> Result<TokenizedQuery, Error> {
+        let lang = self
+            .langs
+            .get(lang_id)
+            .ok_or_else(|| Error::UnknownLang(lang_id.to_string()))?;
+        let tk = self
+            .tokenizers
+            .get(&lang.tokenizer)
+            .ok_or_else(|| Error::UnknownLang(lang_id.to_string()))?;
+
+        let out = tk.to_query(query, lang_id, &lang.config)?;
+
+        log::debug!(
+            "lang={}, query='{}', raw='{}', fts='{}'",
+            lang_id,
+            query,
+            out.text,
+            out.fts_query
+        );
+
+        Ok(out)
+    }
+
+    /// Generate tokenizer-specific autocomplete variants.
+    pub fn autocomplete_variants(&self, query: &str, lang_id: &str) -> Result<Vec<String>, Error> {
+        let lang = self
+            .langs
+            .get(lang_id)
+            .ok_or_else(|| Error::UnknownLang(lang_id.to_string()))?;
         let tk = self
             .get_tokenizer(lang_id)
             .ok_or_else(|| Error::UnknownLang(lang_id.to_string()))?;
 
-        let out = tk.to_query(query, lang_id)?;
-
-        log::debug!("lang={}, query='{}', fts='{}'", lang_id, query, out);
-
-        Ok(out)
+        Ok(tk.autocomplete(query, lang_id, &lang.config)?)
     }
 
     // #########################
@@ -92,11 +116,14 @@ impl Manager {
             return Err(Error::UnknownLang(sq.from_lang.clone()));
         }
 
-        // Generate FTS query.
-        let fts_query = self.to_fts_query(&sq.query, &sq.from_lang)?;
+        // Generate FTS query. Some tokenizers may return a transformed raw
+        // text in addition to the query. Eg: Indicphone that takes native Indic
+        // script and also Romanized phonetic strings (where it transliterates and returns
+        // native script guesses).
+        let query = self.to_search_query(&sq.query, &sq.from_lang)?;
 
         // If FTS query is empty, return an error.
-        if fts_query.trim().is_empty() {
+        if query.fts_query.trim().is_empty() {
             return Err(Error::Validation("invalid search query".to_string()));
         }
 
@@ -108,8 +135,8 @@ impl Manager {
 
         let results: Vec<Entry> = sqlx::query_as(&q.search.query)
             .bind(&sq.from_lang)
-            .bind(&sq.query)
-            .bind(&fts_query)
+            .bind(&query.text)
+            .bind(&query.fts_query)
             .bind(&status)
             .bind(offset)
             .bind(limit)
@@ -120,8 +147,8 @@ impl Manager {
         Ok((results, total))
     }
 
-    /// Get autocomplete results for a search query.
-    pub async fn get_autocomplete(
+    /// Get autocomplete results from the tokenizer-generated FTS query.
+    pub async fn autocomplete_by_fts_query(
         &self,
         lang: &str,
         query: &str,
@@ -131,7 +158,7 @@ impl Manager {
             return Err(Error::UnknownLang(lang.to_string()));
         }
 
-        let fts_query = self.to_fts_query(query, lang)?;
+        let fts_query = self.to_search_query(query, lang)?.fts_query;
         if fts_query.trim().is_empty() {
             return Err(Error::Validation("invalid search query".to_string()));
         }
