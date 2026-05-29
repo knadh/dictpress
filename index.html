@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>dictpress - Build and publish dictionaries for any language</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="description" content="Webserver application for building and publishing dictionary websites" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+	<meta property="og:image" content="https://dict.press/static/thumb.png">
+	<link rel="shortcut icon" href="static/favicon.png" />
+	<link rel="stylesheet" type="text/css" href="static/style.css" />
+</head>
+<body>
+
+<header class="header">
+	<div class="container intro">
+		<div class="logo">
+			<a href="/"><img src="static/logo.svg" alt="DictMaker" /></a>
+		</div>
+		<nav class="nav">
+			<a href="docs#download">Download</a>
+			<a href="docs">Docs</a>
+			<a href="https://github.com/knadh/dictpress">GitHub</a>
+		</nav>
+		<h1 class="hero">Build dictionaries for any language</h1>
+		<p class="desc">
+			dictpress is a free and open source, single binary webserver application for building
+			and publishing fast, searchable dictionaries for any language.
+		</p>
+		<br />
+		<a href="https://github.com/knadh/dictpress/releases" class="button">Download</a>
+	</div>
+</header>
+
+<div class="container">
+	<section>
+		<p>
+			Examples dictionaries:
+		</p>
+		<ul>
+			<li><a href="https://alar.ink">Alar</a> &mdash; Kannada-English dictionary.</li>
+			<li><a href="https://olam.in">Olam</a> &mdash; English-Malayalam, Malayalam-Malayalam dictionary.</li>
+		</ul>
+		<br />
+
+		<figure class="box">
+			<a href="https://olam.in"><img src="static/demo.png" alt="Screenshot of Olam"></a>
+			<figcaption>Screenshot of Olam (English-Malayalam) dictionary</figcaption>
+		</figure>
+		<figure class="box">
+			<h3>Admin UI</h3>
+			<a href="static/admin.png"><img src="static/admin.png" alt="Screenshot of admin UI"></a>
+			<figcaption>Screenshot of admin UI</figcaption>
+		</figure>
+	</section>
+
+	<section>
+		<h2>Features</h2>
+		<ul>
+			<li>Build dictionaries for any language to any language.</li>
+			<li>Supports multiple dictionaries and languages in the same database.</li>
+			<li>Custom themes and templates for publishing dictionary websites.</li>
+			<li>Paginated A-Z (all alphabets for any language) glossaries.</li>
+			<li>HTTP/JSON API for search and everything else.</li>
+			<li>Pluggable search tokenizers (Lua scripts) and algorithms for fulltext search, phonetic search etc.</li>
+			<li>Admin UI for managing and curating dictionary data.</li>
+			<li>Admin moderation UI for crowd sourcing dictionary entries.</li>
+			<li>Bulk CSV to database import.</li>
+		</ul>
+	</section>
+	<section>
+		<h2>How it works</h2>
+		<p>DictPress is language agnostic and has no concept of language semantics.
+			It stores all data in an SQLite database file in just two tables <code>entries</code> and <code>relations</code>.
+			To make a universal dictionary interface possible,
+			it treats all dictionary entries as UTF-8 strings that can be searched with SQLite's fulltext capabilities
+			on tokens alongside them. The tokens that encode and make the entries searchable
+			can be anything&mdash;simple stemmed words or phonetic hashes like Metaphone.
+		</p>
+		<p>
+			DictPress bundles a Snowball stemming algorithm library which supports [arabic, danish, dutch, english, finnish, french, german, greek, hungarian, italian, norwegian, portuguese, romanian, russian, spanish, swedish, tamil, turkish].
+		</p>
+		<p>
+			For languages that do not have fulltext tokenisation, search tokens can be generated externally using any algorithm and plugged in.
+			For example, <a href="https://olam.in">Olam</a> uses <a href="https://github.com/knadh/dictmaker/blob/master/tokenizers/indicphone/indicphone.go">MLPhone</a>,
+			a simple Metaphone like phonetic hashing algorithm that allows Malayalam words in the dictionary to be searched
+			by how they sound.
+		</p>
+		<br />
+		<p>
+			See <a href="https://zerodha.tech/blog/alar-the-making-of-an-open-source-dictionary/">this article</a> for
+			historical context on the project.
+		</p>
+	</section>
+
+	<section>
+		<h2>Getting started</h2>
+		<ol>
+			<li><a href="https://github.com/knadh/dictpress/releases">Download</a> the latest version of DictPress.</li>
+			<li><a href="docs">Read the docs</a> to install the app and to import dictionary data.</li>
+		</ol>
+	</section>
+</div>
+
+<footer>
+	<p><a href="https://nadh.in">Kailash Nadh</a> &copy; 2022</p>
+</footer>
+
+</body>
+</html>
