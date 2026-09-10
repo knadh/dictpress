@@ -4,6 +4,7 @@ use std::{
 };
 
 use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
+use sqlx::Executor;
 
 use crate::models::schema;
 
@@ -28,8 +29,7 @@ pub async fn install_schema(db_path: &str, prompt: bool) -> Result<(), Box<dyn s
     // Create new database.
     let db = init(db_path, 1, false).await?;
 
-    // Exec pragma and schema.
-    sqlx::query(&schema.pragma.query).execute(&db).await?;
+    // Exec schema.
     sqlx::query(&schema.schema.query).execute(&db).await?;
 
     // Record the migration version.
@@ -139,14 +139,15 @@ pub async fn init(
     let mode = if read_only { "ro" } else { "rwc" };
     let db = SqlitePoolOptions::new()
         .max_connections(max_conns)
+        .after_connect(|conn, _meta| {
+            Box::pin(async move {
+                // Apply pragmas to every new connection before it enters the pool.
+                conn.execute(schema.pragma.query.as_str()).await?;
+                Ok(())
+            })
+        })
         .connect(&format!("sqlite://{}?mode={}", db_path, mode))
         .await?;
-
-    // Apply SQLite DB pragmas.
-    if let Err(e) = sqlx::query(&schema.pragma.query).execute(&db).await {
-        log::error!("error applying pragmas: {}", e);
-        std::process::exit(1);
-    }
 
     Ok(db)
 }
